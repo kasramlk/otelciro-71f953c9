@@ -80,9 +80,12 @@ const Dashboard = () => {
       <header className="border-b bg-card">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center space-x-8">
-            <div className="flex items-center space-x-2">
-              <Hotel className="h-6 w-6 text-primary" />
-              <h1 className="text-xl font-bold text-primary">Hotel PMS</h1>
+            <div className="flex items-center">
+              <img 
+                src="/lovable-uploads/27a5c254-db11-4fe2-927e-a659f46eb769.png" 
+                alt="Otelciro PMS" 
+                className="h-8"
+              />
             </div>
             
             {/* Navigation Menu */}
