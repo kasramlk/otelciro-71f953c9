@@ -29,6 +29,9 @@ import { AdminLayout } from "./layouts/AdminLayout";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import HotelOnboarding from "./pages/admin/HotelOnboarding";
 import UserManagement from "./pages/admin/UserManagement";
+import AgencyManagement from "./pages/admin/AgencyManagement";
+import PlatformSettings from "./pages/admin/PlatformSettings";
+import AuditMonitoring from "./pages/admin/AuditMonitoring";
 import GuestCRM from "./pages/GuestCRM";
 import RevenueAI from "./pages/RevenueAI";
 import Operations from "./pages/Operations";
@@ -133,9 +136,9 @@ const AppContent = () => {
             <Route path="/admin" element={<AdminDashboard />} />
             <Route path="/admin/onboarding" element={<HotelOnboarding />} />
             <Route path="/admin/users" element={<UserManagement />} />
-            <Route path="/admin/agencies" element={<div>Agency Management</div>} />
-            <Route path="/admin/settings" element={<div>Platform Settings</div>} />
-            <Route path="/admin/audit" element={<div>Audit & Monitoring</div>} />
+            <Route path="/admin/agencies" element={<AgencyManagement />} />
+            <Route path="/admin/settings" element={<PlatformSettings />} />
+            <Route path="/admin/audit" element={<AuditMonitoring />} />
             <Route path="/admin/data" element={<div>Data Management</div>} />
           </Routes>
         </AdminLayout>
