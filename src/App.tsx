@@ -26,6 +26,10 @@ import AgencyDashboard from "./pages/agency/AgencyDashboard";
 import AgencyBookings from "./pages/agency/AgencyBookings";
 import AgencyReports from "./pages/agency/AgencyReports";
 import AgencyPayments from "./pages/agency/AgencyPayments";
+import HotelDashboard from "./pages/hotel/HotelDashboard";
+import ARICalendar from "./pages/hotel/ARICalendar";
+import HotelReservations from "./pages/hotel/HotelReservations";
+import HousekeepingModule from "./pages/hotel/HousekeepingModule";
 import { HotelManagerLayout } from "./layouts/HotelManagerLayout";
 import { TravelAgencyLayout } from "./layouts/TravelAgencyLayout";
 import { AdminLayout } from "./layouts/AdminLayout";
@@ -170,12 +174,22 @@ const AppContent = () => {
       {/* Hotel Manager Routes */}
       <Route path="/dashboard" element={
         <HotelManagerLayout>
-          <Dashboard />
+          <HotelDashboard />
+        </HotelManagerLayout>
+      } />
+      <Route path="/ari-calendar" element={
+        <HotelManagerLayout>
+          <ARICalendar />
         </HotelManagerLayout>
       } />
       <Route path="/reservations" element={
         <HotelManagerLayout>
-          <Reservations />
+          <HotelReservations />
+        </HotelManagerLayout>
+      } />
+      <Route path="/housekeeping" element={
+        <HotelManagerLayout>
+          <HousekeepingModule />
         </HotelManagerLayout>
       } />
       <Route path="/guests" element={
