@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
+import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -140,6 +141,7 @@ const getGroupTypeIcon = (type: string) => {
 };
 
 export const GroupReservations = () => {
+  const navigate = useNavigate();
   const [selectedGroup, setSelectedGroup] = useState<any>(null);
   
   return (
@@ -375,7 +377,11 @@ export const GroupReservations = () => {
                             Edit Block
                           </Button>
                           
-                          <Button variant="outline" size="sm">
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => navigate('/reservations/new')}
+                          >
                             <Plus className="mr-2 h-4 w-4" />
                             Add Reservation
                           </Button>

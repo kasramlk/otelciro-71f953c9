@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect } from "react";
 import { motion } from "framer-motion";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -128,6 +129,7 @@ const getLoyaltyBadge = (tier: string) => {
 };
 
 export const ReservationsList = ({ filterStatus }: ReservationsListProps) => {
+  const navigate = useNavigate();
   const [selectedReservations, setSelectedReservations] = useState<string[]>([]);
   const [currentPage, setCurrentPage] = useState(0);
   const [reservations, setReservations] = useState<any[]>([]);
@@ -333,10 +335,7 @@ export const ReservationsList = ({ filterStatus }: ReservationsListProps) => {
           />
         ) : filteredReservations.length === 0 ? (
           <NoReservationsEmptyState 
-            onCreateReservation={() => {
-              // This would open the new reservation modal
-              console.log('Create new reservation');
-            }}
+            onCreateReservation={() => navigate('/reservations/new')}
           />
         ) : (
           <div className="rounded-lg border border-border overflow-hidden">

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
+import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -39,16 +40,17 @@ import {
   Cell
 } from 'recharts';
 
-const HotelDashboard = () => {
-  const [selectedPeriod, setSelectedPeriod] = useState("7");
+export default function HotelDashboard() {
+  const navigate = useNavigate();
+  const [selectedTimeRange, setSelectedTimeRange] = useState("today");
 
   // Fetch dashboard data
   const { data: dashboardData, isLoading } = useQuery({
-    queryKey: ['hotel-dashboard', selectedPeriod],
+    queryKey: ['hotel-dashboard', selectedTimeRange],
     queryFn: async () => {
       const today = new Date();
       const daysAgo = new Date(today);
-      daysAgo.setDate(today.getDate() - parseInt(selectedPeriod));
+      daysAgo.setDate(today.getDate() - 7); // Default to 7 days
 
       // Get reservations data
       const { data: reservations } = await supabase
@@ -186,7 +188,10 @@ const HotelDashboard = () => {
             <Bell className="h-4 w-4" />
             Notifications
           </Button>
-          <Button className="bg-gradient-to-r from-primary to-secondary hover:opacity-90 gap-2">
+          <Button 
+            className="bg-gradient-to-r from-primary to-secondary hover:opacity-90 gap-2"
+            onClick={() => navigate('/reservations/new')}
+          >
             <Plus className="h-4 w-4" />
             New Reservation
           </Button>
@@ -392,5 +397,3 @@ const HotelDashboard = () => {
     </div>
   );
 };
-
-export default HotelDashboard;

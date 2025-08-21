@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { motion } from "framer-motion";
+import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -34,7 +35,8 @@ import {
   Bed
 } from "lucide-react";
 
-const HotelReservations = () => {
+export default function HotelReservations() {
+  const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [dateFilter, setDateFilter] = useState("all");
@@ -159,7 +161,10 @@ const HotelReservations = () => {
             <Move className="h-4 w-4" />
             Room Move
           </Button>
-          <Button className="bg-gradient-to-r from-primary to-secondary hover:opacity-90 gap-2">
+          <Button 
+            className="bg-gradient-to-r from-primary to-secondary hover:opacity-90 gap-2"
+            onClick={() => navigate('/reservations/new')}
+          >
             <Plus className="h-4 w-4" />
             New Reservation
           </Button>
@@ -449,5 +454,3 @@ const HotelReservations = () => {
     </div>
   );
 };
-
-export default HotelReservations;

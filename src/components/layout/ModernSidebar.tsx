@@ -164,7 +164,7 @@ export const ModernSidebar = () => {
                 <Button 
                   size="sm" 
                   className="w-full bg-gradient-primary text-white shadow-glow hover:shadow-xl transition-all duration-300 button-glow"
-                  onClick={() => navigate('/reservations?new=true')}
+                  onClick={() => navigate('/reservations/new')}
                 >
                   <Plus className="h-4 w-4 mr-2" />
                   New Reservation
