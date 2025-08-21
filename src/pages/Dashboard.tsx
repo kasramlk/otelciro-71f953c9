@@ -4,8 +4,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { User } from "@supabase/supabase-js";
-import { Hotel, Calendar, Users, FileText, Settings, LogOut, Filter } from "lucide-react";
+import { Hotel, Calendar, Users, FileText, Settings, LogOut, Filter, LayoutDashboard, Bed, UserCheck, BookOpen, Square, TrendingUp, Receipt, CreditCard, BarChart3 } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { NavigationMenu, NavigationMenuContent, NavigationMenuItem, NavigationMenuLink, NavigationMenuList, NavigationMenuTrigger, navigationMenuTriggerStyle } from "@/components/ui/navigation-menu";
 
 const Dashboard = () => {
   const [user, setUser] = useState<User | null>(null);
@@ -78,10 +79,73 @@ const Dashboard = () => {
       {/* Header */}
       <header className="border-b bg-card">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center space-x-2">
-            <Hotel className="h-6 w-6 text-primary" />
-            <h1 className="text-xl font-bold text-primary">Hotel PMS</h1>
+          <div className="flex items-center space-x-8">
+            <div className="flex items-center space-x-2">
+              <Hotel className="h-6 w-6 text-primary" />
+              <h1 className="text-xl font-bold text-primary">Hotel PMS</h1>
+            </div>
+            
+            {/* Navigation Menu */}
+            <NavigationMenu>
+              <NavigationMenuList className="flex space-x-1">
+                <NavigationMenuItem>
+                  <NavigationMenuLink className={`${navigationMenuTriggerStyle()} cursor-pointer`}>
+                    <LayoutDashboard className="h-4 w-4 mr-2" />
+                    Dashboard
+                  </NavigationMenuLink>
+                </NavigationMenuItem>
+                <NavigationMenuItem>
+                  <NavigationMenuLink className={`${navigationMenuTriggerStyle()} cursor-pointer`}>
+                    <Bed className="h-4 w-4 mr-2" />
+                    Room Plan
+                  </NavigationMenuLink>
+                </NavigationMenuItem>
+                <NavigationMenuItem>
+                  <NavigationMenuLink className={`${navigationMenuTriggerStyle()} cursor-pointer`}>
+                    <UserCheck className="h-4 w-4 mr-2" />
+                    Guests
+                  </NavigationMenuLink>
+                </NavigationMenuItem>
+                <NavigationMenuItem>
+                  <NavigationMenuLink className={`${navigationMenuTriggerStyle()} cursor-pointer`}>
+                    <BookOpen className="h-4 w-4 mr-2" />
+                    Reservation
+                  </NavigationMenuLink>
+                </NavigationMenuItem>
+                <NavigationMenuItem>
+                  <NavigationMenuLink className={`${navigationMenuTriggerStyle()} cursor-pointer`}>
+                    <Square className="h-4 w-4 mr-2" />
+                    Block
+                  </NavigationMenuLink>
+                </NavigationMenuItem>
+                <NavigationMenuItem>
+                  <NavigationMenuLink className={`${navigationMenuTriggerStyle()} cursor-pointer`}>
+                    <TrendingUp className="h-4 w-4 mr-2" />
+                    Sales
+                  </NavigationMenuLink>
+                </NavigationMenuItem>
+                <NavigationMenuItem>
+                  <NavigationMenuLink className={`${navigationMenuTriggerStyle()} cursor-pointer`}>
+                    <Receipt className="h-4 w-4 mr-2" />
+                    Active Folios
+                  </NavigationMenuLink>
+                </NavigationMenuItem>
+                <NavigationMenuItem>
+                  <NavigationMenuLink className={`${navigationMenuTriggerStyle()} cursor-pointer`}>
+                    <CreditCard className="h-4 w-4 mr-2" />
+                    Cashier
+                  </NavigationMenuLink>
+                </NavigationMenuItem>
+                <NavigationMenuItem>
+                  <NavigationMenuLink className={`${navigationMenuTriggerStyle()} cursor-pointer`}>
+                    <BarChart3 className="h-4 w-4 mr-2" />
+                    Reports
+                  </NavigationMenuLink>
+                </NavigationMenuItem>
+              </NavigationMenuList>
+            </NavigationMenu>
           </div>
+          
           <div className="flex items-center space-x-4">
             <span className="text-sm text-muted-foreground">
               Welcome, {user?.user_metadata?.name || user?.email}
