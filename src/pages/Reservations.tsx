@@ -45,7 +45,9 @@ import { Badge } from "@/components/ui/badge";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Textarea } from "@/components/ui/textarea";
-import { CalendarIcon, MoreHorizontal, Plus, Search, Filter } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { CalendarIcon, MoreHorizontal, Plus, Search, Filter, Receipt } from "lucide-react";
+import FolioManager from "@/components/FolioManager";
 import { format } from "date-fns";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -145,6 +147,8 @@ const getStatusBadgeVariant = (status: string) => {
 
 export default function Reservations() {
   const [isNewReservationOpen, setIsNewReservationOpen] = useState(false);
+  const [isReservationDetailOpen, setIsReservationDetailOpen] = useState(false);
+  const [selectedReservation, setSelectedReservation] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [sourceFilter, setSourceFilter] = useState("all");
@@ -185,6 +189,11 @@ export default function Reservations() {
     });
     setIsNewReservationOpen(false);
     form.reset();
+  };
+
+  const handleViewReservation = (reservation) => {
+    setSelectedReservation(reservation);
+    setIsReservationDetailOpen(true);
   };
 
   const filteredReservations = mockReservations.filter((reservation) => {
@@ -637,7 +646,7 @@ export default function Reservations() {
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
                       <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                      <DropdownMenuItem>View Details</DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleViewReservation(reservation)}>View Details</DropdownMenuItem>
                       <DropdownMenuItem>Edit Reservation</DropdownMenuItem>
                       <DropdownMenuSeparator />
                       {reservation.status === "Booked" && (
@@ -662,6 +671,103 @@ export default function Reservations() {
           </TableBody>
         </Table>
       </div>
+
+      {/* Reservation Detail Dialog */}
+      <Dialog open={isReservationDetailOpen} onOpenChange={setIsReservationDetailOpen}>
+        <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+          {selectedReservation && (
+            <>
+              <DialogHeader>
+                <DialogTitle className="flex items-center">
+                  <Receipt className="mr-2 h-5 w-5" />
+                  Reservation Details: {selectedReservation.code}
+                </DialogTitle>
+                <DialogDescription>
+                  Manage reservation details and folio
+                </DialogDescription>
+              </DialogHeader>
+              
+              <Tabs defaultValue="details" className="w-full">
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="details">Reservation Details</TabsTrigger>
+                  <TabsTrigger value="folio">Folio Management</TabsTrigger>
+                </TabsList>
+                
+                <TabsContent value="details" className="space-y-4">
+                  <div className="grid grid-cols-2 gap-6">
+                    <div className="space-y-4">
+                      <div>
+                        <h4 className="font-semibold text-sm text-muted-foreground">Guest Information</h4>
+                        <p className="text-lg font-medium">{selectedReservation.guest}</p>
+                      </div>
+                      
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <h4 className="font-semibold text-sm text-muted-foreground">Check-in</h4>
+                          <p>{selectedReservation.checkIn}</p>
+                        </div>
+                        <div>
+                          <h4 className="font-semibold text-sm text-muted-foreground">Check-out</h4>
+                          <p>{selectedReservation.checkOut}</p>
+                        </div>
+                      </div>
+                      
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <h4 className="font-semibold text-sm text-muted-foreground">Room Type</h4>
+                          <p>{selectedReservation.roomType}</p>
+                        </div>
+                        <div>
+                          <h4 className="font-semibold text-sm text-muted-foreground">Room Number</h4>
+                          <p>{selectedReservation.room}</p>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-4">
+                      <div>
+                        <h4 className="font-semibold text-sm text-muted-foreground">Rate Plan</h4>
+                        <p>{selectedReservation.ratePlan}</p>
+                      </div>
+                      
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <h4 className="font-semibold text-sm text-muted-foreground">Status</h4>
+                          <Badge variant={getStatusBadgeVariant(selectedReservation.status)}>
+                            {selectedReservation.status}
+                          </Badge>
+                        </div>
+                        <div>
+                          <h4 className="font-semibold text-sm text-muted-foreground">Source</h4>
+                          <p>{selectedReservation.source}</p>
+                        </div>
+                      </div>
+                      
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <h4 className="font-semibold text-sm text-muted-foreground">Total Price</h4>
+                          <p className="text-lg font-semibold">${selectedReservation.price.toFixed(2)}</p>
+                        </div>
+                        <div>
+                          <h4 className="font-semibold text-sm text-muted-foreground">Currency</h4>
+                          <p>{selectedReservation.currency}</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </TabsContent>
+                
+                <TabsContent value="folio" className="space-y-4">
+                  <FolioManager 
+                    reservationId={selectedReservation.id} 
+                    reservationCode={selectedReservation.code}
+                  />
+                </TabsContent>
+              </Tabs>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
