@@ -18,7 +18,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { 
   CalendarIcon, 
   Users, 
-  Building, 
+  Building2, 
   CreditCard, 
   Save, 
   ArrowLeft, 
@@ -32,7 +32,10 @@ import {
   DollarSign,
   Calculator,
   Bed,
-  Clock
+  Clock,
+  Sparkles,
+  Star,
+  CheckCircle2
 } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
@@ -358,130 +361,176 @@ export default function NewReservation() {
   };
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20 p-4 md:p-8"
-    >
-      {/* Header */}
-      <div className="flex items-center justify-between mb-8">
-        <div className="flex items-center space-x-4">
-          <Button 
-            variant="outline" 
-            onClick={() => navigate('/reservations')}
-            className="bg-background/80 backdrop-blur-sm border-border/50"
-          >
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to Reservations
-          </Button>
-          <div>
-            <h1 className="text-3xl font-bold text-foreground">New Reservation</h1>
-            <p className="text-muted-foreground">Create a new hotel reservation</p>
-          </div>
-        </div>
+    <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
+      {/* Modern Glassmorphic Header */}
+      <div className="sticky top-0 z-50 glass-subtle border-b border-border/20">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-16">
+            <div className="flex items-center space-x-4">
+              <Button 
+                variant="ghost" 
+                onClick={() => navigate('/reservations')}
+                className="text-muted-foreground hover:text-foreground hover:bg-white/10 backdrop-blur-sm"
+              >
+                <ArrowLeft className="mr-2 h-4 w-4" />
+                Back to Reservations
+              </Button>
+              <Separator orientation="vertical" className="h-6" />
+              <div className="flex items-center space-x-3">
+                <div className="p-2 rounded-lg bg-gradient-primary">
+                  <Sparkles className="h-5 w-5 text-white" />
+                </div>
+                <div>
+                  <h1 className="text-xl font-semibold text-foreground">New Reservation</h1>
+                  <p className="text-sm text-muted-foreground">Create a new hotel reservation</p>
+                </div>
+              </div>
+            </div>
 
-        <div className="flex items-center space-x-2">
-          <Button 
-            variant="outline" 
-            onClick={() => handleExport('pdf')}
-            className="bg-background/80 backdrop-blur-sm"
-          >
-            <Printer className="mr-2 h-4 w-4" />
-            Print Proforma
-          </Button>
-          <Button 
-            variant="outline" 
-            onClick={() => handleExport('excel')}
-            className="bg-background/80 backdrop-blur-sm"
-          >
-            <Download className="mr-2 h-4 w-4" />
-            Export
-          </Button>
-          <Button 
-            variant="outline" 
-            onClick={handleSendEmail}
-            className="bg-background/80 backdrop-blur-sm"
-          >
-            <Mail className="mr-2 h-4 w-4" />
-            Send Email
-          </Button>
-          <Button 
-            onClick={handleSave} 
-            disabled={loading}
-            className="bg-gradient-primary text-white shadow-glow"
-          >
-            <Save className="mr-2 h-4 w-4" />
-            {loading ? 'Saving...' : 'Save Reservation'}
-          </Button>
+            <div className="flex items-center space-x-2">
+              <Button 
+                variant="ghost" 
+                onClick={() => handleExport('pdf')}
+                className="text-muted-foreground hover:text-foreground hover:bg-white/10"
+              >
+                <Printer className="mr-2 h-4 w-4" />
+                Print
+              </Button>
+              <Button 
+                variant="ghost" 
+                onClick={() => handleExport('excel')}
+                className="text-muted-foreground hover:text-foreground hover:bg-white/10"
+              >
+                <Download className="mr-2 h-4 w-4" />
+                Export
+              </Button>
+              <Button 
+                variant="ghost" 
+                onClick={handleSendEmail}
+                className="text-muted-foreground hover:text-foreground hover:bg-white/10"
+              >
+                <Mail className="mr-2 h-4 w-4" />
+                Email
+              </Button>
+              <Button 
+                onClick={handleSave} 
+                disabled={loading}
+                className="bg-gradient-primary text-white shadow-glow hover:shadow-xl transition-all duration-300"
+              >
+                <Save className="mr-2 h-4 w-4" />
+                {loading ? 'Saving...' : 'Save Reservation'}
+              </Button>
+            </div>
+          </div>
         </div>
       </div>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-6 mb-6 bg-background/80 backdrop-blur-sm">
-          <TabsTrigger value="details" className="flex items-center">
-            <FileText className="mr-2 h-4 w-4" />
-            Details
-          </TabsTrigger>
-          <TabsTrigger value="rooms" className="flex items-center">
-            <Bed className="mr-2 h-4 w-4" />
-            Room Allocation
-          </TabsTrigger>
-          <TabsTrigger value="guests" className="flex items-center">
-            <Users className="mr-2 h-4 w-4" />
-            Guests
-          </TabsTrigger>
-          <TabsTrigger value="folio" className="flex items-center">
-            <DollarSign className="mr-2 h-4 w-4" />
-            Folio
-          </TabsTrigger>
-          <TabsTrigger value="documents" className="flex items-center">
-            <Upload className="mr-2 h-4 w-4" />
-            Documents
-          </TabsTrigger>
-          <TabsTrigger value="notes" className="flex items-center">
-            <Clock className="mr-2 h-4 w-4" />
-            Notes & Times
-          </TabsTrigger>
-        </TabsList>
+      {/* Main Content */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8"
+      >
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="grid w-full grid-cols-6 mb-8 glass-subtle p-1 h-12">
+            <TabsTrigger 
+              value="details" 
+              className="flex items-center justify-center space-x-2 data-[state=active]:bg-gradient-primary data-[state=active]:text-white"
+            >
+              <FileText className="h-4 w-4" />
+              <span className="hidden sm:inline">Details</span>
+            </TabsTrigger>
+            <TabsTrigger 
+              value="rooms" 
+              className="flex items-center justify-center space-x-2 data-[state=active]:bg-gradient-primary data-[state=active]:text-white"
+            >
+              <Bed className="h-4 w-4" />
+              <span className="hidden sm:inline">Rooms</span>
+            </TabsTrigger>
+            <TabsTrigger 
+              value="guests" 
+              className="flex items-center justify-center space-x-2 data-[state=active]:bg-gradient-primary data-[state=active]:text-white"
+            >
+              <Users className="h-4 w-4" />
+              <span className="hidden sm:inline">Guests</span>
+            </TabsTrigger>
+            <TabsTrigger 
+              value="folio" 
+              className="flex items-center justify-center space-x-2 data-[state=active]:bg-gradient-primary data-[state=active]:text-white"
+            >
+              <DollarSign className="h-4 w-4" />
+              <span className="hidden sm:inline">Folio</span>
+            </TabsTrigger>
+            <TabsTrigger 
+              value="documents" 
+              className="flex items-center justify-center space-x-2 data-[state=active]:bg-gradient-primary data-[state=active]:text-white"
+            >
+              <Upload className="h-4 w-4" />
+              <span className="hidden sm:inline">Documents</span>
+            </TabsTrigger>
+            <TabsTrigger 
+              value="notes" 
+              className="flex items-center justify-center space-x-2 data-[state=active]:bg-gradient-primary data-[state=active]:text-white"
+            >
+              <Clock className="h-4 w-4" />
+              <span className="hidden sm:inline">Notes</span>
+            </TabsTrigger>
+          </TabsList>
 
         {/* Main Details Tab */}
         <TabsContent value="details" className="space-y-6">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Reservation Header */}
-            <Card className="lg:col-span-3 bg-background/80 backdrop-blur-sm border-border/50">
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <Building className="mr-2 h-5 w-5" />
+            <Card className="lg:col-span-3 card-modern hover:shadow-elevated transition-all duration-300">
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center text-lg">
+                  <Building2 className="mr-2 h-5 w-5 text-primary" />
                   Reservation Header
+                  <Badge variant="secondary" className="ml-auto">{formData.status}</Badge>
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <div>
-                    <Label>Reservation Number</Label>
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium text-muted-foreground">Reservation Number</Label>
                     <Input 
                       value={formData.reservationNumber} 
                       onChange={(e) => updateFormData('reservationNumber', e.target.value)}
-                      className="bg-background"
+                      className="bg-muted/30 border-0 focus:bg-background"
                     />
                   </div>
-                  <div>
-                    <Label>Status</Label>
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium text-muted-foreground">Status</Label>
                     <Select value={formData.status} onValueChange={(value: any) => updateFormData('status', value)}>
-                      <SelectTrigger className="bg-background">
+                      <SelectTrigger className="bg-muted/30 border-0 focus:bg-background">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="confirmed">Confirmed</SelectItem>
-                        <SelectItem value="option">Option</SelectItem>
-                        <SelectItem value="cancelled">Cancelled</SelectItem>
+                        <SelectItem value="confirmed">
+                          <div className="flex items-center">
+                            <CheckCircle2 className="mr-2 h-4 w-4 text-green-500" />
+                            Confirmed
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="option">
+                          <div className="flex items-center">
+                            <Clock className="mr-2 h-4 w-4 text-yellow-500" />
+                            Option
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="cancelled">
+                          <div className="flex items-center">
+                            <X className="mr-2 h-4 w-4 text-red-500" />
+                            Cancelled
+                          </div>
+                        </SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
-                  <div>
-                    <Label>Agency/Source</Label>
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium text-muted-foreground">Agency/Source</Label>
                     <Select value={formData.agencyId} onValueChange={(value) => updateFormData('agencyId', value)}>
-                      <SelectTrigger className="bg-background">
+                      <SelectTrigger className="bg-muted/30 border-0 focus:bg-background">
                         <SelectValue placeholder="Select agency" />
                       </SelectTrigger>
                       <SelectContent>
@@ -492,13 +541,13 @@ export default function NewReservation() {
                       </SelectContent>
                     </Select>
                   </div>
-                  <div>
-                    <Label>Group Name</Label>
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium text-muted-foreground">Group Name</Label>
                     <Input 
                       value={formData.groupName} 
                       onChange={(e) => updateFormData('groupName', e.target.value)}
                       placeholder="Optional"
-                      className="bg-background"
+                      className="bg-muted/30 border-0 focus:bg-background"
                     />
                   </div>
                 </div>
@@ -506,46 +555,46 @@ export default function NewReservation() {
             </Card>
 
             {/* Guest Information */}
-            <Card className="bg-background/80 backdrop-blur-sm border-border/50">
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <Users className="mr-2 h-5 w-5" />
+            <Card className="card-modern hover:shadow-elevated transition-all duration-300">
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center text-lg">
+                  <Users className="mr-2 h-5 w-5 text-primary" />
                   Guest & Stay Information
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div>
-                  <Label>Guest Name *</Label>
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium text-muted-foreground">Guest Name *</Label>
                   <Input 
                     value={formData.guestName} 
                     onChange={(e) => updateFormData('guestName', e.target.value)}
                     placeholder="Full name"
-                    className="bg-background"
+                    className="bg-muted/30 border-0 focus:bg-background"
                   />
                 </div>
-                <div>
-                  <Label>Email *</Label>
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium text-muted-foreground">Email *</Label>
                   <Input 
                     type="email"
                     value={formData.email} 
                     onChange={(e) => updateFormData('email', e.target.value)}
                     placeholder="guest@email.com"
-                    className="bg-background"
+                    className="bg-muted/30 border-0 focus:bg-background"
                   />
                 </div>
-                <div>
-                  <Label>Phone *</Label>
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium text-muted-foreground">Phone *</Label>
                   <Input 
                     value={formData.phone} 
                     onChange={(e) => updateFormData('phone', e.target.value)}
                     placeholder="+1-555-0123"
-                    className="bg-background"
+                    className="bg-muted/30 border-0 focus:bg-background"
                   />
                 </div>
-                <div>
-                  <Label>Nationality</Label>
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium text-muted-foreground">Nationality</Label>
                   <Select value={formData.nationality} onValueChange={(value) => updateFormData('nationality', value)}>
-                    <SelectTrigger className="bg-background">
+                    <SelectTrigger className="bg-muted/30 border-0 focus:bg-background">
                       <SelectValue placeholder="Select country" />
                     </SelectTrigger>
                     <SelectContent>
@@ -557,17 +606,17 @@ export default function NewReservation() {
                   </Select>
                 </div>
 
-                <Separator />
+                <Separator className="my-4" />
 
                 <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label>Check-in Date *</Label>
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium text-muted-foreground">Check-in Date *</Label>
                     <Popover>
                       <PopoverTrigger asChild>
                         <Button
                           variant="outline"
                           className={cn(
-                            "w-full justify-start text-left bg-background",
+                            "w-full justify-start text-left bg-muted/30 border-0 focus:bg-background",
                             !formData.checkIn && "text-muted-foreground"
                           )}
                         >
@@ -585,14 +634,14 @@ export default function NewReservation() {
                       </PopoverContent>
                     </Popover>
                   </div>
-                  <div>
-                    <Label>Check-out Date *</Label>
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium text-muted-foreground">Check-out Date *</Label>
                     <Popover>
                       <PopoverTrigger asChild>
                         <Button
                           variant="outline"
                           className={cn(
-                            "w-full justify-start text-left bg-background",
+                            "w-full justify-start text-left bg-muted/30 border-0 focus:bg-background",
                             !formData.checkOut && "text-muted-foreground"
                           )}
                         >
@@ -612,45 +661,45 @@ export default function NewReservation() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-4 gap-2">
-                  <div>
-                    <Label>Nights</Label>
+                <div className="grid grid-cols-4 gap-3">
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium text-muted-foreground">Nights</Label>
                     <Input 
                       type="number"
                       value={formData.nights} 
                       onChange={(e) => updateFormData('nights', parseInt(e.target.value))}
                       min="1"
-                      className="bg-background"
+                      className="bg-muted/30 border-0 focus:bg-background"
                     />
                   </div>
-                  <div>
-                    <Label>Adults</Label>
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium text-muted-foreground">Adults</Label>
                     <Input 
                       type="number"
                       value={formData.adults} 
                       onChange={(e) => updateFormData('adults', parseInt(e.target.value))}
                       min="1"
-                      className="bg-background"
+                      className="bg-muted/30 border-0 focus:bg-background"
                     />
                   </div>
-                  <div>
-                    <Label>Children</Label>
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium text-muted-foreground">Children</Label>
                     <Input 
                       type="number"
                       value={formData.children} 
                       onChange={(e) => updateFormData('children', parseInt(e.target.value))}
                       min="0"
-                      className="bg-background"
+                      className="bg-muted/30 border-0 focus:bg-background"
                     />
                   </div>
-                  <div>
-                    <Label>Infants</Label>
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium text-muted-foreground">Infants</Label>
                     <Input 
                       type="number"
                       value={formData.infants} 
                       onChange={(e) => updateFormData('infants', parseInt(e.target.value))}
                       min="0"
-                      className="bg-background"
+                      className="bg-muted/30 border-0 focus:bg-background"
                     />
                   </div>
                 </div>
@@ -658,18 +707,18 @@ export default function NewReservation() {
             </Card>
 
             {/* Room & Rate Selection */}
-            <Card className="bg-background/80 backdrop-blur-sm border-border/50">
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <Bed className="mr-2 h-5 w-5" />
+            <Card className="card-modern hover:shadow-elevated transition-all duration-300">
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center text-lg">
+                  <Bed className="mr-2 h-5 w-5 text-primary" />
                   Room & Rate Selection
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div>
-                  <Label>Room Type *</Label>
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium text-muted-foreground">Room Type *</Label>
                   <Select value={formData.roomType} onValueChange={(value) => updateFormData('roomType', value)}>
-                    <SelectTrigger className="bg-background">
+                    <SelectTrigger className="bg-muted/30 border-0 focus:bg-background">
                       <SelectValue placeholder="Select room type" />
                     </SelectTrigger>
                     <SelectContent>
@@ -681,10 +730,10 @@ export default function NewReservation() {
                     </SelectContent>
                   </Select>
                 </div>
-                <div>
-                  <Label>Room Number</Label>
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium text-muted-foreground">Room Number</Label>
                   <Select value={formData.roomNumber} onValueChange={(value) => updateFormData('roomNumber', value)}>
-                    <SelectTrigger className="bg-background">
+                    <SelectTrigger className="bg-muted/30 border-0 focus:bg-background">
                       <SelectValue placeholder="Select room" />
                     </SelectTrigger>
                     <SelectContent>
@@ -696,10 +745,10 @@ export default function NewReservation() {
                     </SelectContent>
                   </Select>
                 </div>
-                <div>
-                  <Label>Meal Plan</Label>
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium text-muted-foreground">Meal Plan</Label>
                   <Select value={formData.mealPlan} onValueChange={(value: any) => updateFormData('mealPlan', value)}>
-                    <SelectTrigger className="bg-background">
+                    <SelectTrigger className="bg-muted/30 border-0 focus:bg-background">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -710,10 +759,10 @@ export default function NewReservation() {
                     </SelectContent>
                   </Select>
                 </div>
-                <div>
-                  <Label>Rate Plan</Label>
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium text-muted-foreground">Rate Plan</Label>
                   <Select value={formData.ratePlan} onValueChange={(value) => updateFormData('ratePlan', value)}>
-                    <SelectTrigger className="bg-background">
+                    <SelectTrigger className="bg-muted/30 border-0 focus:bg-background">
                       <SelectValue placeholder="Select rate plan" />
                     </SelectTrigger>
                     <SelectContent>
@@ -724,20 +773,20 @@ export default function NewReservation() {
                   </Select>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label>Price per Night</Label>
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium text-muted-foreground">Price per Night</Label>
                     <Input 
                       type="number"
                       step="0.01"
                       value={formData.pricePerNight} 
                       onChange={(e) => updateFormData('pricePerNight', parseFloat(e.target.value))}
-                      className="bg-background"
+                      className="bg-muted/30 border-0 focus:bg-background"
                     />
                   </div>
-                  <div>
-                    <Label>Currency</Label>
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium text-muted-foreground">Currency</Label>
                     <Select value={formData.currency} onValueChange={(value) => updateFormData('currency', value)}>
-                      <SelectTrigger className="bg-background">
+                      <SelectTrigger className="bg-muted/30 border-0 focus:bg-background">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -752,18 +801,18 @@ export default function NewReservation() {
             </Card>
 
             {/* Payment & Guarantee */}
-            <Card className="bg-background/80 backdrop-blur-sm border-border/50">
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <CreditCard className="mr-2 h-5 w-5" />
+            <Card className="card-modern hover:shadow-elevated transition-all duration-300">
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center text-lg">
+                  <CreditCard className="mr-2 h-5 w-5 text-primary" />
                   Payment & Guarantee
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div>
-                  <Label>Payment Type</Label>
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium text-muted-foreground">Payment Type</Label>
                   <Select value={formData.paymentType} onValueChange={(value) => updateFormData('paymentType', value)}>
-                    <SelectTrigger className="bg-background">
+                    <SelectTrigger className="bg-muted/30 border-0 focus:bg-background">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -774,10 +823,10 @@ export default function NewReservation() {
                     </SelectContent>
                   </Select>
                 </div>
-                <div>
-                  <Label>Guarantee Type</Label>
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium text-muted-foreground">Guarantee Type</Label>
                   <Select value={formData.guaranteeType} onValueChange={(value: any) => updateFormData('guaranteeType', value)}>
-                    <SelectTrigger className="bg-background">
+                    <SelectTrigger className="bg-muted/30 border-0 focus:bg-background">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -787,67 +836,71 @@ export default function NewReservation() {
                     </SelectContent>
                   </Select>
                 </div>
-                <div>
-                  <Label>Deposit Amount</Label>
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium text-muted-foreground">Deposit Amount</Label>
                   <Input 
                     type="number"
                     step="0.01"
                     value={formData.depositAmount} 
                     onChange={(e) => updateFormData('depositAmount', parseFloat(e.target.value))}
-                    className="bg-background"
+                    className="bg-muted/30 border-0 focus:bg-background"
                   />
                 </div>
-                <div>
-                  <Label>Early Bird Discount %</Label>
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium text-muted-foreground">Early Bird Discount %</Label>
                   <Input 
                     type="number"
                     value={formData.earlyBirdDiscount} 
                     onChange={(e) => updateFormData('earlyBirdDiscount', parseFloat(e.target.value))}
-                    className="bg-background"
+                    className="bg-muted/30 border-0 focus:bg-background"
                   />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label>Discount %</Label>
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium text-muted-foreground">Discount %</Label>
                     <Input 
                       type="number"
                       value={formData.discountPercent} 
                       onChange={(e) => updateFormData('discountPercent', parseFloat(e.target.value))}
-                      className="bg-background"
+                      className="bg-muted/30 border-0 focus:bg-background"
                     />
                   </div>
-                  <div>
-                    <Label>Discount Amount</Label>
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium text-muted-foreground">Discount Amount</Label>
                     <Input 
                       type="number"
                       step="0.01"
                       value={formData.discountAmount} 
                       onChange={(e) => updateFormData('discountAmount', parseFloat(e.target.value))}
-                      className="bg-background"
+                      className="bg-muted/30 border-0 focus:bg-background"
                     />
                   </div>
                 </div>
 
-                <Separator />
+                <Separator className="my-4" />
 
                 {/* Price Summary */}
-                <div className="space-y-2 p-4 bg-muted/30 rounded-lg">
-                  <div className="flex justify-between text-sm">
+                <div className="space-y-3 p-4 bg-gradient-to-br from-muted/20 to-muted/30 rounded-lg border border-border/20">
+                  <div className="flex items-center mb-2">
+                    <Calculator className="mr-2 h-4 w-4 text-primary" />
+                    <span className="font-medium text-foreground">Price Summary</span>
+                  </div>
+                  <div className="flex justify-between text-sm text-muted-foreground">
                     <span>Subtotal ({formData.nights} nights):</span>
                     <span>{formData.currency} {calculateTotal().subtotal.toFixed(2)}</span>
                   </div>
-                  <div className="flex justify-between text-sm">
+                  <div className="flex justify-between text-sm text-muted-foreground">
                     <span>Discount:</span>
-                    <span>-{formData.currency} {calculateTotal().discountAmount.toFixed(2)}</span>
+                    <span className="text-green-600">-{formData.currency} {calculateTotal().discountAmount.toFixed(2)}</span>
                   </div>
-                  <div className="flex justify-between text-sm">
+                  <div className="flex justify-between text-sm text-muted-foreground">
                     <span>Tax (10%):</span>
                     <span>{formData.currency} {calculateTotal().taxAmount.toFixed(2)}</span>
                   </div>
-                  <Separator />
-                  <div className="flex justify-between font-semibold">
-                    <span>Total Amount:</span>
-                    <span>{formData.currency} {calculateTotal().total.toFixed(2)}</span>
+                  <Separator className="opacity-50" />
+                  <div className="flex justify-between font-semibold text-lg">
+                    <span className="text-foreground">Total Amount:</span>
+                    <span className="text-primary">{formData.currency} {calculateTotal().total.toFixed(2)}</span>
                   </div>
                 </div>
               </CardContent>
@@ -856,15 +909,19 @@ export default function NewReservation() {
         </TabsContent>
 
         {/* Room Allocation Tab */}
-        <TabsContent value="rooms">
-          <Card className="bg-background/80 backdrop-blur-sm border-border/50">
-            <CardHeader>
-              <CardTitle>Room Allocation</CardTitle>
+        <TabsContent value="rooms" className="space-y-6">
+          <Card className="card-modern">
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center text-lg">
+                <Bed className="mr-2 h-5 w-5 text-primary" />
+                Room Allocation
+              </CardTitle>
             </CardHeader>
             <CardContent>
-              <Alert>
-                <AlertDescription>
-                  Room allocation functionality - assign multiple rooms to this reservation
+              <Alert className="border-blue-200 bg-blue-50/50">
+                <Star className="h-4 w-4 text-blue-600" />
+                <AlertDescription className="text-blue-800">
+                  Room allocation functionality - assign multiple rooms to this reservation. This feature allows managing group bookings with multiple room assignments.
                 </AlertDescription>
               </Alert>
             </CardContent>
@@ -872,12 +929,18 @@ export default function NewReservation() {
         </TabsContent>
 
         {/* Guests Tab */}
-        <TabsContent value="guests">
-          <Card className="bg-background/80 backdrop-blur-sm border-border/50">
-            <CardHeader>
-              <CardTitle className="flex items-center justify-between">
-                Guest List
-                <Button onClick={() => setGuestList(prev => [...prev, { name: '', age: '', relation: '' }])}>
+        <TabsContent value="guests" className="space-y-6">
+          <Card className="card-modern">
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center justify-between text-lg">
+                <div className="flex items-center">
+                  <Users className="mr-2 h-5 w-5 text-primary" />
+                  Guest List
+                </div>
+                <Button 
+                  onClick={() => setGuestList(prev => [...prev, { name: '', age: '', relation: '' }])}
+                  className="bg-gradient-primary text-white hover:shadow-lg transition-all duration-300"
+                >
                   <Plus className="mr-2 h-4 w-4" />
                   Add Guest
                 </Button>
@@ -885,7 +948,7 @@ export default function NewReservation() {
             </CardHeader>
             <CardContent>
               {guestList.map((guest, index) => (
-                <div key={index} className="flex items-center space-x-4 mb-4 p-4 border rounded-lg">
+                <div key={index} className="flex items-center space-x-4 mb-4 p-4 bg-muted/20 rounded-lg border border-border/50">
                   <Input 
                     placeholder="Guest name"
                     value={guest.name}
@@ -894,6 +957,7 @@ export default function NewReservation() {
                       newList[index].name = e.target.value;
                       setGuestList(newList);
                     }}
+                    className="bg-background/80 border-0"
                   />
                   <Input 
                     placeholder="Age"
@@ -904,27 +968,42 @@ export default function NewReservation() {
                       newList[index].age = e.target.value;
                       setGuestList(newList);
                     }}
+                    className="bg-background/80 border-0 w-20"
                   />
                   <Button 
-                    variant="outline" 
+                    variant="ghost" 
                     size="icon"
                     onClick={() => setGuestList(prev => prev.filter((_, i) => i !== index))}
+                    className="hover:bg-red-50 hover:text-red-600"
                   >
                     <X className="h-4 w-4" />
                   </Button>
                 </div>
               ))}
+              {guestList.length === 0 && (
+                <div className="text-center py-8 text-muted-foreground">
+                  <Users className="mx-auto h-12 w-12 mb-4 opacity-50" />
+                  <p>No additional guests added yet.</p>
+                  <p className="text-sm">Click "Add Guest" to add more guests to this reservation.</p>
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
 
         {/* Folio Tab */}
-        <TabsContent value="folio">
-          <Card className="bg-background/80 backdrop-blur-sm border-border/50">
-            <CardHeader>
-              <CardTitle className="flex items-center justify-between">
-                Folio Items
-                <Button onClick={addFolioItem}>
+        <TabsContent value="folio" className="space-y-6">
+          <Card className="card-modern">
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center justify-between text-lg">
+                <div className="flex items-center">
+                  <DollarSign className="mr-2 h-5 w-5 text-primary" />
+                  Folio Items
+                </div>
+                <Button 
+                  onClick={addFolioItem}
+                  className="bg-gradient-primary text-white hover:shadow-lg transition-all duration-300"
+                >
                   <Plus className="mr-2 h-4 w-4" />
                   Add Charge
                 </Button>
@@ -932,11 +1011,12 @@ export default function NewReservation() {
             </CardHeader>
             <CardContent>
               {folioItems.map((item, index) => (
-                <div key={index} className="grid grid-cols-4 gap-4 mb-4 p-4 border rounded-lg">
+                <div key={index} className="grid grid-cols-4 gap-4 mb-4 p-4 bg-muted/20 rounded-lg border border-border/50">
                   <Input 
                     placeholder="Description"
                     value={item.description}
                     onChange={(e) => updateFolioItem(index, 'description', e.target.value)}
+                    className="bg-background/80 border-0"
                   />
                   <Input 
                     placeholder="Amount"
@@ -944,12 +1024,13 @@ export default function NewReservation() {
                     step="0.01"
                     value={item.amount}
                     onChange={(e) => updateFolioItem(index, 'amount', parseFloat(e.target.value))}
+                    className="bg-background/80 border-0"
                   />
                   <Select 
                     value={item.category}
                     onValueChange={(value) => updateFolioItem(index, 'category', value)}
                   >
-                    <SelectTrigger>
+                    <SelectTrigger className="bg-background/80 border-0">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -960,28 +1041,40 @@ export default function NewReservation() {
                     </SelectContent>
                   </Select>
                   <Button 
-                    variant="outline" 
+                    variant="ghost" 
                     size="icon"
                     onClick={() => removeFolioItem(index)}
+                    className="hover:bg-red-50 hover:text-red-600"
                   >
                     <X className="h-4 w-4" />
                   </Button>
                 </div>
               ))}
+              {folioItems.length === 0 && (
+                <div className="text-center py-8 text-muted-foreground">
+                  <DollarSign className="mx-auto h-12 w-12 mb-4 opacity-50" />
+                  <p>No folio items added yet.</p>
+                  <p className="text-sm">Click "Add Charge" to add charges to this reservation's folio.</p>
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
 
         {/* Documents Tab */}
-        <TabsContent value="documents">
-          <Card className="bg-background/80 backdrop-blur-sm border-border/50">
-            <CardHeader>
-              <CardTitle>Documents & Files</CardTitle>
+        <TabsContent value="documents" className="space-y-6">
+          <Card className="card-modern">
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center text-lg">
+                <Upload className="mr-2 h-5 w-5 text-primary" />
+                Documents & Files
+              </CardTitle>
             </CardHeader>
             <CardContent>
-              <Alert>
-                <AlertDescription>
-                  Upload guest documents like passport, ID cards, etc.
+              <Alert className="border-purple-200 bg-purple-50/50">
+                <FileText className="h-4 w-4 text-purple-600" />
+                <AlertDescription className="text-purple-800">
+                  Upload guest documents like passport, ID cards, contracts, and other important files related to this reservation.
                 </AlertDescription>
               </Alert>
             </CardContent>
@@ -989,46 +1082,49 @@ export default function NewReservation() {
         </TabsContent>
 
         {/* Notes & Times Tab */}
-        <TabsContent value="notes">
-          <Card className="bg-background/80 backdrop-blur-sm border-border/50">
-            <CardHeader>
-              <CardTitle>Notes & Special Times</CardTitle>
+        <TabsContent value="notes" className="space-y-6">
+          <Card className="card-modern">
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center text-lg">
+                <Clock className="mr-2 h-5 w-5 text-primary" />
+                Notes & Special Times
+              </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label>Arrival Time</Label>
+            <CardContent className="space-y-6">
+              <div className="grid grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium text-muted-foreground">Arrival Time</Label>
                   <Input 
                     type="time"
                     value={formData.arrivalTime} 
                     onChange={(e) => updateFormData('arrivalTime', e.target.value)}
-                    className="bg-background"
+                    className="bg-muted/30 border-0 focus:bg-background"
                   />
                 </div>
-                <div>
-                  <Label>Departure Time</Label>
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium text-muted-foreground">Departure Time</Label>
                   <Input 
                     type="time"
                     value={formData.departureTime} 
                     onChange={(e) => updateFormData('departureTime', e.target.value)}
-                    className="bg-background"
+                    className="bg-muted/30 border-0 focus:bg-background"
                   />
                 </div>
               </div>
-              <div>
-                <Label>Reservation Notes</Label>
+              <div className="space-y-2">
+                <Label className="text-sm font-medium text-muted-foreground">Reservation Notes</Label>
                 <Textarea 
                   value={formData.notes} 
                   onChange={(e) => updateFormData('notes', e.target.value)}
                   placeholder="Internal notes about this reservation..."
                   rows={4}
-                  className="bg-background"
+                  className="bg-muted/30 border-0 focus:bg-background resize-none"
                 />
               </div>
-              <div>
-                <Label>Sales Channel</Label>
+              <div className="space-y-2">
+                <Label className="text-sm font-medium text-muted-foreground">Sales Channel</Label>
                 <Select value={formData.salesChannel} onValueChange={(value) => updateFormData('salesChannel', value)}>
-                  <SelectTrigger className="bg-background">
+                  <SelectTrigger className="bg-muted/30 border-0 focus:bg-background">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -1043,7 +1139,8 @@ export default function NewReservation() {
             </CardContent>
           </Card>
         </TabsContent>
-      </Tabs>
-    </motion.div>
+        </Tabs>
+      </motion.div>
+    </div>
   );
 }
