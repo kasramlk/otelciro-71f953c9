@@ -14,6 +14,210 @@ export type Database = {
   }
   public: {
     Tables: {
+      agencies: {
+        Row: {
+          address: string | null
+          city: string | null
+          contact_email: string | null
+          contact_person: string | null
+          contact_phone: string | null
+          country: string | null
+          created_at: string
+          credit_limit: number | null
+          current_balance: number | null
+          id: string
+          is_active: boolean | null
+          name: string
+          org_id: string
+          payment_terms: number | null
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          address?: string | null
+          city?: string | null
+          contact_email?: string | null
+          contact_person?: string | null
+          contact_phone?: string | null
+          country?: string | null
+          created_at?: string
+          credit_limit?: number | null
+          current_balance?: number | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          org_id: string
+          payment_terms?: number | null
+          type?: string
+          updated_at?: string
+        }
+        Update: {
+          address?: string | null
+          city?: string | null
+          contact_email?: string | null
+          contact_person?: string | null
+          contact_phone?: string | null
+          country?: string | null
+          created_at?: string
+          credit_limit?: number | null
+          current_balance?: number | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          org_id?: string
+          payment_terms?: number | null
+          type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agencies_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      audit_log: {
+        Row: {
+          action: string
+          created_at: string
+          diff_json: Json | null
+          entity_id: string
+          entity_type: string
+          id: string
+          ip_address: unknown | null
+          new_values: Json | null
+          old_values: Json | null
+          org_id: string
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          diff_json?: Json | null
+          entity_id: string
+          entity_type: string
+          id?: string
+          ip_address?: unknown | null
+          new_values?: Json | null
+          old_values?: Json | null
+          org_id: string
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          diff_json?: Json | null
+          entity_id?: string
+          entity_type?: string
+          id?: string
+          ip_address?: unknown | null
+          new_values?: Json | null
+          old_values?: Json | null
+          org_id?: string
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "audit_log_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "audit_log_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cashier_sessions: {
+        Row: {
+          card_collected: number | null
+          cash_collected: number | null
+          closed_at: string | null
+          closing_balance: number | null
+          created_at: string
+          hotel_id: string
+          id: string
+          is_closed: boolean | null
+          notes: string | null
+          opened_at: string
+          opening_balance: number | null
+          org_id: string
+          other_collected: number | null
+          session_date: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          card_collected?: number | null
+          cash_collected?: number | null
+          closed_at?: string | null
+          closing_balance?: number | null
+          created_at?: string
+          hotel_id: string
+          id?: string
+          is_closed?: boolean | null
+          notes?: string | null
+          opened_at?: string
+          opening_balance?: number | null
+          org_id: string
+          other_collected?: number | null
+          session_date?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          card_collected?: number | null
+          cash_collected?: number | null
+          closed_at?: string | null
+          closing_balance?: number | null
+          created_at?: string
+          hotel_id?: string
+          id?: string
+          is_closed?: boolean | null
+          notes?: string | null
+          opened_at?: string
+          opening_balance?: number | null
+          org_id?: string
+          other_collected?: number | null
+          session_date?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cashier_sessions_hotel_id_fkey"
+            columns: ["hotel_id"]
+            isOneToOne: false
+            referencedRelation: "hotels"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cashier_sessions_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cashier_sessions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       daily_rates: {
         Row: {
           created_at: string
@@ -287,6 +491,79 @@ export type Database = {
         }
         Relationships: []
       }
+      pricing_agreements: {
+        Row: {
+          agency_id: string
+          allotment: number | null
+          created_at: string
+          currency: string
+          discount_percent: number | null
+          end_date: string | null
+          fixed_rate: number | null
+          hotel_id: string
+          id: string
+          is_active: boolean | null
+          name: string
+          room_type_id: string | null
+          start_date: string
+          updated_at: string
+        }
+        Insert: {
+          agency_id: string
+          allotment?: number | null
+          created_at?: string
+          currency?: string
+          discount_percent?: number | null
+          end_date?: string | null
+          fixed_rate?: number | null
+          hotel_id: string
+          id?: string
+          is_active?: boolean | null
+          name: string
+          room_type_id?: string | null
+          start_date: string
+          updated_at?: string
+        }
+        Update: {
+          agency_id?: string
+          allotment?: number | null
+          created_at?: string
+          currency?: string
+          discount_percent?: number | null
+          end_date?: string | null
+          fixed_rate?: number | null
+          hotel_id?: string
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          room_type_id?: string | null
+          start_date?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pricing_agreements_agency_id_fkey"
+            columns: ["agency_id"]
+            isOneToOne: false
+            referencedRelation: "agencies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pricing_agreements_hotel_id_fkey"
+            columns: ["hotel_id"]
+            isOneToOne: false
+            referencedRelation: "hotels"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pricing_agreements_room_type_id_fkey"
+            columns: ["room_type_id"]
+            isOneToOne: false
+            referencedRelation: "room_types"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       rate_plans: {
         Row: {
           code: string
@@ -398,6 +675,7 @@ export type Database = {
       reservations: {
         Row: {
           adults: number
+          agency_id: string | null
           check_in: string
           check_out: string
           children: number
@@ -418,6 +696,7 @@ export type Database = {
         }
         Insert: {
           adults?: number
+          agency_id?: string | null
           check_in: string
           check_out: string
           children?: number
@@ -438,6 +717,7 @@ export type Database = {
         }
         Update: {
           adults?: number
+          agency_id?: string | null
           check_in?: string
           check_out?: string
           children?: number
@@ -457,6 +737,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "reservations_agency_id_fkey"
+            columns: ["agency_id"]
+            isOneToOne: false
+            referencedRelation: "agencies"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "reservations_guest_id_fkey"
             columns: ["guest_id"]

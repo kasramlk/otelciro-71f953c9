@@ -10,6 +10,11 @@ import Reservations from "./pages/Reservations";
 import Guests from "./pages/Guests";
 import RoomPlan from "./pages/RoomPlan";
 import RoomStatus from "./pages/RoomStatus";
+import Sales from "./pages/Sales";
+import Cashier from "./pages/Cashier";
+import Reports from "./pages/Reports";
+import Settings from "./pages/Settings";
+import AuditLog from "./pages/AuditLog";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -28,6 +33,11 @@ const App = () => (
           <Route path="/guests" element={<Guests />} />
           <Route path="/room-plan" element={<RoomPlan />} />
           <Route path="/room-status" element={<RoomStatus />} />
+          <Route path="/sales" element={<Sales />} />
+          <Route path="/cashier" element={<Cashier />} />
+          <Route path="/reports" element={<Reports />} />
+          <Route path="/settings" element={<Settings />} />
+          <Route path="/audit-log" element={<AuditLog />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
