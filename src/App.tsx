@@ -23,6 +23,9 @@ import Occupancy from "./pages/Occupancy";
 import NotFound from "./pages/NotFound";
 import HotelSearch from "./pages/agency/HotelSearch";
 import AgencyDashboard from "./pages/agency/AgencyDashboard";
+import AgencyBookings from "./pages/agency/AgencyBookings";
+import AgencyReports from "./pages/agency/AgencyReports";
+import AgencyPayments from "./pages/agency/AgencyPayments";
 import { HotelManagerLayout } from "./layouts/HotelManagerLayout";
 import { TravelAgencyLayout } from "./layouts/TravelAgencyLayout";
 import { AdminLayout } from "./layouts/AdminLayout";
@@ -115,10 +118,10 @@ const AppContent = () => {
           <Routes>
             <Route path="/agency" element={<AgencyDashboard />} />
             <Route path="/agency/search" element={<HotelSearch />} />
-            <Route path="/agency/bookings" element={<div>My Bookings</div>} />
+            <Route path="/agency/bookings" element={<AgencyBookings />} />
             <Route path="/agency/contracts" element={<div>Negotiations</div>} />
-            <Route path="/agency/payments" element={<div>Payments</div>} />
-            <Route path="/agency/analytics" element={<div>Analytics</div>} />
+            <Route path="/agency/payments" element={<AgencyPayments />} />
+            <Route path="/agency/analytics" element={<AgencyReports />} />
             <Route path="/agency/profile" element={<div>Profile</div>} />
           </Routes>
         </TravelAgencyLayout>
