@@ -2,6 +2,7 @@ import { motion } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { useNavigate } from "react-router-dom";
 import { 
   Search, 
   Calendar, 
@@ -15,6 +16,7 @@ import {
 } from "lucide-react";
 
 const AgencyDashboard = () => {
+  const navigate = useNavigate();
   const stats = [
     {
       title: "Total Bookings",
@@ -81,10 +83,13 @@ const AgencyDashboard = () => {
                 <h3 className="font-semibold text-lg text-foreground">AI-Powered Hotel Search</h3>
                 <p className="text-muted-foreground">Try: "Find me a 5-star hotel in Istanbul with spa and pool for business travelers"</p>
               </div>
-              <Button className="bg-gradient-to-r from-green-500 to-blue-500 hover:opacity-90 text-white">
-                Start Search
-                <ArrowUpRight className="ml-2 h-4 w-4" />
-              </Button>
+          <Button 
+            className="bg-gradient-to-r from-green-500 to-blue-500 hover:opacity-90 text-white"
+            onClick={() => navigate('/agency/search')}
+          >
+            Start Search
+            <ArrowUpRight className="ml-2 h-4 w-4" />
+          </Button>
             </div>
           </CardContent>
         </Card>

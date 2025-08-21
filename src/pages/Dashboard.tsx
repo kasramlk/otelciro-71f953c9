@@ -104,11 +104,18 @@ const Dashboard = () => {
           <p className="text-muted-foreground mt-2">Here's what's happening at your hotel today</p>
         </div>
         <div className="flex items-center space-x-3">
-          <Button className="bg-gradient-primary text-white shadow-glow hover:shadow-xl button-glow">
+          <Button 
+            className="bg-gradient-primary text-white shadow-glow hover:shadow-xl button-glow"
+            onClick={() => navigate('/reservations')}
+          >
             <Calendar className="h-4 w-4 mr-2" />
             Quick Booking
           </Button>
-          <Button variant="outline" className="border-primary/20">
+          <Button 
+            variant="outline" 
+            className="border-primary/20"
+            onClick={() => navigate('/room-status')}
+          >
             <UserCheck className="h-4 w-4 mr-2" />
             Check In
           </Button>

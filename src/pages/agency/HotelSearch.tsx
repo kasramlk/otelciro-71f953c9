@@ -84,12 +84,39 @@ const HotelSearch = () => {
     "Business Center": Coffee
   };
 
-  const handleSearch = () => {
+  const handleBookHotel = (hotel: any) => {
+    console.log('Booking hotel:', hotel);
+    // In production, this would open a booking modal or navigate to booking page
+  };
+
+  const handleViewDetails = (hotel: any) => {
+    console.log('Viewing hotel details:', hotel);
+    // In production, this would show detailed hotel information
+  };
+
+  const handleRequestQuote = (hotel: any) => {
+    console.log('Requesting quote for hotel:', hotel);
+    // In production, this would open a quote request form
+  };
+
+  const handleSearch = async () => {
     setLoading(true);
-    // Simulate API call
-    setTimeout(() => {
+    try {
+      // Simulate AI-powered search - in production, this would call an AI service
+      // For now, we'll just simulate the delay and show mock results
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      
+      // Here you would implement:
+      // 1. Parse natural language query using AI
+      // 2. Search hotel database based on parsed criteria
+      // 3. Return ranked results
+      
+      console.log('AI Search Query:', searchQuery);
+    } catch (error) {
+      console.error('Search error:', error);
+    } finally {
       setLoading(false);
-    }, 1500);
+    }
   };
 
   return (
@@ -117,10 +144,10 @@ const HotelSearch = () => {
                 />
               </div>
               <Button 
-                onClick={handleSearch}
-                disabled={loading}
-                className="px-8 py-6 bg-gradient-to-r from-green-500 to-blue-500 hover:opacity-90"
-              >
+            onClick={() => handleSearch()}
+            disabled={loading}
+            className="px-8 py-6 bg-gradient-to-r from-green-500 to-blue-500 hover:opacity-90"
+          >
                 {loading ? (
                   <motion.div
                     animate={{ rotate: 360 }}
@@ -263,13 +290,24 @@ const HotelSearch = () => {
                       </div>
                       
                       <div className="space-y-2">
-                        <Button className="w-full bg-gradient-to-r from-green-500 to-blue-500 hover:opacity-90">
+                        <Button 
+                          className="w-full bg-gradient-to-r from-green-500 to-blue-500 hover:opacity-90"
+                          onClick={() => handleBookHotel(hotel)}
+                        >
                           Book Now
                         </Button>
-                        <Button variant="outline" className="w-full">
+                        <Button 
+                          variant="outline" 
+                          className="w-full"
+                          onClick={() => handleViewDetails(hotel)}
+                        >
                           View Details
                         </Button>
-                        <Button variant="ghost" className="w-full text-sm">
+                        <Button 
+                          variant="ghost" 
+                          className="w-full text-sm"
+                          onClick={() => handleRequestQuote(hotel)}
+                        >
                           Request Quote
                         </Button>
                       </div>

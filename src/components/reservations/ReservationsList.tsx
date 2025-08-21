@@ -1,5 +1,6 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { motion } from "framer-motion";
+import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -120,24 +121,113 @@ const getLoyaltyBadge = (tier: string) => {
 export const ReservationsList = ({ filterStatus }: ReservationsListProps) => {
   const [selectedReservations, setSelectedReservations] = useState<string[]>([]);
   const [currentPage, setCurrentPage] = useState(0);
+  const [reservations, setReservations] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
   const itemsPerPage = 10;
-  
-  const allReservations = useMemo(() => generateMockReservations(50), []);
-  
+
+  // Load reservations from Supabase
+  useEffect(() => {
+    const loadReservations = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('reservations')
+          .select(`
+            *,
+            guests(first_name, last_name, email, phone, nationality),
+            room_types(name),
+            rate_plans(name)
+          `)
+          .order('created_at', { ascending: false });
+
+        if (error) throw error;
+        setReservations(data || []);
+      } catch (error) {
+        console.error('Error loading reservations:', error);
+        // Fall back to mock data
+        setReservations(generateMockReservations(50));
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadReservations();
+  }, []);
+  const handleReservationAction = (action: string, reservationId: string) => {
+    switch (action) {
+      case 'view':
+        console.log('Viewing reservation:', reservationId);
+        // In production, this would open a detailed reservation view modal
+        break;
+      case 'edit':
+        console.log('Editing reservation:', reservationId);
+        // In production, this would open an edit reservation modal
+        break;
+      case 'folio':
+        console.log('Managing folio for:', reservationId);
+        // In production, this would open the folio management interface
+        break;
+      case 'email':
+        console.log('Sending email for:', reservationId);
+        // In production, this would open email composition
+        break;
+      case 'sms':
+        console.log('Sending SMS for:', reservationId);
+        // In production, this would send SMS to guest
+        break;
+      case 'cancel':
+        console.log('Cancelling reservation:', reservationId);
+        // In production, this would show a cancellation dialog
+        break;
+    }
+  };
+
   // Filter reservations based on filterStatus
   const filteredReservations = useMemo(() => {
+    if (loading) return [];
+    
     const today = new Date();
     const todayStr = format(today, 'yyyy-MM-dd');
     
+    // Convert Supabase data to expected format
+    const formattedReservations = reservations.map(res => ({
+      id: res.id,
+      reservationNo: res.code || `RES${res.id.slice(-6)}`,
+      confirmationNo: res.booking_reference || `CNF${res.id.slice(-6)}`,
+      guest: {
+        name: res.guests ? `${res.guests.first_name} ${res.guests.last_name}` : 'Unknown Guest',
+        email: res.guests?.email || '',
+        phone: res.guests?.phone || '',
+        avatar: `https://api.dicebear.com/7.x/initials/svg?seed=${res.guests?.first_name || 'Guest'}`,
+        loyaltyTier: 'Standard' // Can be enhanced with actual loyalty data
+      },
+      status: res.status,
+      source: res.source || 'Direct',
+      checkIn: res.check_in,
+      checkOut: res.check_out,
+      nights: Math.ceil((new Date(res.check_out).getTime() - new Date(res.check_in).getTime()) / (1000 * 60 * 60 * 24)),
+      adults: res.adults || 1,
+      children: res.children || 0,
+      roomType: res.room_types?.name || 'Standard Room',
+      roomNumber: res.room_id ? parseInt(res.room_id.slice(-3)) : Math.floor(Math.random() * 400) + 100,
+      rate: 150, // Can be calculated from rate plan
+      totalAmount: res.total_price || 0,
+      paidAmount: res.deposit_amount || 0,
+      company: '', // Can be enhanced with company data
+      specialRequests: res.special_requests || [],
+      isVIP: false, // Can be enhanced with guest profile data
+      groupBooking: !!res.group_id,
+      createdAt: format(new Date(res.created_at), 'yyyy-MM-dd HH:mm'),
+    }));
+    
     switch (filterStatus) {
       case 'arrivals':
-        return allReservations.filter(res => res.checkIn === todayStr);
+        return formattedReservations.filter(res => res.checkIn === todayStr);
       case 'departures':
-        return allReservations.filter(res => res.checkOut === todayStr);
+        return formattedReservations.filter(res => res.checkOut === todayStr);
       default:
-        return allReservations;
+        return formattedReservations;
     }
-  }, [allReservations, filterStatus]);
+  }, [reservations, filterStatus, loading]);
   
   // Paginate data
   const paginatedReservations = useMemo(() => {
@@ -203,26 +293,35 @@ export const ReservationsList = ({ filterStatus }: ReservationsListProps) => {
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="rounded-lg border border-border overflow-hidden">
-          <Table>
-            <TableHeader>
-              <TableRow className="bg-muted/50">
-                <TableHead className="w-12">
-                  <Checkbox
-                    checked={selectedReservations.length === paginatedReservations.length && paginatedReservations.length > 0}
-                    onCheckedChange={handleSelectAll}
-                  />
-                </TableHead>
-                <TableHead className="font-semibold">Guest</TableHead>
-                <TableHead className="font-semibold">Reservation</TableHead>
-                <TableHead className="font-semibold">Dates</TableHead>
-                <TableHead className="font-semibold">Room</TableHead>
-                <TableHead className="font-semibold">Status</TableHead>
-                <TableHead className="font-semibold">Source</TableHead>
-                <TableHead className="font-semibold text-right">Amount</TableHead>
-                <TableHead className="font-semibold text-center">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
+        {loading ? (
+          <div className="flex items-center justify-center py-12">
+            <motion.div
+              animate={{ rotate: 360 }}
+              transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+              className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full"
+            />
+          </div>
+        ) : (
+          <div className="rounded-lg border border-border overflow-hidden">
+            <Table>
+              <TableHeader>
+                <TableRow className="bg-muted/50">
+                  <TableHead className="w-12">
+                    <Checkbox
+                      checked={selectedReservations.length === paginatedReservations.length && paginatedReservations.length > 0}
+                      onCheckedChange={handleSelectAll}
+                    />
+                  </TableHead>
+                  <TableHead className="font-semibold">Guest</TableHead>
+                  <TableHead className="font-semibold">Reservation</TableHead>
+                  <TableHead className="font-semibold">Dates</TableHead>
+                  <TableHead className="font-semibold">Room</TableHead>
+                  <TableHead className="font-semibold">Status</TableHead>
+                  <TableHead className="font-semibold">Source</TableHead>
+                  <TableHead className="font-semibold text-right">Amount</TableHead>
+                  <TableHead className="font-semibold text-center">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
             <TableBody>
               {paginatedReservations.map((reservation, index) => {
                 const statusBadge = getStatusBadge(reservation.status);
@@ -341,29 +440,32 @@ export const ReservationsList = ({ filterStatus }: ReservationsListProps) => {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" className="bg-popover border border-border">
-                          <DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleReservationAction('view', reservation.id)}>
                             <Eye className="mr-2 h-4 w-4" />
                             View Details
                           </DropdownMenuItem>
-                          <DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleReservationAction('edit', reservation.id)}>
                             <Edit className="mr-2 h-4 w-4" />
                             Edit Reservation
                           </DropdownMenuItem>
-                          <DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleReservationAction('folio', reservation.id)}>
                             <CreditCard className="mr-2 h-4 w-4" />
                             Manage Folio
                           </DropdownMenuItem>
                           <DropdownMenuSeparator />
-                          <DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleReservationAction('email', reservation.id)}>
                             <Mail className="mr-2 h-4 w-4" />
                             Send Email
                           </DropdownMenuItem>
-                          <DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleReservationAction('sms', reservation.id)}>
                             <Phone className="mr-2 h-4 w-4" />
                             Send SMS
                           </DropdownMenuItem>
                           <DropdownMenuSeparator />
-                          <DropdownMenuItem className="text-red-600">
+                          <DropdownMenuItem 
+                            className="text-red-600"
+                            onClick={() => handleReservationAction('cancel', reservation.id)}
+                          >
                             <Trash2 className="mr-2 h-4 w-4" />
                             Cancel Reservation
                           </DropdownMenuItem>
@@ -376,6 +478,7 @@ export const ReservationsList = ({ filterStatus }: ReservationsListProps) => {
             </TableBody>
           </Table>
         </div>
+      )}
       </CardContent>
     </Card>
   );

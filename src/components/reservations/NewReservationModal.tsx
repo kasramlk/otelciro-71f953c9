@@ -1,5 +1,7 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 import {
   Dialog,
   DialogContent,
@@ -52,6 +54,8 @@ const steps = [
 
 export const NewReservationModal = ({ open, onClose }: NewReservationModalProps) => {
   const [currentStep, setCurrentStep] = useState(1);
+  const [loading, setLoading] = useState(false);
+  const { toast } = useToast();
   const [formData, setFormData] = useState({
     // Step 1: Guest Information
     firstName: '',
@@ -99,10 +103,85 @@ export const NewReservationModal = ({ open, onClose }: NewReservationModalProps)
     if (currentStep > 1) setCurrentStep(currentStep - 1);
   };
 
-  const handleSubmit = () => {
-    // Handle form submission
-    console.log('Reservation data:', formData);
-    onClose();
+  const handleSubmit = async () => {
+    try {
+      setLoading(true);
+      
+      // First create or find guest
+      const { data: existingGuest } = await supabase
+        .from('guests')
+        .select('id')
+        .eq('email', formData.email)
+        .single();
+      
+      let guestId;
+      
+      if (existingGuest) {
+        guestId = existingGuest.id;
+      } else {
+        // Create new guest
+        const { data: newGuest, error: guestError } = await supabase
+          .from('guests')
+          .insert({
+            first_name: formData.firstName,
+            last_name: formData.lastName,
+            email: formData.email,
+            phone: formData.phone,
+            nationality: formData.nationality,
+            id_number: formData.idNumber,
+            hotel_id: '550e8400-e29b-41d4-a716-446655440001' // Mock hotel ID
+          })
+          .select()
+          .single();
+          
+        if (guestError) throw guestError;
+        guestId = newGuest.id;
+      }
+      
+      // Create reservation
+      const reservationCode = `RES${Date.now().toString().slice(-6)}`;
+      const { data: reservation, error: reservationError } = await supabase
+        .from('reservations')
+        .insert({
+          code: reservationCode,
+          guest_id: guestId,
+          hotel_id: '550e8400-e29b-41d4-a716-446655440001',
+          check_in: formData.checkIn?.toISOString().split('T')[0],
+          check_out: formData.checkOut?.toISOString().split('T')[0],
+          adults: formData.adults,
+          children: formData.children,
+          room_type_id: '550e8400-e29b-41d4-a716-446655440010', // Mock room type ID
+          rate_plan_id: '550e8400-e29b-41d4-a716-446655440020', // Mock rate plan ID
+          total_price: 199.99, // Calculate based on room type and dates
+          payment_method: formData.paymentMethod,
+          deposit_amount: formData.depositAmount,
+          source: formData.source,
+          notes: formData.notes,
+          special_requests: formData.specialRequests ? [formData.specialRequests] : null,
+          status: 'Booked'
+        })
+        .select()
+        .single();
+        
+      if (reservationError) throw reservationError;
+      
+      toast({
+        title: "Success",
+        description: `Reservation ${reservationCode} created successfully!`,
+      });
+      
+      onClose();
+      
+    } catch (error: any) {
+      console.error('Error creating reservation:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to create reservation",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   const renderStepContent = () => {
@@ -596,9 +675,9 @@ export const NewReservationModal = ({ open, onClose }: NewReservationModalProps)
             </Button>
             
             {currentStep === 3 ? (
-              <Button onClick={handleSubmit} className="bg-gradient-primary text-white">
+              <Button onClick={handleSubmit} disabled={loading} className="bg-gradient-primary text-white">
                 <Save className="mr-2 h-4 w-4" />
-                Create Reservation
+                {loading ? 'Creating...' : 'Create Reservation'}
               </Button>
             ) : (
               <Button onClick={nextStep}>
