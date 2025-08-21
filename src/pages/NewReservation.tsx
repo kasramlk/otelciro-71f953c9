@@ -485,7 +485,7 @@ export default function NewReservation() {
                         <SelectValue placeholder="Select agency" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">Direct</SelectItem>
+                        <SelectItem value="direct">Direct</SelectItem>
                         {agencies.map(agency => (
                           <SelectItem key={agency.id} value={agency.id}>{agency.name}</SelectItem>
                         ))}
