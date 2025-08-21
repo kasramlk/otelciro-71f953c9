@@ -125,6 +125,87 @@ const Dashboard = () => {
           </Card>
         </div>
 
+        {/* Mock Hotels by Country */}
+        <div className="mb-8">
+          <h3 className="text-2xl font-bold mb-4">Hotels by Country</h3>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            {/* United States Hotels */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <Hotel className="h-5 w-5 mr-2 text-primary" />
+                  United States
+                </CardTitle>
+                <CardDescription>2 Properties</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="border-l-4 border-l-primary pl-4">
+                  <h4 className="font-semibold">Grand Plaza Manhattan</h4>
+                  <p className="text-sm text-muted-foreground">GPM001</p>
+                  <p className="text-sm">123 Broadway Ave, New York, NY</p>
+                  <p className="text-sm text-muted-foreground">+1 (555) 123-4567 • UTC-5</p>
+                </div>
+                <div className="border-l-4 border-l-secondary pl-4">
+                  <h4 className="font-semibold">Sunset Beach Resort</h4>
+                  <p className="text-sm text-muted-foreground">SBR002</p>
+                  <p className="text-sm">456 Ocean Drive, Miami, FL</p>
+                  <p className="text-sm text-muted-foreground">+1 (555) 987-6543 • UTC-5</p>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* United Kingdom Hotels */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <Hotel className="h-5 w-5 mr-2 text-primary" />
+                  United Kingdom
+                </CardTitle>
+                <CardDescription>2 Properties</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="border-l-4 border-l-primary pl-4">
+                  <h4 className="font-semibold">Royal Westminster Hotel</h4>
+                  <p className="text-sm text-muted-foreground">RWH003</p>
+                  <p className="text-sm">78 Piccadilly Circus, London</p>
+                  <p className="text-sm text-muted-foreground">+44 20 7123 4567 • UTC+0</p>
+                </div>
+                <div className="border-l-4 border-l-secondary pl-4">
+                  <h4 className="font-semibold">Edinburgh Castle View</h4>
+                  <p className="text-sm text-muted-foreground">ECV004</p>
+                  <p className="text-sm">15 Royal Mile, Edinburgh</p>
+                  <p className="text-sm text-muted-foreground">+44 131 555 0123 • UTC+0</p>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Japan Hotels */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <Hotel className="h-5 w-5 mr-2 text-primary" />
+                  Japan
+                </CardTitle>
+                <CardDescription>2 Properties</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="border-l-4 border-l-primary pl-4">
+                  <h4 className="font-semibold">Tokyo Imperial Suites</h4>
+                  <p className="text-sm text-muted-foreground">TIS005</p>
+                  <p className="text-sm">2-1-1 Shibuya, Tokyo</p>
+                  <p className="text-sm text-muted-foreground">+81 3-1234-5678 • UTC+9</p>
+                </div>
+                <div className="border-l-4 border-l-secondary pl-4">
+                  <h4 className="font-semibold">Kyoto Zen Garden Hotel</h4>
+                  <p className="text-sm text-muted-foreground">KZG006</p>
+                  <p className="text-sm">123 Gion District, Kyoto</p>
+                  <p className="text-sm text-muted-foreground">+81 75-567-8901 • UTC+9</p>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+
         {/* Main Actions */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           <Card className="cursor-pointer hover:shadow-lg transition-shadow">
