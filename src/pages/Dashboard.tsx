@@ -104,7 +104,10 @@ const Dashboard = () => {
                   </NavigationMenuLink>
                 </NavigationMenuItem>
                 <NavigationMenuItem>
-                  <NavigationMenuLink className={`${navigationMenuTriggerStyle()} cursor-pointer`}>
+                  <NavigationMenuLink 
+                    className={`${navigationMenuTriggerStyle()} cursor-pointer`}
+                    onClick={() => navigate('/guests')}
+                  >
                     <UserCheck className="h-4 w-4 mr-2" />
                     Guests
                   </NavigationMenuLink>
