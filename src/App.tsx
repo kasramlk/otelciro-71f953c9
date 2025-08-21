@@ -43,6 +43,7 @@ import GuestCRM from "./pages/GuestCRM";
 import RevenueAI from "./pages/RevenueAI";
 import Operations from "./pages/Operations";
 import FrontOffice from "./pages/FrontOffice";
+import GuestExperience from "./pages/GuestExperience";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -256,6 +257,11 @@ const AppContent = () => {
       <Route path="/settings" element={
         <HotelManagerLayout>
           <Settings />
+        </HotelManagerLayout>
+      } />
+      <Route path="/guest-experience" element={
+        <HotelManagerLayout>
+          <GuestExperience />
         </HotelManagerLayout>
       } />
       
