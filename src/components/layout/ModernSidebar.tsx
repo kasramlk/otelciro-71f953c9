@@ -57,6 +57,7 @@ const businessItems: SidebarItem[] = [
   { title: "Sales", href: "/sales", icon: TrendingUp },
   { title: "Active Folios", href: "/folios", icon: Receipt, badge: "8" },
   { title: "Cashier", href: "/cashier", icon: CreditCard },
+  { title: "Analytics", href: "/analytics", icon: BarChart3, badge: "AI" },
   { title: "Reports", href: "/reports", icon: BarChart3 },
 ];
 

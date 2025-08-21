@@ -44,6 +44,7 @@ import RevenueAI from "./pages/RevenueAI";
 import Operations from "./pages/Operations";
 import FrontOffice from "./pages/FrontOffice";
 import GuestExperience from "./pages/GuestExperience";
+import Analytics from "./pages/Analytics";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -217,6 +218,11 @@ const AppContent = () => {
       <Route path="/occupancy" element={
         <HotelManagerLayout>
           <Occupancy />
+        </HotelManagerLayout>
+      } />
+      <Route path="/analytics" element={
+        <HotelManagerLayout>
+          <Analytics />
         </HotelManagerLayout>
       } />
       <Route path="/reports" element={
