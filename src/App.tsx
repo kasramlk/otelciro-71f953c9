@@ -42,6 +42,7 @@ import AuditMonitoring from "./pages/admin/AuditMonitoring";
 import GuestCRM from "./pages/GuestCRM";
 import RevenueAI from "./pages/RevenueAI";
 import Operations from "./pages/Operations";
+import FrontOffice from "./pages/FrontOffice";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -190,6 +191,11 @@ const AppContent = () => {
       <Route path="/housekeeping" element={
         <HotelManagerLayout>
           <HousekeepingModule />
+        </HotelManagerLayout>
+      } />
+      <Route path="/front-office" element={
+        <HotelManagerLayout>
+          <FrontOffice />
         </HotelManagerLayout>
       } />
       <Route path="/guests" element={
