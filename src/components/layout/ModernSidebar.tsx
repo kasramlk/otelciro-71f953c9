@@ -21,7 +21,8 @@ import {
   ChevronLeft,
   ChevronRight,
   Hotel,
-  PieChart
+  PieChart,
+  Brain
 } from "lucide-react";
 import { NavLink, useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -50,6 +51,9 @@ const navigationItems: SidebarItem[] = [
 ];
 
 const businessItems: SidebarItem[] = [
+  { title: "Guest CRM", href: "/guest-crm", icon: Users, badge: "New" },
+  { title: "Revenue AI", href: "/revenue-ai", icon: Brain, badge: "AI" },
+  { title: "Operations", href: "/operations", icon: Settings, badge: "Live" },
   { title: "Sales", href: "/sales", icon: TrendingUp },
   { title: "Active Folios", href: "/folios", icon: Receipt, badge: "8" },
   { title: "Cashier", href: "/cashier", icon: CreditCard },

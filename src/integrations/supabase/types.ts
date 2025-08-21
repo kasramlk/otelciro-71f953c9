@@ -79,6 +79,54 @@ export type Database = {
           },
         ]
       }
+      agency_contracts: {
+        Row: {
+          agency_id: string
+          booking_terms: Json | null
+          commission_rate: number | null
+          contract_name: string
+          contract_type: string
+          created_at: string
+          hotel_id: string
+          id: string
+          is_active: boolean | null
+          rate_details: Json
+          updated_at: string
+          valid_from: string
+          valid_until: string | null
+        }
+        Insert: {
+          agency_id: string
+          booking_terms?: Json | null
+          commission_rate?: number | null
+          contract_name: string
+          contract_type: string
+          created_at?: string
+          hotel_id: string
+          id?: string
+          is_active?: boolean | null
+          rate_details?: Json
+          updated_at?: string
+          valid_from: string
+          valid_until?: string | null
+        }
+        Update: {
+          agency_id?: string
+          booking_terms?: Json | null
+          commission_rate?: number | null
+          contract_name?: string
+          contract_type?: string
+          created_at?: string
+          hotel_id?: string
+          id?: string
+          is_active?: boolean | null
+          rate_details?: Json
+          updated_at?: string
+          valid_from?: string
+          valid_until?: string | null
+        }
+        Relationships: []
+      }
       audit_log: {
         Row: {
           action: string
@@ -138,6 +186,63 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      booking_holds: {
+        Row: {
+          adults: number
+          agency_id: string
+          check_in: string
+          check_out: string
+          children: number
+          created_at: string
+          currency: string
+          expires_at: string
+          guest_name: string
+          hotel_id: string
+          id: string
+          rate_quoted: number
+          room_type_id: string
+          special_requests: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          adults?: number
+          agency_id: string
+          check_in: string
+          check_out: string
+          children?: number
+          created_at?: string
+          currency?: string
+          expires_at: string
+          guest_name: string
+          hotel_id: string
+          id?: string
+          rate_quoted: number
+          room_type_id: string
+          special_requests?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          adults?: number
+          agency_id?: string
+          check_in?: string
+          check_out?: string
+          children?: number
+          created_at?: string
+          currency?: string
+          expires_at?: string
+          guest_name?: string
+          hotel_id?: string
+          id?: string
+          rate_quoted?: number
+          room_type_id?: string
+          special_requests?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       cashier_sessions: {
         Row: {
@@ -332,6 +437,48 @@ export type Database = {
         }
         Relationships: []
       }
+      competitor_rates: {
+        Row: {
+          availability_status: string | null
+          competitor_name: string
+          competitor_room_type: string
+          currency: string
+          date: string
+          hotel_id: string
+          id: string
+          our_room_type_id: string
+          rate: number
+          scraped_at: string
+          source: string
+        }
+        Insert: {
+          availability_status?: string | null
+          competitor_name: string
+          competitor_room_type: string
+          currency?: string
+          date: string
+          hotel_id: string
+          id?: string
+          our_room_type_id: string
+          rate: number
+          scraped_at?: string
+          source: string
+        }
+        Update: {
+          availability_status?: string | null
+          competitor_name?: string
+          competitor_room_type?: string
+          currency?: string
+          date?: string
+          hotel_id?: string
+          id?: string
+          our_room_type_id?: string
+          rate?: number
+          scraped_at?: string
+          source?: string
+        }
+        Relationships: []
+      }
       currencies: {
         Row: {
           code: string
@@ -417,6 +564,99 @@ export type Database = {
           },
         ]
       }
+      demand_forecasts: {
+        Row: {
+          confidence_score: number | null
+          created_at: string
+          factors: Json | null
+          forecast_date: string
+          forecast_type: string
+          hotel_id: string
+          id: string
+          model_version: string | null
+          predicted_value: number
+          room_type_id: string
+        }
+        Insert: {
+          confidence_score?: number | null
+          created_at?: string
+          factors?: Json | null
+          forecast_date: string
+          forecast_type: string
+          hotel_id: string
+          id?: string
+          model_version?: string | null
+          predicted_value: number
+          room_type_id: string
+        }
+        Update: {
+          confidence_score?: number | null
+          created_at?: string
+          factors?: Json | null
+          forecast_date?: string
+          forecast_type?: string
+          hotel_id?: string
+          id?: string
+          model_version?: string | null
+          predicted_value?: number
+          room_type_id?: string
+        }
+        Relationships: []
+      }
+      equipment: {
+        Row: {
+          brand: string | null
+          created_at: string
+          equipment_type: string
+          hotel_id: string
+          id: string
+          last_maintenance: string | null
+          model: string | null
+          next_maintenance: string | null
+          purchase_date: string | null
+          room_id: string | null
+          serial_number: string | null
+          specifications: Json | null
+          status: string
+          updated_at: string
+          warranty_expiry: string | null
+        }
+        Insert: {
+          brand?: string | null
+          created_at?: string
+          equipment_type: string
+          hotel_id: string
+          id?: string
+          last_maintenance?: string | null
+          model?: string | null
+          next_maintenance?: string | null
+          purchase_date?: string | null
+          room_id?: string | null
+          serial_number?: string | null
+          specifications?: Json | null
+          status?: string
+          updated_at?: string
+          warranty_expiry?: string | null
+        }
+        Update: {
+          brand?: string | null
+          created_at?: string
+          equipment_type?: string
+          hotel_id?: string
+          id?: string
+          last_maintenance?: string | null
+          model?: string | null
+          next_maintenance?: string | null
+          purchase_date?: string | null
+          room_id?: string | null
+          serial_number?: string | null
+          specifications?: Json | null
+          status?: string
+          updated_at?: string
+          warranty_expiry?: string | null
+        }
+        Relationships: []
+      }
       exchange_rates: {
         Row: {
           created_at: string
@@ -441,6 +681,159 @@ export type Database = {
           id?: string
           rate?: number
           to_currency?: string
+        }
+        Relationships: []
+      }
+      guest_communications: {
+        Row: {
+          communication_type: string
+          content: string
+          created_at: string
+          guest_id: string
+          hotel_id: string
+          id: string
+          metadata: Json | null
+          scheduled_at: string | null
+          sent_at: string | null
+          status: string
+          subject: string | null
+          template_id: string | null
+        }
+        Insert: {
+          communication_type: string
+          content: string
+          created_at?: string
+          guest_id: string
+          hotel_id: string
+          id?: string
+          metadata?: Json | null
+          scheduled_at?: string | null
+          sent_at?: string | null
+          status?: string
+          subject?: string | null
+          template_id?: string | null
+        }
+        Update: {
+          communication_type?: string
+          content?: string
+          created_at?: string
+          guest_id?: string
+          hotel_id?: string
+          id?: string
+          metadata?: Json | null
+          scheduled_at?: string | null
+          sent_at?: string | null
+          status?: string
+          subject?: string | null
+          template_id?: string | null
+        }
+        Relationships: []
+      }
+      guest_loyalty_programs: {
+        Row: {
+          created_at: string
+          hotel_id: string
+          id: string
+          is_active: boolean | null
+          point_value: number
+          program_name: string
+          redemption_rules: Json
+          tier_structure: Json
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          hotel_id: string
+          id?: string
+          is_active?: boolean | null
+          point_value?: number
+          program_name: string
+          redemption_rules?: Json
+          tier_structure?: Json
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          hotel_id?: string
+          id?: string
+          is_active?: boolean | null
+          point_value?: number
+          program_name?: string
+          redemption_rules?: Json
+          tier_structure?: Json
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      guest_loyalty_transactions: {
+        Row: {
+          created_at: string
+          description: string | null
+          guest_id: string
+          id: string
+          points: number
+          program_id: string
+          reference_id: string | null
+          reference_type: string | null
+          transaction_type: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          guest_id: string
+          id?: string
+          points: number
+          program_id: string
+          reference_id?: string | null
+          reference_type?: string | null
+          transaction_type: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          guest_id?: string
+          id?: string
+          points?: number
+          program_id?: string
+          reference_id?: string | null
+          reference_type?: string | null
+          transaction_type?: string
+        }
+        Relationships: []
+      }
+      guest_preferences: {
+        Row: {
+          category: string
+          created_at: string
+          guest_id: string
+          id: string
+          notes: string | null
+          preference_key: string
+          preference_value: string
+          priority: number | null
+          updated_at: string
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          guest_id: string
+          id?: string
+          notes?: string | null
+          preference_key: string
+          preference_value: string
+          priority?: number | null
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          guest_id?: string
+          id?: string
+          notes?: string | null
+          preference_key?: string
+          preference_value?: string
+          priority?: number | null
+          updated_at?: string
         }
         Relationships: []
       }
@@ -692,6 +1085,252 @@ export type Database = {
           },
         ]
       }
+      invoice_line_items: {
+        Row: {
+          created_at: string
+          description: string
+          id: string
+          invoice_id: string
+          line_total: number
+          quantity: number
+          tax_rate: number | null
+          unit_price: number
+        }
+        Insert: {
+          created_at?: string
+          description: string
+          id?: string
+          invoice_id: string
+          line_total: number
+          quantity?: number
+          tax_rate?: number | null
+          unit_price: number
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          id?: string
+          invoice_id?: string
+          line_total?: number
+          quantity?: number
+          tax_rate?: number | null
+          unit_price?: number
+        }
+        Relationships: []
+      }
+      invoices: {
+        Row: {
+          created_at: string
+          currency: string
+          due_date: string
+          entity_id: string
+          entity_type: string
+          hotel_id: string
+          id: string
+          invoice_number: string
+          issue_date: string
+          metadata: Json | null
+          notes: string | null
+          payment_terms: number | null
+          reservation_id: string | null
+          status: string
+          subtotal: number
+          tax_amount: number
+          total_amount: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          currency?: string
+          due_date: string
+          entity_id: string
+          entity_type: string
+          hotel_id: string
+          id?: string
+          invoice_number: string
+          issue_date: string
+          metadata?: Json | null
+          notes?: string | null
+          payment_terms?: number | null
+          reservation_id?: string | null
+          status?: string
+          subtotal?: number
+          tax_amount?: number
+          total_amount?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          currency?: string
+          due_date?: string
+          entity_id?: string
+          entity_type?: string
+          hotel_id?: string
+          id?: string
+          invoice_number?: string
+          issue_date?: string
+          metadata?: Json | null
+          notes?: string | null
+          payment_terms?: number | null
+          reservation_id?: string | null
+          status?: string
+          subtotal?: number
+          tax_amount?: number
+          total_amount?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      maintenance_requests: {
+        Row: {
+          actual_cost: number | null
+          assigned_to: string | null
+          category: string
+          completed_date: string | null
+          created_at: string
+          description: string
+          equipment_id: string | null
+          estimated_cost: number | null
+          hotel_id: string
+          id: string
+          images: Json | null
+          notes: string | null
+          priority: string
+          reported_by: string | null
+          room_id: string | null
+          scheduled_date: string | null
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          actual_cost?: number | null
+          assigned_to?: string | null
+          category: string
+          completed_date?: string | null
+          created_at?: string
+          description: string
+          equipment_id?: string | null
+          estimated_cost?: number | null
+          hotel_id: string
+          id?: string
+          images?: Json | null
+          notes?: string | null
+          priority?: string
+          reported_by?: string | null
+          room_id?: string | null
+          scheduled_date?: string | null
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          actual_cost?: number | null
+          assigned_to?: string | null
+          category?: string
+          completed_date?: string | null
+          created_at?: string
+          description?: string
+          equipment_id?: string | null
+          estimated_cost?: number | null
+          hotel_id?: string
+          id?: string
+          images?: Json | null
+          notes?: string | null
+          priority?: string
+          reported_by?: string | null
+          room_id?: string | null
+          scheduled_date?: string | null
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      market_events: {
+        Row: {
+          created_at: string
+          demand_multiplier: number | null
+          description: string | null
+          end_date: string
+          event_type: string
+          expected_impact: string | null
+          id: string
+          location: string | null
+          name: string
+          start_date: string
+        }
+        Insert: {
+          created_at?: string
+          demand_multiplier?: number | null
+          description?: string | null
+          end_date: string
+          event_type: string
+          expected_impact?: string | null
+          id?: string
+          location?: string | null
+          name: string
+          start_date: string
+        }
+        Update: {
+          created_at?: string
+          demand_multiplier?: number | null
+          description?: string | null
+          end_date?: string
+          event_type?: string
+          expected_impact?: string | null
+          id?: string
+          location?: string | null
+          name?: string
+          start_date?: string
+        }
+        Relationships: []
+      }
+      message_templates: {
+        Row: {
+          communication_channel: string
+          content: string
+          created_at: string
+          hotel_id: string
+          id: string
+          is_active: boolean | null
+          subject: string | null
+          template_name: string
+          template_type: string
+          trigger_conditions: Json | null
+          updated_at: string
+          variables: Json | null
+        }
+        Insert: {
+          communication_channel: string
+          content: string
+          created_at?: string
+          hotel_id: string
+          id?: string
+          is_active?: boolean | null
+          subject?: string | null
+          template_name: string
+          template_type: string
+          trigger_conditions?: Json | null
+          updated_at?: string
+          variables?: Json | null
+        }
+        Update: {
+          communication_channel?: string
+          content?: string
+          created_at?: string
+          hotel_id?: string
+          id?: string
+          is_active?: boolean | null
+          subject?: string | null
+          template_name?: string
+          template_type?: string
+          trigger_conditions?: Json | null
+          updated_at?: string
+          variables?: Json | null
+        }
+        Relationships: []
+      }
       organizations: {
         Row: {
           billing_email: string
@@ -710,6 +1349,63 @@ export type Database = {
           created_at?: string
           id?: string
           name?: string
+        }
+        Relationships: []
+      }
+      payments: {
+        Row: {
+          amount: number
+          amount_in_base_currency: number
+          created_at: string
+          currency: string
+          exchange_rate: number | null
+          gateway_transaction_id: string | null
+          hotel_id: string
+          id: string
+          invoice_id: string | null
+          metadata: Json | null
+          notes: string | null
+          payment_method: string
+          payment_type: string
+          processed_at: string | null
+          reservation_id: string | null
+          status: string
+        }
+        Insert: {
+          amount: number
+          amount_in_base_currency: number
+          created_at?: string
+          currency?: string
+          exchange_rate?: number | null
+          gateway_transaction_id?: string | null
+          hotel_id: string
+          id?: string
+          invoice_id?: string | null
+          metadata?: Json | null
+          notes?: string | null
+          payment_method: string
+          payment_type: string
+          processed_at?: string | null
+          reservation_id?: string | null
+          status?: string
+        }
+        Update: {
+          amount?: number
+          amount_in_base_currency?: number
+          created_at?: string
+          currency?: string
+          exchange_rate?: number | null
+          gateway_transaction_id?: string | null
+          hotel_id?: string
+          id?: string
+          invoice_id?: string | null
+          metadata?: Json | null
+          notes?: string | null
+          payment_method?: string
+          payment_type?: string
+          processed_at?: string | null
+          reservation_id?: string | null
+          status?: string
         }
         Relationships: []
       }
@@ -785,6 +1481,45 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      pricing_rules: {
+        Row: {
+          actions: Json
+          conditions: Json
+          created_at: string
+          hotel_id: string
+          id: string
+          is_active: boolean | null
+          priority: number | null
+          rule_name: string
+          rule_type: string
+          updated_at: string
+        }
+        Insert: {
+          actions?: Json
+          conditions?: Json
+          created_at?: string
+          hotel_id: string
+          id?: string
+          is_active?: boolean | null
+          priority?: number | null
+          rule_name: string
+          rule_type: string
+          updated_at?: string
+        }
+        Update: {
+          actions?: Json
+          conditions?: Json
+          created_at?: string
+          hotel_id?: string
+          id?: string
+          is_active?: boolean | null
+          priority?: number | null
+          rule_name?: string
+          rule_type?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       promotions: {
         Row: {
@@ -1328,6 +2063,102 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      staff: {
+        Row: {
+          created_at: string
+          department: string
+          email: string | null
+          employee_id: string
+          first_name: string
+          hire_date: string
+          hotel_id: string
+          hourly_rate: number | null
+          id: string
+          last_name: string
+          permissions: Json | null
+          phone: string | null
+          position: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          department: string
+          email?: string | null
+          employee_id: string
+          first_name: string
+          hire_date: string
+          hotel_id: string
+          hourly_rate?: number | null
+          id?: string
+          last_name: string
+          permissions?: Json | null
+          phone?: string | null
+          position: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          department?: string
+          email?: string | null
+          employee_id?: string
+          first_name?: string
+          hire_date?: string
+          hotel_id?: string
+          hourly_rate?: number | null
+          id?: string
+          last_name?: string
+          permissions?: Json | null
+          phone?: string | null
+          position?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      staff_schedules: {
+        Row: {
+          created_at: string
+          department: string
+          hotel_id: string
+          id: string
+          notes: string | null
+          shift_date: string
+          shift_end: string
+          shift_start: string
+          staff_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          department: string
+          hotel_id: string
+          id?: string
+          notes?: string | null
+          shift_date: string
+          shift_end: string
+          shift_start: string
+          staff_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          department?: string
+          hotel_id?: string
+          id?: string
+          notes?: string | null
+          shift_date?: string
+          shift_end?: string
+          shift_start?: string
+          staff_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       users: {
         Row: {

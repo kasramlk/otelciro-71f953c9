@@ -23,6 +23,9 @@ import HotelSearch from "./pages/agency/HotelSearch";
 import AgencyDashboard from "./pages/agency/AgencyDashboard";
 import { HotelManagerLayout } from "./layouts/HotelManagerLayout";
 import { TravelAgencyLayout } from "./layouts/TravelAgencyLayout";
+import GuestCRM from "./pages/GuestCRM";
+import RevenueAI from "./pages/RevenueAI";
+import Operations from "./pages/Operations";
 
 const queryClient = new QueryClient();
 
@@ -165,6 +168,21 @@ const AppContent = () => {
       <Route path="/cashier" element={
         <HotelManagerLayout>
           <Cashier />
+        </HotelManagerLayout>
+      } />
+      <Route path="/guest-crm" element={
+        <HotelManagerLayout>
+          <GuestCRM />
+        </HotelManagerLayout>
+      } />
+      <Route path="/revenue-ai" element={
+        <HotelManagerLayout>
+          <RevenueAI />
+        </HotelManagerLayout>
+      } />
+      <Route path="/operations" element={
+        <HotelManagerLayout>
+          <Operations />
         </HotelManagerLayout>
       } />
       <Route path="/audit-log" element={
