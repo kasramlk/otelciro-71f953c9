@@ -14,6 +14,105 @@ export type Database = {
   }
   public: {
     Tables: {
+      daily_rates: {
+        Row: {
+          created_at: string
+          date: string
+          hotel_id: string
+          id: string
+          rate: number
+          rate_plan_id: string
+          room_type_id: string
+        }
+        Insert: {
+          created_at?: string
+          date: string
+          hotel_id: string
+          id?: string
+          rate: number
+          rate_plan_id: string
+          room_type_id: string
+        }
+        Update: {
+          created_at?: string
+          date?: string
+          hotel_id?: string
+          id?: string
+          rate?: number
+          rate_plan_id?: string
+          room_type_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "daily_rates_hotel_id_fkey"
+            columns: ["hotel_id"]
+            isOneToOne: false
+            referencedRelation: "hotels"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "daily_rates_rate_plan_id_fkey"
+            columns: ["rate_plan_id"]
+            isOneToOne: false
+            referencedRelation: "rate_plans"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "daily_rates_room_type_id_fkey"
+            columns: ["room_type_id"]
+            isOneToOne: false
+            referencedRelation: "room_types"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      guests: {
+        Row: {
+          created_at: string
+          email: string | null
+          first_name: string
+          hotel_id: string
+          id: string
+          id_number: string | null
+          last_name: string
+          nationality: string | null
+          phone: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          first_name: string
+          hotel_id: string
+          id?: string
+          id_number?: string | null
+          last_name: string
+          nationality?: string | null
+          phone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          first_name?: string
+          hotel_id?: string
+          id?: string
+          id_number?: string | null
+          last_name?: string
+          nationality?: string | null
+          phone?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "guests_hotel_id_fkey"
+            columns: ["hotel_id"]
+            isOneToOne: false
+            referencedRelation: "hotels"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       hotels: {
         Row: {
           address: string | null
@@ -61,6 +160,51 @@ export type Database = {
           },
         ]
       }
+      inventory: {
+        Row: {
+          allotment: number
+          created_at: string
+          date: string
+          hotel_id: string
+          id: string
+          room_type_id: string
+          stop_sell: boolean
+        }
+        Insert: {
+          allotment?: number
+          created_at?: string
+          date: string
+          hotel_id: string
+          id?: string
+          room_type_id: string
+          stop_sell?: boolean
+        }
+        Update: {
+          allotment?: number
+          created_at?: string
+          date?: string
+          hotel_id?: string
+          id?: string
+          room_type_id?: string
+          stop_sell?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inventory_hotel_id_fkey"
+            columns: ["hotel_id"]
+            isOneToOne: false
+            referencedRelation: "hotels"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_room_type_id_fkey"
+            columns: ["room_type_id"]
+            isOneToOne: false
+            referencedRelation: "room_types"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       organizations: {
         Row: {
           billing_email: string
@@ -81,6 +225,229 @@ export type Database = {
           name?: string
         }
         Relationships: []
+      }
+      rate_plans: {
+        Row: {
+          code: string
+          created_at: string
+          currency: string
+          description: string | null
+          hotel_id: string
+          id: string
+          name: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          currency?: string
+          description?: string | null
+          hotel_id: string
+          id?: string
+          name: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          currency?: string
+          description?: string | null
+          hotel_id?: string
+          id?: string
+          name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rate_plans_hotel_id_fkey"
+            columns: ["hotel_id"]
+            isOneToOne: false
+            referencedRelation: "hotels"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      reservations: {
+        Row: {
+          adults: number
+          check_in: string
+          check_out: string
+          children: number
+          code: string
+          created_at: string
+          currency: string
+          guest_id: string
+          hotel_id: string
+          id: string
+          notes: string | null
+          rate_plan_id: string
+          room_id: string | null
+          room_type_id: string
+          source: string | null
+          status: string
+          total_price: number
+          updated_at: string
+        }
+        Insert: {
+          adults?: number
+          check_in: string
+          check_out: string
+          children?: number
+          code: string
+          created_at?: string
+          currency?: string
+          guest_id: string
+          hotel_id: string
+          id?: string
+          notes?: string | null
+          rate_plan_id: string
+          room_id?: string | null
+          room_type_id: string
+          source?: string | null
+          status?: string
+          total_price: number
+          updated_at?: string
+        }
+        Update: {
+          adults?: number
+          check_in?: string
+          check_out?: string
+          children?: number
+          code?: string
+          created_at?: string
+          currency?: string
+          guest_id?: string
+          hotel_id?: string
+          id?: string
+          notes?: string | null
+          rate_plan_id?: string
+          room_id?: string | null
+          room_type_id?: string
+          source?: string | null
+          status?: string
+          total_price?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reservations_guest_id_fkey"
+            columns: ["guest_id"]
+            isOneToOne: false
+            referencedRelation: "guests"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reservations_hotel_id_fkey"
+            columns: ["hotel_id"]
+            isOneToOne: false
+            referencedRelation: "hotels"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reservations_rate_plan_id_fkey"
+            columns: ["rate_plan_id"]
+            isOneToOne: false
+            referencedRelation: "rate_plans"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reservations_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "rooms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reservations_room_type_id_fkey"
+            columns: ["room_type_id"]
+            isOneToOne: false
+            referencedRelation: "room_types"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      room_types: {
+        Row: {
+          capacity_adults: number
+          capacity_children: number
+          code: string
+          created_at: string
+          description: string | null
+          hotel_id: string
+          id: string
+          name: string
+        }
+        Insert: {
+          capacity_adults?: number
+          capacity_children?: number
+          code: string
+          created_at?: string
+          description?: string | null
+          hotel_id: string
+          id?: string
+          name: string
+        }
+        Update: {
+          capacity_adults?: number
+          capacity_children?: number
+          code?: string
+          created_at?: string
+          description?: string | null
+          hotel_id?: string
+          id?: string
+          name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "room_types_hotel_id_fkey"
+            columns: ["hotel_id"]
+            isOneToOne: false
+            referencedRelation: "hotels"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      rooms: {
+        Row: {
+          created_at: string
+          floor: number | null
+          hotel_id: string
+          id: string
+          number: string
+          room_type_id: string
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          floor?: number | null
+          hotel_id: string
+          id?: string
+          number: string
+          room_type_id: string
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          floor?: number | null
+          hotel_id?: string
+          id?: string
+          number?: string
+          room_type_id?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rooms_hotel_id_fkey"
+            columns: ["hotel_id"]
+            isOneToOne: false
+            referencedRelation: "hotels"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rooms_room_type_id_fkey"
+            columns: ["room_type_id"]
+            isOneToOne: false
+            referencedRelation: "room_types"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       users: {
         Row: {
