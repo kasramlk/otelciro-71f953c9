@@ -612,6 +612,129 @@ export type Database = {
         }
         Relationships: []
       }
+      digital_keys: {
+        Row: {
+          access_log: Json | null
+          created_at: string
+          expires_at: string
+          guest_id: string
+          hotel_id: string
+          id: string
+          is_active: boolean | null
+          issued_at: string
+          key_code: string
+          key_type: string
+          reservation_id: string
+          room_id: string
+        }
+        Insert: {
+          access_log?: Json | null
+          created_at?: string
+          expires_at: string
+          guest_id: string
+          hotel_id: string
+          id?: string
+          is_active?: boolean | null
+          issued_at?: string
+          key_code: string
+          key_type?: string
+          reservation_id: string
+          room_id: string
+        }
+        Update: {
+          access_log?: Json | null
+          created_at?: string
+          expires_at?: string
+          guest_id?: string
+          hotel_id?: string
+          id?: string
+          is_active?: boolean | null
+          issued_at?: string
+          key_code?: string
+          key_type?: string
+          reservation_id?: string
+          room_id?: string
+        }
+        Relationships: []
+      }
+      e_invoices: {
+        Row: {
+          compliance_data: Json | null
+          created_at: string
+          currency: string
+          digital_signature: string | null
+          document_number: string
+          e_invoice_type: string
+          email_sent: boolean | null
+          exchange_rate: number | null
+          guest_id: string
+          hotel_id: string
+          id: string
+          invoice_date: string
+          invoice_id: string
+          pdf_url: string | null
+          sent_at: string | null
+          status: string
+          subtotal: number
+          tax_amount: number
+          tax_number: string | null
+          tax_office: string | null
+          total_amount: number
+          updated_at: string
+          xml_content: string | null
+        }
+        Insert: {
+          compliance_data?: Json | null
+          created_at?: string
+          currency?: string
+          digital_signature?: string | null
+          document_number: string
+          e_invoice_type: string
+          email_sent?: boolean | null
+          exchange_rate?: number | null
+          guest_id: string
+          hotel_id: string
+          id?: string
+          invoice_date: string
+          invoice_id: string
+          pdf_url?: string | null
+          sent_at?: string | null
+          status?: string
+          subtotal?: number
+          tax_amount?: number
+          tax_number?: string | null
+          tax_office?: string | null
+          total_amount?: number
+          updated_at?: string
+          xml_content?: string | null
+        }
+        Update: {
+          compliance_data?: Json | null
+          created_at?: string
+          currency?: string
+          digital_signature?: string | null
+          document_number?: string
+          e_invoice_type?: string
+          email_sent?: boolean | null
+          exchange_rate?: number | null
+          guest_id?: string
+          hotel_id?: string
+          id?: string
+          invoice_date?: string
+          invoice_id?: string
+          pdf_url?: string | null
+          sent_at?: string | null
+          status?: string
+          subtotal?: number
+          tax_amount?: number
+          tax_number?: string | null
+          tax_office?: string | null
+          total_amount?: number
+          updated_at?: string
+          xml_content?: string | null
+        }
+        Relationships: []
+      }
       equipment: {
         Row: {
           brand: string | null
@@ -735,6 +858,60 @@ export type Database = {
           status?: string
           subject?: string | null
           template_id?: string | null
+        }
+        Relationships: []
+      }
+      guest_interactions: {
+        Row: {
+          ai_response: string | null
+          content: string | null
+          created_at: string
+          escalated: boolean | null
+          guest_id: string
+          hotel_id: string
+          id: string
+          intent_detected: string | null
+          interaction_source: string
+          interaction_type: string
+          metadata: Json | null
+          reservation_id: string | null
+          resolved: boolean | null
+          sentiment_score: number | null
+          staff_response: string | null
+        }
+        Insert: {
+          ai_response?: string | null
+          content?: string | null
+          created_at?: string
+          escalated?: boolean | null
+          guest_id: string
+          hotel_id: string
+          id?: string
+          intent_detected?: string | null
+          interaction_source: string
+          interaction_type: string
+          metadata?: Json | null
+          reservation_id?: string | null
+          resolved?: boolean | null
+          sentiment_score?: number | null
+          staff_response?: string | null
+        }
+        Update: {
+          ai_response?: string | null
+          content?: string | null
+          created_at?: string
+          escalated?: boolean | null
+          guest_id?: string
+          hotel_id?: string
+          id?: string
+          intent_detected?: string | null
+          interaction_source?: string
+          interaction_type?: string
+          metadata?: Json | null
+          reservation_id?: string | null
+          resolved?: boolean | null
+          sentiment_score?: number | null
+          staff_response?: string | null
         }
         Relationships: []
       }
@@ -2088,6 +2265,78 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      service_requests: {
+        Row: {
+          actual_cost: number | null
+          assigned_to: string | null
+          completed_at: string | null
+          created_at: string
+          description: string | null
+          estimated_cost: number | null
+          guest_feedback: string | null
+          guest_id: string
+          guest_rating: number | null
+          hotel_id: string
+          id: string
+          notes: string | null
+          priority: string | null
+          requested_time: string | null
+          reservation_id: string
+          room_number: string
+          service_category: string | null
+          service_type: string
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          actual_cost?: number | null
+          assigned_to?: string | null
+          completed_at?: string | null
+          created_at?: string
+          description?: string | null
+          estimated_cost?: number | null
+          guest_feedback?: string | null
+          guest_id: string
+          guest_rating?: number | null
+          hotel_id: string
+          id?: string
+          notes?: string | null
+          priority?: string | null
+          requested_time?: string | null
+          reservation_id: string
+          room_number: string
+          service_category?: string | null
+          service_type: string
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          actual_cost?: number | null
+          assigned_to?: string | null
+          completed_at?: string | null
+          created_at?: string
+          description?: string | null
+          estimated_cost?: number | null
+          guest_feedback?: string | null
+          guest_id?: string
+          guest_rating?: number | null
+          hotel_id?: string
+          id?: string
+          notes?: string | null
+          priority?: string | null
+          requested_time?: string | null
+          reservation_id?: string
+          room_number?: string
+          service_category?: string | null
+          service_type?: string
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       staff: {
         Row: {
