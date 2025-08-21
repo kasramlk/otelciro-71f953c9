@@ -4,6 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { RoleSelector } from "@/components/auth/RoleSelector";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 import { useEffect } from "react";
@@ -13,6 +15,8 @@ const Auth = () => {
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
   const [orgName, setOrgName] = useState("");
+  const [role, setRole] = useState<'hotel_manager' | 'travel_agency' | 'admin'>('hotel_manager');
+  const [showRoleSelector, setShowRoleSelector] = useState(true);
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -20,11 +24,24 @@ const Auth = () => {
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (session) {
-        navigate("/");
+        // Route based on user role
+        const userRole = session.user.user_metadata?.role || 'hotel_manager';
+        if (userRole === 'travel_agency') {
+          navigate("/agency");
+        } else if (userRole === 'admin') {
+          navigate("/admin");
+        } else {
+          navigate("/");
+        }
       }
     });
     return () => subscription.unsubscribe();
   }, [navigate]);
+
+  const handleRoleSelect = (selectedRole: 'hotel_manager' | 'travel_agency' | 'admin') => {
+    setRole(selectedRole);
+    setShowRoleSelector(false);
+  };
 
   const signUp = async () => {
     if (!email || !password || !name || !orgName) {
@@ -46,6 +63,7 @@ const Auth = () => {
           data: {
             name,
             org_name: orgName,
+            role: role,
           }
         }
       });
@@ -96,12 +114,41 @@ const Auth = () => {
     }
   };
 
+  if (showRoleSelector) {
+    return <RoleSelector onRoleSelect={handleRoleSelect} />;
+  }
+
+  const getRoleTitle = () => {
+    switch (role) {
+      case 'hotel_manager': return 'Hotel Manager Portal';
+      case 'travel_agency': return 'Travel Agency Portal';  
+      case 'admin': return 'System Admin Portal';
+      default: return 'OtelCiro Platform';
+    }
+  };
+
+  const getRoleDescription = () => {
+    switch (role) {
+      case 'hotel_manager': return 'Access your Property Management System';
+      case 'travel_agency': return 'Search and book hotel inventory';
+      case 'admin': return 'Manage platform users and settings';
+      default: return 'Multi-tenant Hotel Platform';
+    }
+  };
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/5 via-background to-secondary/5 p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
-          <CardTitle className="text-2xl font-bold text-primary">Hotel PMS</CardTitle>
-          <CardDescription>Property Management System</CardDescription>
+          <Button 
+            variant="ghost" 
+            onClick={() => setShowRoleSelector(true)}
+            className="mb-4 text-sm text-muted-foreground hover:text-foreground"
+          >
+            ← Change Role
+          </Button>
+          <CardTitle className="text-2xl font-bold text-primary">{getRoleTitle()}</CardTitle>
+          <CardDescription>{getRoleDescription()}</CardDescription>
         </CardHeader>
         <CardContent>
           <Tabs defaultValue="signin" className="w-full">
@@ -144,7 +191,7 @@ const Auth = () => {
                 />
                 <Input
                   type="text"
-                  placeholder="Hotel/Organization Name"
+                  placeholder={role === 'travel_agency' ? 'Agency Name' : 'Hotel/Organization Name'}
                   value={orgName}
                   onChange={(e) => setOrgName(e.target.value)}
                 />
@@ -160,6 +207,19 @@ const Auth = () => {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                 />
+                <Select 
+                  value={role} 
+                  onValueChange={(value) => setRole(value as 'hotel_manager' | 'travel_agency' | 'admin')}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select your role" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="hotel_manager">Hotel Manager</SelectItem>
+                    <SelectItem value="travel_agency">Travel Agency</SelectItem>
+                    <SelectItem value="admin">System Admin</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
               <Button 
                 onClick={signUp} 

@@ -1,70 +1,200 @@
+import { useEffect, useState } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
-import { ModernLayout } from "./components/layout/ModernLayout";
-import Index from "./pages/Index";
+import { BrowserRouter, Routes, Route, useLocation, Navigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 import Auth from "./pages/Auth";
+import Index from "./pages/Index";
 import Dashboard from "./pages/Dashboard";
-import Occupancy from "./pages/Occupancy";
 import Reservations from "./pages/Reservations";
 import Guests from "./pages/Guests";
 import RoomPlan from "./pages/RoomPlan";
 import RoomStatus from "./pages/RoomStatus";
-import Sales from "./pages/Sales";
-import Cashier from "./pages/Cashier";
 import Reports from "./pages/Reports";
 import Settings from "./pages/Settings";
+import Cashier from "./pages/Cashier";
+import Sales from "./pages/Sales";
 import AuditLog from "./pages/AuditLog";
+import Occupancy from "./pages/Occupancy";
 import NotFound from "./pages/NotFound";
+import HotelSearch from "./pages/agency/HotelSearch";
+import AgencyDashboard from "./pages/agency/AgencyDashboard";
+import { HotelManagerLayout } from "./layouts/HotelManagerLayout";
+import { TravelAgencyLayout } from "./layouts/TravelAgencyLayout";
 
 const queryClient = new QueryClient();
 
 const AppContent = () => {
   const location = useLocation();
-  const isPublicRoute = ['/', '/auth'].includes(location.pathname);
+  const [session, setSession] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [userRole, setUserRole] = useState<string | null>(null);
 
-  if (isPublicRoute) {
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      setUserRole(session?.user?.user_metadata?.role || null);
+      setLoading(false);
+    });
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+      setUserRole(session?.user?.user_metadata?.role || null);
+      setLoading(false);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  if (loading) {
     return (
-      <Routes>
-        <Route path="/" element={<Index />} />
-        <Route path="/auth" element={<Auth />} />
-        <Route path="*" element={<NotFound />} />
-      </Routes>
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
     );
   }
 
+  const isPublicRoute = ['/', '/auth'].includes(location.pathname);
+
+  if (!session && !isPublicRoute) {
+    return <Navigate to="/auth" replace />;
+  }
+
+  // Role-based routing
+  if (session) {
+    const role = userRole || 'hotel_manager';
+    
+    // Agency routes
+    if (location.pathname.startsWith('/agency')) {
+      if (role !== 'travel_agency') {
+        return <Navigate to="/" replace />;
+      }
+      return (
+        <TravelAgencyLayout>
+          <Routes>
+            <Route path="/agency" element={<AgencyDashboard />} />
+            <Route path="/agency/search" element={<HotelSearch />} />
+            <Route path="/agency/bookings" element={<div>My Bookings</div>} />
+            <Route path="/agency/contracts" element={<div>Negotiations</div>} />
+            <Route path="/agency/payments" element={<div>Payments</div>} />
+            <Route path="/agency/analytics" element={<div>Analytics</div>} />
+            <Route path="/agency/profile" element={<div>Profile</div>} />
+          </Routes>
+        </TravelAgencyLayout>
+      );
+    }
+    
+    // Admin routes
+    if (location.pathname.startsWith('/admin')) {
+      if (role !== 'admin') {
+        return <Navigate to="/" replace />;
+      }
+      return (
+        <HotelManagerLayout>
+          <Routes>
+            <Route path="/admin" element={<div>Admin Dashboard</div>} />
+          </Routes>
+        </HotelManagerLayout>
+      );
+    }
+    
+    // Hotel manager routes (default)
+    if (role === 'travel_agency' && location.pathname === '/') {
+      return <Navigate to="/agency" replace />;
+    }
+    
+    if (role === 'admin' && location.pathname === '/') {
+      return <Navigate to="/admin" replace />;
+    }
+  }
+
   return (
-    <ModernLayout>
-      <Routes>
-        <Route path="/dashboard" element={<Dashboard />} />
-        <Route path="/occupancy" element={<Occupancy />} />
-        <Route path="/reservations" element={<Reservations />} />
-        <Route path="/guests" element={<Guests />} />
-        <Route path="/room-plan" element={<RoomPlan />} />
-        <Route path="/room-status" element={<RoomStatus />} />
-        <Route path="/sales" element={<Sales />} />
-        <Route path="/cashier" element={<Cashier />} />
-        <Route path="/reports" element={<Reports />} />
-        <Route path="/settings" element={<Settings />} />
-        <Route path="/audit-log" element={<AuditLog />} />
-        <Route path="*" element={<NotFound />} />
-      </Routes>
-    </ModernLayout>
+    <Routes>
+      <Route path="/auth" element={<Auth />} />
+      <Route path="/" element={session ? (
+        <HotelManagerLayout>
+          <Index />
+        </HotelManagerLayout>
+      ) : <Index />} />
+      
+      {/* Hotel Manager Routes */}
+      <Route path="/dashboard" element={
+        <HotelManagerLayout>
+          <Dashboard />
+        </HotelManagerLayout>
+      } />
+      <Route path="/reservations" element={
+        <HotelManagerLayout>
+          <Reservations />
+        </HotelManagerLayout>
+      } />
+      <Route path="/guests" element={
+        <HotelManagerLayout>
+          <Guests />
+        </HotelManagerLayout>
+      } />
+      <Route path="/room-plan" element={
+        <HotelManagerLayout>
+          <RoomPlan />
+        </HotelManagerLayout>
+      } />
+      <Route path="/room-status" element={
+        <HotelManagerLayout>
+          <RoomStatus />
+        </HotelManagerLayout>
+      } />
+      <Route path="/occupancy" element={
+        <HotelManagerLayout>
+          <Occupancy />
+        </HotelManagerLayout>
+      } />
+      <Route path="/reports" element={
+        <HotelManagerLayout>
+          <Reports />
+        </HotelManagerLayout>
+      } />
+      <Route path="/sales" element={
+        <HotelManagerLayout>
+          <Sales />
+        </HotelManagerLayout>
+      } />
+      <Route path="/cashier" element={
+        <HotelManagerLayout>
+          <Cashier />
+        </HotelManagerLayout>
+      } />
+      <Route path="/audit-log" element={
+        <HotelManagerLayout>
+          <AuditLog />
+        </HotelManagerLayout>
+      } />
+      <Route path="/settings" element={
+        <HotelManagerLayout>
+          <Settings />
+        </HotelManagerLayout>
+      } />
+      
+      <Route path="*" element={<NotFound />} />
+    </Routes>
   );
 };
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <AppContent />
-      </BrowserRouter>
-    </TooltipProvider>
-  </QueryClientProvider>
-);
+function App() {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <AppContent />
+        </BrowserRouter>
+      </TooltipProvider>
+    </QueryClientProvider>
+  );
+}
 
 export default App;
