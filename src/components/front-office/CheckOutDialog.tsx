@@ -127,11 +127,42 @@ export function CheckOutDialog({ open, onOpenChange, reservation, onCheckOut }: 
         if (paymentError) throw paymentError;
       }
 
-      // Call the parent handler
+      // Update reservation status to checked out
+      const { error: updateError } = await supabase
+        .from('reservations')
+        .update({
+          status: 'Checked Out'
+        })
+        .eq('id', reservation.id);
+
+      if (updateError) throw updateError;
+
+      // Record check-out log
+      const { error: logError } = await supabase
+        .from('checkout_logs')
+        .insert({
+          reservation_id: reservation.id,
+          room_id: reservation.room_id,
+          checked_out_at: new Date().toISOString(),
+          final_balance: formData.finalBalance,
+          notes: formData.notes || null,
+          hotel_id: reservation.hotel_id
+        });
+
+      if (logError) throw logError;
+
+      // Call the parent handler to complete the process
       await onCheckOut({
         ...formData,
         finalBalance: 0 // Balance should be 0 after checkout
       });
+
+      toast({
+        title: "Check-out Successful",
+        description: `Guest has been checked out from room ${reservation.rooms?.number}`,
+      });
+
+      onOpenChange(false);
 
       if (formData.sendInvoice) {
         toast({

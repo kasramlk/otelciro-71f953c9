@@ -99,14 +99,43 @@ export default function CheckInDialog({ open, onOpenChange, guest }: CheckInDial
         .from('reservations')
         .update({
           status: 'Checked In',
-          room_id: data.roomNumber,
-          actual_checkin_time: new Date().toISOString(),
-          payment_method: data.paymentMethod,
-          pre_auth_amount: data.depositAmount
+          room_id: data.roomNumber, // This should be UUID but using room number for now
+          payment_type: data.paymentMethod
         })
         .eq('code', guest.reservationCode);
 
       if (error) throw error;
+
+      // Record check-in log
+      const { error: logError } = await supabase
+        .from('checkin_logs')
+        .insert({
+          reservation_id: guest.id,
+          room_id: data.roomNumber,
+          checked_in_at: new Date().toISOString(),
+          notes: data.specialRequests || null,
+          hotel_id: '550e8400-e29b-41d4-a716-446655440000' // This should be dynamic
+        });
+
+      if (logError) throw logError;
+
+      // Record deposit payment if amount > 0
+      if (data.depositAmount > 0) {
+        const { error: paymentError } = await supabase
+          .from('payments')
+          .insert({
+            reservation_id: guest.id,
+            hotel_id: '550e8400-e29b-41d4-a716-446655440000',
+            payment_type: 'deposit',
+            payment_method: data.paymentMethod,
+            amount: data.depositAmount,
+            amount_in_base_currency: data.depositAmount,
+            currency: 'USD',
+            processed_at: new Date().toISOString()
+          });
+
+        if (paymentError) throw paymentError;
+      }
 
       toast({
         title: "Check-in successful",

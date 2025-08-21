@@ -47,7 +47,7 @@ const navigationItems: SidebarItem[] = [
   { title: "Reservations", href: "/reservations", icon: BookOpen, badge: 12 },
   { title: "Guests", href: "/guests", icon: Users },
   { title: "Room Status", href: "/room-status", icon: Bed, badge: 3 },
-  { title: "Check In/Out", href: "/check-in-out", icon: UserCheck },
+  { title: "Front Office", href: "/front-office", icon: UserCheck, badge: "Live" },
 ];
 
 const businessItems: SidebarItem[] = [
