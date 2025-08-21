@@ -25,6 +25,10 @@ import HotelSearch from "./pages/agency/HotelSearch";
 import AgencyDashboard from "./pages/agency/AgencyDashboard";
 import { HotelManagerLayout } from "./layouts/HotelManagerLayout";
 import { TravelAgencyLayout } from "./layouts/TravelAgencyLayout";
+import { AdminLayout } from "./layouts/AdminLayout";
+import AdminDashboard from "./pages/admin/AdminDashboard";
+import HotelOnboarding from "./pages/admin/HotelOnboarding";
+import UserManagement from "./pages/admin/UserManagement";
 import GuestCRM from "./pages/GuestCRM";
 import RevenueAI from "./pages/RevenueAI";
 import Operations from "./pages/Operations";
@@ -124,11 +128,17 @@ const AppContent = () => {
         return <Navigate to="/" replace />;
       }
       return (
-        <HotelManagerLayout>
+        <AdminLayout>
           <Routes>
-            <Route path="/admin" element={<div>Admin Dashboard</div>} />
+            <Route path="/admin" element={<AdminDashboard />} />
+            <Route path="/admin/onboarding" element={<HotelOnboarding />} />
+            <Route path="/admin/users" element={<UserManagement />} />
+            <Route path="/admin/agencies" element={<div>Agency Management</div>} />
+            <Route path="/admin/settings" element={<div>Platform Settings</div>} />
+            <Route path="/admin/audit" element={<div>Audit & Monitoring</div>} />
+            <Route path="/admin/data" element={<div>Data Management</div>} />
           </Routes>
-        </HotelManagerLayout>
+        </AdminLayout>
       );
     }
     
