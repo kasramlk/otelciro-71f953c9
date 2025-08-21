@@ -20,7 +20,8 @@ import {
   LogOut,
   ChevronLeft,
   ChevronRight,
-  Hotel
+  Hotel,
+  PieChart
 } from "lucide-react";
 import { NavLink, useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -41,6 +42,7 @@ interface SidebarItem {
 const navigationItems: SidebarItem[] = [
   { title: "Dashboard", href: "/dashboard", icon: LayoutDashboard, color: "primary" },
   { title: "Room Plan", href: "/room-plan", icon: Calendar, badge: "Live" },
+  { title: "Occupancy", href: "/occupancy", icon: PieChart, badge: "New" },
   { title: "Reservations", href: "/reservations", icon: BookOpen, badge: 12 },
   { title: "Guests", href: "/guests", icon: Users },
   { title: "Room Status", href: "/room-status", icon: Bed, badge: 3 },

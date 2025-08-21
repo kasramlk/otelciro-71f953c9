@@ -7,6 +7,7 @@ import { ModernLayout } from "./components/layout/ModernLayout";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
+import Occupancy from "./pages/Occupancy";
 import Reservations from "./pages/Reservations";
 import Guests from "./pages/Guests";
 import RoomPlan from "./pages/RoomPlan";
@@ -38,6 +39,7 @@ const AppContent = () => {
     <ModernLayout>
       <Routes>
         <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/occupancy" element={<Occupancy />} />
         <Route path="/reservations" element={<Reservations />} />
         <Route path="/guests" element={<Guests />} />
         <Route path="/room-plan" element={<RoomPlan />} />
