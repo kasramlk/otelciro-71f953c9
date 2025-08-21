@@ -12,6 +12,8 @@ import {
   useEmptyState 
 } from "@/components/ui/empty-state";
 import { useErrorHandler } from "@/lib/error-handler";
+import RoomMoveDialog from "@/components/reservations/RoomMoveDialog";
+import { useToast } from "@/hooks/use-toast";
 import {
   Table,
   TableBody,
@@ -131,8 +133,13 @@ export const ReservationsList = ({ filterStatus }: ReservationsListProps) => {
   const [reservations, setReservations] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [roomMoveDialog, setRoomMoveDialog] = useState<{ open: boolean; reservationId: string | null }>({
+    open: false,
+    reservationId: null
+  });
   const { handleAsyncOperation } = useErrorHandler();
   const { isEmpty, isLoading, error: emptyStateError, handleDataLoad } = useEmptyState();
+  const { toast } = useToast();
   const itemsPerPage = 10;
 
   // Load reservations from Supabase
@@ -197,9 +204,8 @@ export const ReservationsList = ({ filterStatus }: ReservationsListProps) => {
         console.log('Sending SMS for:', reservationId);
         // In production, this would send SMS to guest
         break;
-      case 'cancel':
-        console.log('Cancelling reservation:', reservationId);
-        // In production, this would show a cancellation dialog
+      case 'move':
+        setRoomMoveDialog({ open: true, reservationId });
         break;
     }
   };
@@ -479,9 +485,9 @@ export const ReservationsList = ({ filterStatus }: ReservationsListProps) => {
                             <Edit className="mr-2 h-4 w-4" />
                             Edit Reservation
                           </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleReservationAction('folio', reservation.id)}>
-                            <CreditCard className="mr-2 h-4 w-4" />
-                            Manage Folio
+                          <DropdownMenuItem onClick={() => handleReservationAction('move', reservation.id)}>
+                            <MapPin className="mr-2 h-4 w-4" />
+                            Move Room
                           </DropdownMenuItem>
                           <DropdownMenuSeparator />
                           <DropdownMenuItem onClick={() => handleReservationAction('email', reservation.id)}>
@@ -541,6 +547,28 @@ export const ReservationsList = ({ filterStatus }: ReservationsListProps) => {
           </div>
         )}
       </CardContent>
+      
+      {/* Room Move Dialog */}
+      <RoomMoveDialog 
+        open={roomMoveDialog.open}
+        onOpenChange={(open) => {
+          if (!open) {
+            setRoomMoveDialog({ open: false, reservationId: null });
+          }
+        }}
+        reservation={{
+          id: roomMoveDialog.reservationId || '',
+          code: `RES${roomMoveDialog.reservationId?.slice(-6) || '000001'}`,
+          guestName: 'Guest',
+          currentRoomNumber: '101',
+          currentRoomType: 'Standard Room',
+          roomTypeId: '550e8400-e29b-41d4-a716-446655440010',
+          checkIn: new Date().toISOString().split('T')[0],
+          checkOut: new Date().toISOString().split('T')[0],
+          adults: 1,
+          children: 0
+        }}
+      />
     </Card>
   );
 };

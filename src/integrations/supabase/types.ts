@@ -2528,6 +2528,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_current_user_role: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
       get_user_org_id: {
         Args: Record<PropertyKey, never>
         Returns: string
