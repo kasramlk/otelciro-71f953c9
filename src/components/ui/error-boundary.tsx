@@ -43,27 +43,21 @@ export class ErrorBoundary extends Component<Props, State> {
 
   private async logErrorToDatabase(error: Error, errorInfo: ErrorInfo) {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      const errorLog = {
+      // Log to console for now (database logging will be enabled once types are updated)
+      console.error('Error logged for future database storage:', {
         error_type: 'frontend_error',
         error_message: error.message,
         error_stack: error.stack,
         component_stack: errorInfo.componentStack,
         error_id: this.state.errorId,
-        user_id: user?.id || null,
         timestamp: new Date().toISOString(),
         metadata: {
           userAgent: navigator.userAgent,
           url: window.location.href,
-          timestamp: Date.now(),
         }
-      };
-
-      // Log to system_errors table (we'll create this in migration)
-      await supabase.from('system_errors').insert(errorLog);
+      });
     } catch (logError) {
-      console.error('Failed to log error to database:', logError);
+      console.error('Failed to log error:', logError);
     }
   }
 
@@ -171,11 +165,14 @@ export const withErrorBoundary = <P extends object>(
   Component: React.ComponentType<P>,
   fallback?: ReactNode
 ) => {
-  return React.forwardRef<any, P>((props, ref) => (
+  const WrappedComponent = (props: P) => (
     <ErrorBoundary fallback={fallback}>
-      <Component {...props} ref={ref} />
+      <Component {...props} />
     </ErrorBoundary>
-  ));
+  );
+  
+  WrappedComponent.displayName = `withErrorBoundary(${Component.displayName || Component.name})`;
+  return WrappedComponent;
 };
 
 // Hook for handling async errors

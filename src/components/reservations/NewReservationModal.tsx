@@ -2,6 +2,15 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { 
+  getDateValidationError, 
+  sanitizeObject, 
+  completeReservationSchema,
+  validateRoomAvailability 
+} from "@/lib/validations";
+import { useAuditLogger } from "@/lib/audit-logger";
+import { useErrorHandler } from "@/lib/error-handler";
+import { useConfirmation } from "@/components/ui/confirmation-dialog";
 import {
   Dialog,
   DialogContent,
@@ -26,6 +35,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { 
   CalendarIcon,
   Users,
@@ -35,7 +45,10 @@ import {
   ChevronRight,
   ChevronLeft,
   Save,
-  X
+  X,
+  AlertTriangle,
+  CheckCircle,
+  Loader2
 } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
@@ -55,7 +68,12 @@ const steps = [
 export const NewReservationModal = ({ open, onClose }: NewReservationModalProps) => {
   const [currentStep, setCurrentStep] = useState(1);
   const [loading, setLoading] = useState(false);
+  const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
+  const [availabilityChecked, setAvailabilityChecked] = useState(false);
   const { toast } = useToast();
+  const { logReservationCreated, logGuestCreated } = useAuditLogger();
+  const { handleAsyncOperation } = useErrorHandler();
+  const { showConfirmation, ConfirmationComponent, setLoading: setConfirmationLoading } = useConfirmation();
   const [formData, setFormData] = useState({
     // Step 1: Guest Information
     firstName: '',
@@ -93,10 +111,111 @@ export const NewReservationModal = ({ open, onClose }: NewReservationModalProps)
 
   const updateFormData = (field: string, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }));
+    
+    // Clear validation error when user starts typing
+    if (validationErrors[field]) {
+      setValidationErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors[field];
+        return newErrors;
+      });
+    }
+    
+    // Reset availability check if dates change
+    if (field === 'checkIn' || field === 'checkOut' || field === 'roomType') {
+      setAvailabilityChecked(false);
+    }
   };
 
-  const nextStep = () => {
-    if (currentStep < 3) setCurrentStep(currentStep + 1);
+  const validateCurrentStep = async (): Promise<boolean> => {
+    const errors: Record<string, string> = {};
+    
+    try {
+      switch (currentStep) {
+        case 1: // Guest Information
+          if (!formData.firstName.trim()) errors.firstName = 'First name is required';
+          if (!formData.lastName.trim()) errors.lastName = 'Last name is required';
+          if (!formData.email.trim()) errors.email = 'Email is required';
+          if (!formData.phone.trim()) errors.phone = 'Phone number is required';
+          
+          // Email format validation
+          const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+          if (formData.email && !emailRegex.test(formData.email)) {
+            errors.email = 'Please enter a valid email address';
+          }
+          
+          break;
+          
+        case 2: // Stay Details
+          if (!formData.checkIn) errors.checkIn = 'Check-in date is required';
+          if (!formData.checkOut) errors.checkOut = 'Check-out date is required';
+          if (!formData.roomType) errors.roomType = 'Room type is required';
+          
+          // Date validation
+          if (formData.checkIn && formData.checkOut) {
+            const dateError = getDateValidationError(formData.checkIn, formData.checkOut);
+            if (dateError) {
+              errors.checkOut = dateError;
+            }
+          }
+          
+          // Room availability check
+          if (formData.checkIn && formData.checkOut && formData.roomType && !availabilityChecked) {
+            const availability = await validateRoomAvailability(
+              formData.roomType,
+              formData.checkIn,
+              formData.checkOut
+            );
+            
+            if (!availability.available) {
+              errors.roomType = availability.message || 'Room not available';
+              // Offer waitlist option
+              showConfirmation({
+                title: 'Room Not Available',
+                description: availability.message + ' Would you like to add this guest to the waitlist instead?',
+                confirmText: 'Add to Waitlist',
+                onConfirm: () => {
+                  // Handle waitlist addition
+                  toast({
+                    title: "Added to Waitlist",
+                    description: "Guest has been added to the waitlist for these dates.",
+                  });
+                  onClose();
+                }
+              });
+            } else {
+              setAvailabilityChecked(true);
+            }
+          }
+          
+          break;
+          
+        case 3: // Billing
+          if (!formData.paymentMethod) errors.paymentMethod = 'Payment method is required';
+          if (formData.depositAmount < 0) errors.depositAmount = 'Deposit cannot be negative';
+          break;
+      }
+      
+      setValidationErrors(errors);
+      return Object.keys(errors).length === 0;
+    } catch (error) {
+      console.error('Validation error:', error);
+      toast({
+        title: "Validation Error",
+        description: "An error occurred during validation. Please try again.",
+        variant: "destructive",
+      });
+      return false;
+    }
+  };
+
+  const nextStep = async () => {
+    if (currentStep < 3) {
+      const isValid = await validateCurrentStep();
+      if (isValid) {
+        setCurrentStep(currentStep + 1);
+      }
+    }
   };
 
   const prevStep = () => {
@@ -104,84 +223,112 @@ export const NewReservationModal = ({ open, onClose }: NewReservationModalProps)
   };
 
   const handleSubmit = async () => {
-    try {
-      setLoading(true);
-      
-      // First create or find guest
-      const { data: existingGuest } = await supabase
-        .from('guests')
-        .select('id')
-        .eq('email', formData.email)
-        .single();
-      
-      let guestId;
-      
-      if (existingGuest) {
-        guestId = existingGuest.id;
-      } else {
-        // Create new guest
-        const { data: newGuest, error: guestError } = await supabase
+    const isValid = await validateCurrentStep();
+    if (!isValid) return;
+
+    const result = await handleAsyncOperation(
+      async () => {
+        setLoading(true);
+        
+        // Sanitize input data
+        const sanitizedData = sanitizeObject(formData);
+        
+        // First create or find guest
+        const { data: existingGuest } = await supabase
           .from('guests')
+          .select('id')
+          .eq('email', sanitizedData.email)
+          .single();
+        
+        let guestId;
+        
+        if (existingGuest) {
+          guestId = existingGuest.id;
+        } else {
+          // Create new guest
+          const { data: newGuest, error: guestError } = await supabase
+            .from('guests')
+            .insert({
+              first_name: sanitizedData.firstName,
+              last_name: sanitizedData.lastName,
+              email: sanitizedData.email,
+              phone: sanitizedData.phone,
+              nationality: sanitizedData.nationality,
+              id_number: sanitizedData.idNumber,
+              hotel_id: '550e8400-e29b-41d4-a716-446655440001' // Mock hotel ID
+            })
+            .select()
+            .single();
+            
+          if (guestError) throw guestError;
+          guestId = newGuest.id;
+          
+          // Log guest creation
+          await logGuestCreated(guestId, {
+            first_name: sanitizedData.firstName,
+            last_name: sanitizedData.lastName,
+            email: sanitizedData.email,
+          });
+        }
+        
+        // Create reservation
+        const reservationCode = `RES${Date.now().toString().slice(-6)}`;
+        const { data: reservation, error: reservationError } = await supabase
+          .from('reservations')
           .insert({
-            first_name: formData.firstName,
-            last_name: formData.lastName,
-            email: formData.email,
-            phone: formData.phone,
-            nationality: formData.nationality,
-            id_number: formData.idNumber,
-            hotel_id: '550e8400-e29b-41d4-a716-446655440001' // Mock hotel ID
+            code: reservationCode,
+            guest_id: guestId,
+            hotel_id: '550e8400-e29b-41d4-a716-446655440001',
+            check_in: formData.checkIn?.toISOString().split('T')[0],
+            check_out: formData.checkOut?.toISOString().split('T')[0],
+            adults: formData.adults,
+            children: formData.children,
+            room_type_id: '550e8400-e29b-41d4-a716-446655440010', // Mock room type ID
+            rate_plan_id: '550e8400-e29b-41d4-a716-446655440020', // Mock rate plan ID
+            total_price: 199.99, // Calculate based on room type and dates
+            payment_method: formData.paymentMethod,
+            deposit_amount: formData.depositAmount,
+            source: formData.source,
+            notes: formData.notes,
+            special_requests: formData.specialRequests ? [formData.specialRequests] : null,
+            status: 'Booked'
           })
           .select()
           .single();
           
-        if (guestError) throw guestError;
-        guestId = newGuest.id;
-      }
-      
-      // Create reservation
-      const reservationCode = `RES${Date.now().toString().slice(-6)}`;
-      const { data: reservation, error: reservationError } = await supabase
-        .from('reservations')
-        .insert({
+        if (reservationError) throw reservationError;
+        
+        // Log reservation creation
+        await logReservationCreated(reservation.id, {
           code: reservationCode,
           guest_id: guestId,
-          hotel_id: '550e8400-e29b-41d4-a716-446655440001',
-          check_in: formData.checkIn?.toISOString().split('T')[0],
-          check_out: formData.checkOut?.toISOString().split('T')[0],
-          adults: formData.adults,
-          children: formData.children,
-          room_type_id: '550e8400-e29b-41d4-a716-446655440010', // Mock room type ID
-          rate_plan_id: '550e8400-e29b-41d4-a716-446655440020', // Mock rate plan ID
-          total_price: 199.99, // Calculate based on room type and dates
-          payment_method: formData.paymentMethod,
-          deposit_amount: formData.depositAmount,
-          source: formData.source,
-          notes: formData.notes,
-          special_requests: formData.specialRequests ? [formData.specialRequests] : null,
+          total_price: reservation.total_price,
           status: 'Booked'
-        })
-        .select()
-        .single();
+        });
         
-      if (reservationError) throw reservationError;
-      
+        return { reservationCode, reservation };
+      },
+      { component: 'NewReservationModal', action: 'create_reservation' }
+    );
+
+    if (result) {
       toast({
         title: "Success",
-        description: `Reservation ${reservationCode} created successfully!`,
+        description: `Reservation ${result.reservationCode} created successfully!`,
+        action: (
+          <Button variant="outline" size="sm" onClick={() => {
+            // Navigate to reservation details or folio
+            console.log('View reservation:', result.reservation.id);
+          }}>
+            View Details
+          </Button>
+        ),
       });
       
       onClose();
-      
-    } catch (error: any) {
-      console.error('Error creating reservation:', error);
-      toast({
-        title: "Error",
-        description: error.message || "Failed to create reservation",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
     }
+    
+    setLoading(false);
   };
 
   const renderStepContent = () => {
@@ -626,6 +773,21 @@ export const NewReservationModal = ({ open, onClose }: NewReservationModalProps)
           </DialogTitle>
         </DialogHeader>
 
+        {/* Validation Errors Display */}
+        {Object.keys(validationErrors).length > 0 && (
+          <Alert variant="destructive" className="mb-4">
+            <AlertTriangle className="h-4 w-4" />
+            <AlertDescription>
+              Please correct the following errors:
+              <ul className="mt-2 list-disc list-inside">
+                {Object.entries(validationErrors).map(([field, error]) => (
+                  <li key={field} className="text-sm">{error}</li>
+                ))}
+              </ul>
+            </AlertDescription>
+          </Alert>
+        )}
+
         {/* Step Indicator */}
         <div className="flex items-center justify-between mb-6">
           {steps.map((step, index) => (
@@ -688,6 +850,7 @@ export const NewReservationModal = ({ open, onClose }: NewReservationModalProps)
           </div>
         </div>
       </DialogContent>
+      <ConfirmationComponent />
     </Dialog>
   );
 };

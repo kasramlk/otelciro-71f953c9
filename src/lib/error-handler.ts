@@ -4,6 +4,8 @@ export interface ErrorContext {
   component?: string;
   action?: string;
   userId?: string;
+  field?: string;
+  url?: string;
   additionalData?: Record<string, any>;
 }
 

@@ -197,7 +197,7 @@ export const sanitizeObject = <T extends Record<string, any>>(obj: T): T => {
   
   for (const key in sanitized) {
     if (typeof sanitized[key] === 'string') {
-      sanitized[key] = sanitizeInput(sanitized[key]);
+      (sanitized as any)[key] = sanitizeInput(sanitized[key] as string);
     }
   }
   

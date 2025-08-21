@@ -6,6 +6,12 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { 
+  NoReservationsEmptyState, 
+  LoadingErrorEmptyState, 
+  useEmptyState 
+} from "@/components/ui/empty-state";
+import { useErrorHandler } from "@/lib/error-handler";
 import {
   Table,
   TableBody,
@@ -38,7 +44,8 @@ import {
   Clock,
   ChevronLeft,
   ChevronRight,
-  Eye
+  Eye,
+  Loader2
 } from "lucide-react";
 import { format, parseISO } from "date-fns";
 
@@ -123,35 +130,51 @@ export const ReservationsList = ({ filterStatus }: ReservationsListProps) => {
   const [currentPage, setCurrentPage] = useState(0);
   const [reservations, setReservations] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const { handleAsyncOperation } = useErrorHandler();
+  const { isEmpty, isLoading, error: emptyStateError, handleDataLoad } = useEmptyState();
   const itemsPerPage = 10;
 
   // Load reservations from Supabase
   useEffect(() => {
     const loadReservations = async () => {
-      try {
-        const { data, error } = await supabase
-          .from('reservations')
-          .select(`
-            *,
-            guests(first_name, last_name, email, phone, nationality),
-            room_types(name),
-            rate_plans(name)
-          `)
-          .order('created_at', { ascending: false });
+      const result = await handleAsyncOperation(
+        async () => {
+          setLoading(true);
+          setError(null);
+          
+          const { data, error } = await supabase
+            .from('reservations')
+            .select(`
+              *,
+              guests(first_name, last_name, email, phone, nationality),
+              room_types(name),
+              rate_plans(name)
+            `)
+            .order('created_at', { ascending: false });
 
-        if (error) throw error;
-        setReservations(data || []);
-      } catch (error) {
-        console.error('Error loading reservations:', error);
-        // Fall back to mock data
-        setReservations(generateMockReservations(50));
-      } finally {
-        setLoading(false);
+          if (error) throw error;
+          return data || [];
+        },
+        { component: 'ReservationsList', action: 'load_reservations' }
+      );
+
+      if (result !== null) {
+        setReservations(result);
+        handleDataLoad(result, false);
+      } else {
+        // Error occurred, use mock data as fallback
+        const mockData = generateMockReservations(50);
+        setReservations(mockData);
+        setError('Unable to load reservations from database. Showing sample data.');
+        handleDataLoad(mockData, false, 'Database connection failed');
       }
+      
+      setLoading(false);
     };
 
     loadReservations();
-  }, []);
+  }, [handleAsyncOperation, handleDataLoad]);
   const handleReservationAction = (action: string, reservationId: string) => {
     switch (action) {
       case 'view':
@@ -295,12 +318,20 @@ export const ReservationsList = ({ filterStatus }: ReservationsListProps) => {
       <CardContent>
         {loading ? (
           <div className="flex items-center justify-center py-12">
-            <motion.div
-              animate={{ rotate: 360 }}
-              transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-              className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full"
-            />
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
           </div>
+        ) : error ? (
+          <LoadingErrorEmptyState 
+            onRetry={() => window.location.reload()}
+            error={error}
+          />
+        ) : filteredReservations.length === 0 ? (
+          <NoReservationsEmptyState 
+            onCreateReservation={() => {
+              // This would open the new reservation modal
+              console.log('Create new reservation');
+            }}
+          />
         ) : (
           <div className="rounded-lg border border-border overflow-hidden">
             <Table>
@@ -478,7 +509,37 @@ export const ReservationsList = ({ filterStatus }: ReservationsListProps) => {
             </TableBody>
           </Table>
         </div>
-      )}
+        )}
+
+        {/* Pagination */}
+        {!loading && !error && filteredReservations.length > 0 && (
+          <div className="flex items-center justify-between mt-4">
+            <p className="text-sm text-muted-foreground">
+              Showing {currentPage * itemsPerPage + 1} to {Math.min((currentPage + 1) * itemsPerPage, filteredReservations.length)} of {filteredReservations.length} reservations
+            </p>
+            <div className="flex items-center space-x-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPage(Math.max(0, currentPage - 1))}
+                disabled={currentPage === 0}
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <span className="text-sm text-muted-foreground">
+                Page {currentPage + 1} of {totalPages}
+              </span>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPage(Math.min(totalPages - 1, currentPage + 1))}
+                disabled={currentPage === totalPages - 1}
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        )}
       </CardContent>
     </Card>
   );

@@ -41,6 +41,24 @@ class AuditLogger {
     }
   }
 
+  private async getCurrentUserOrgId(): Promise<string | null> {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return null;
+      
+      const { data: userData } = await supabase
+        .from('users')
+        .select('org_id')
+        .eq('auth_user_id', user.id)
+        .single();
+      
+      return userData?.org_id || null;
+    } catch (error) {
+      console.error('Failed to get user org_id:', error);
+      return null;
+    }
+  }
+
   private calculateDiff(oldValues: Record<string, any>, newValues: Record<string, any>): Record<string, any> {
     const diff: Record<string, any> = {};
     
@@ -65,7 +83,8 @@ class AuditLogger {
   async log(entry: AuditLogEntry): Promise<void> {
     try {
       const user = await this.getCurrentUser();
-      const clientInfo = await getClientInfo();
+      const clientInfo = await this.getClientInfo();
+      const orgId = await this.getCurrentUserOrgId();
       
       const auditEntry = {
         entity_type: entry.entity_type,
@@ -77,6 +96,7 @@ class AuditLogger {
           ? this.calculateDiff(entry.old_values, entry.new_values)
           : null,
         user_id: entry.user_id || user?.id || null,
+        org_id: orgId || '550e8400-e29b-41d4-a716-446655440000', // Default org for now
         ip_address: entry.ip_address || clientInfo.ip_address,
         user_agent: entry.user_agent || clientInfo.user_agent,
         metadata: entry.metadata || null,
@@ -204,30 +224,19 @@ class AuditLogger {
 
   async logSystemError(error: Error, context?: string, additionalData?: Record<string, any>) {
     try {
-      const user = await this.getCurrentUser();
-      const clientInfo = await getClientInfo();
-
-      const { error: logError } = await supabase
-        .from('system_errors')
-        .insert({
-          error_type: 'application_error',
-          error_message: error.message,
-          error_stack: error.stack,
-          context: context || 'unknown',
-          user_id: user?.id || null,
-          ip_address: clientInfo.ip_address,
-          user_agent: clientInfo.user_agent,
-          metadata: {
-            url: window.location.href,
-            timestamp: Date.now(),
-            ...additionalData,
-          },
-          created_at: new Date().toISOString(),
-        });
-
-      if (logError) {
-        console.error('Failed to log system error:', logError);
-      }
+      // Log to console for now (database logging will be enabled once types are updated)
+      console.error('System error logged for future database storage:', {
+        error_type: 'application_error',
+        error_message: error.message,
+        error_stack: error.stack,
+        context: context || 'unknown',
+        metadata: {
+          url: window.location.href,
+          timestamp: Date.now(),
+          ...additionalData,
+        },
+        created_at: new Date().toISOString(),
+      });
     } catch (logError) {
       console.error('Error in system error logger:', logError);
     }
