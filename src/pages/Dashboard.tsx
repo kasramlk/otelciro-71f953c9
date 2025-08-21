@@ -98,7 +98,10 @@ const Dashboard = () => {
                   </NavigationMenuLink>
                 </NavigationMenuItem>
                 <NavigationMenuItem>
-                  <NavigationMenuLink className={`${navigationMenuTriggerStyle()} cursor-pointer`}>
+                  <NavigationMenuLink 
+                    className={`${navigationMenuTriggerStyle()} cursor-pointer`}
+                    onClick={() => navigate('/room-plan')}
+                  >
                     <Bed className="h-4 w-4 mr-2" />
                     Room Plan
                   </NavigationMenuLink>
@@ -267,7 +270,7 @@ const Dashboard = () => {
 
         {/* Main Actions */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <Card className="cursor-pointer hover:shadow-lg transition-shadow">
+          <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => navigate('/room-plan')}>
             <CardHeader>
               <CardTitle className="flex items-center">
                 <Calendar className="h-5 w-5 mr-2 text-primary" />
@@ -279,7 +282,7 @@ const Dashboard = () => {
             </CardHeader>
           </Card>
 
-          <Card className="cursor-pointer hover:shadow-lg transition-shadow">
+          <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => navigate('/reservations')}>
             <CardHeader>
               <CardTitle className="flex items-center">
                 <FileText className="h-5 w-5 mr-2 text-primary" />
@@ -291,7 +294,7 @@ const Dashboard = () => {
             </CardHeader>
           </Card>
 
-          <Card className="cursor-pointer hover:shadow-lg transition-shadow">
+          <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => navigate('/room-status')}>
             <CardHeader>
               <CardTitle className="flex items-center">
                 <Hotel className="h-5 w-5 mr-2 text-primary" />
@@ -303,7 +306,7 @@ const Dashboard = () => {
             </CardHeader>
           </Card>
 
-          <Card className="cursor-pointer hover:shadow-lg transition-shadow">
+          <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => navigate('/guests')}>
             <CardHeader>
               <CardTitle className="flex items-center">
                 <Users className="h-5 w-5 mr-2 text-primary" />

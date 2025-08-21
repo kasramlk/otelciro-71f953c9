@@ -160,6 +160,67 @@ export type Database = {
           },
         ]
       }
+      housekeeping_tasks: {
+        Row: {
+          assigned_to: string | null
+          created_at: string
+          due_date: string | null
+          hotel_id: string
+          id: string
+          notes: string | null
+          room_id: string
+          status: string
+          task_type: string
+          updated_at: string
+        }
+        Insert: {
+          assigned_to?: string | null
+          created_at?: string
+          due_date?: string | null
+          hotel_id: string
+          id?: string
+          notes?: string | null
+          room_id: string
+          status?: string
+          task_type?: string
+          updated_at?: string
+        }
+        Update: {
+          assigned_to?: string | null
+          created_at?: string
+          due_date?: string | null
+          hotel_id?: string
+          id?: string
+          notes?: string | null
+          room_id?: string
+          status?: string
+          task_type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "housekeeping_tasks_assigned_to_fkey"
+            columns: ["assigned_to"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "housekeeping_tasks_hotel_id_fkey"
+            columns: ["hotel_id"]
+            isOneToOne: false
+            referencedRelation: "hotels"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "housekeeping_tasks_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "rooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       inventory: {
         Row: {
           allotment: number
@@ -479,6 +540,7 @@ export type Database = {
           created_at: string
           floor: number | null
           hotel_id: string
+          housekeeping_status: string
           id: string
           number: string
           room_type_id: string
@@ -488,6 +550,7 @@ export type Database = {
           created_at?: string
           floor?: number | null
           hotel_id: string
+          housekeeping_status?: string
           id?: string
           number: string
           room_type_id: string
@@ -497,6 +560,7 @@ export type Database = {
           created_at?: string
           floor?: number | null
           hotel_id?: string
+          housekeeping_status?: string
           id?: string
           number?: string
           room_type_id?: string
