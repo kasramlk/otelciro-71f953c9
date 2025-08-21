@@ -580,6 +580,13 @@ const ARICalendar = () => {
       <OutOfOrderDialog 
         open={outOfOrderDialog}
         onOpenChange={setOutOfOrderDialog}
+        hotelId="550e8400-e29b-41d4-a716-446655440001"
+        rooms={roomTypes.map(rt => ({
+          id: rt.id,
+          room_number: `${rt.name}-001`,
+          room_types: { name: rt.name },
+          status: 'clean'
+        }))}
       />
     </div>
   );

@@ -142,7 +142,16 @@ export default function HotelManagement() {
     mutationFn: async (hotelData: HotelFormData) => {
       const { error } = await supabase
         .from('hotels')
-        .insert(hotelData);
+        .insert({
+          name: hotelData.name,
+          code: hotelData.code,
+          address: hotelData.address,
+          city: hotelData.city,
+          country: hotelData.country,
+          phone: hotelData.phone,
+          timezone: hotelData.timezone,
+          org_id: hotelData.org_id,
+        });
       
       if (error) throw error;
     },

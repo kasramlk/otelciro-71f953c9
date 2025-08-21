@@ -1,5 +1,7 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -15,10 +17,10 @@ import {
   Calendar,
   Settings,
   Clock,
-  CheckCircle
+  CheckCircle,
+  Loader2
 } from "lucide-react";
 import { DateRange } from "react-day-picker";
-import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 
 interface ExportReportsProps {
@@ -28,6 +30,7 @@ interface ExportReportsProps {
 
 export const ExportReports = ({ dateRange, selectedHotel }: ExportReportsProps) => {
   const [exportFormat, setExportFormat] = useState("pdf");
+  const [exportingId, setExportingId] = useState<string | null>(null);
   const [reportSections, setReportSections] = useState({
     daily: true,
     forecasting: true,
@@ -39,6 +42,56 @@ export const ExportReports = ({ dateRange, selectedHotel }: ExportReportsProps) 
   const [scheduleFrequency, setScheduleFrequency] = useState("weekly");
   const [customNotes, setCustomNotes] = useState("");
   const { toast } = useToast();
+
+  const handleExport = async (template?: string) => {
+    const templateId = template || 'custom';
+    setExportingId(templateId);
+    
+    const sections = template 
+      ? reportTemplates.find(t => t.id === template)?.sections || [] 
+      : Object.keys(reportSections).filter(key => reportSections[key as keyof typeof reportSections]);
+    
+    try {
+      const { data, error } = await supabase.functions.invoke('export-data', {
+        body: {
+          type: exportFormat,
+          dataType: 'analytics',
+          template: templateId,
+          sections,
+          dateRange: dateRange ? {
+            from: dateRange.from?.toISOString(),
+            to: dateRange.to?.toISOString()
+          } : undefined,
+          hotel: selectedHotel,
+          customNotes
+        }
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Export Started",
+        description: `Your ${exportFormat.toUpperCase()} report is being generated with ${sections.length} sections.`,
+      });
+
+      // Simulate export completion
+      setTimeout(() => {
+        toast({
+          title: "Export Complete",
+          description: "Your report has been generated and is ready for download.",
+        });
+        setExportingId(null);
+      }, 3000);
+
+    } catch (error) {
+      toast({
+        title: "Export Failed",
+        description: "There was an error generating the report. Please try again.",
+        variant: "destructive"
+      });
+      setExportingId(null);
+    }
+  };
 
   const reportTemplates = [
     {
@@ -94,23 +147,6 @@ export const ExportReports = ({ dateRange, selectedHotel }: ExportReportsProps) 
       status: "paused"
     }
   ];
-
-  const handleExport = (template?: string) => {
-    const sections = template ? reportTemplates.find(t => t.id === template)?.sections || [] : Object.keys(reportSections).filter(key => reportSections[key as keyof typeof reportSections]);
-    
-    toast({
-      title: "Report Export Started",
-      description: `Your ${exportFormat.toUpperCase()} report is being generated with ${sections.length} sections.`,
-    });
-
-    // Simulate export process
-    setTimeout(() => {
-      toast({
-        title: "Report Ready",
-        description: "Your report has been generated and is ready for download.",
-      });
-    }, 2000);
-  };
 
   const handleScheduleReport = () => {
     if (!scheduledEmail) {
@@ -173,9 +209,19 @@ export const ExportReports = ({ dateRange, selectedHotel }: ExportReportsProps) 
                     onClick={() => handleExport(template.id)}
                     className="w-full gap-2"
                     variant={template.popularity ? "default" : "outline"}
+                    disabled={exportingId === template.id}
                   >
-                    <Download className="h-4 w-4" />
-                    Export {template.name}
+                    {exportingId === template.id ? (
+                      <>
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        Exporting...
+                      </>
+                    ) : (
+                      <>
+                        <Download className="h-4 w-4" />
+                        Export {template.name}
+                      </>
+                    )}
                   </Button>
                 </div>
               </CardContent>
@@ -257,9 +303,19 @@ export const ExportReports = ({ dateRange, selectedHotel }: ExportReportsProps) 
                   <Button 
                     onClick={() => handleExport()}
                     className="w-full gap-2"
+                    disabled={exportingId === 'custom'}
                   >
-                    <Download className="h-4 w-4" />
-                    Generate Custom Report
+                    {exportingId === 'custom' ? (
+                      <>
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        Generating...
+                      </>
+                    ) : (
+                      <>
+                        <Download className="h-4 w-4" />
+                        Generate Custom Report
+                      </>
+                    )}
                   </Button>
                 </div>
               </div>

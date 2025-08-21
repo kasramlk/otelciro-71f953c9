@@ -38,6 +38,7 @@ import HotelOnboarding from "./pages/admin/HotelOnboarding";
 import UserManagement from "./pages/admin/UserManagement";
 import AgencyManagement from "./pages/admin/AgencyManagement";
 import PlatformSettings from "./pages/admin/PlatformSettings";
+import HotelManagement from "./pages/admin/HotelManagement";
 import AuditMonitoring from "./pages/admin/AuditMonitoring";
 import GuestCRM from "./pages/GuestCRM";
 import RevenueAI from "./pages/RevenueAI";
@@ -144,10 +145,10 @@ const AppContent = () => {
         <AdminLayout>
           <Routes>
             <Route path="/admin" element={<AdminDashboard />} />
+            <Route path="/admin/hotels" element={<HotelManagement />} />
             <Route path="/admin/onboarding" element={<HotelOnboarding />} />
             <Route path="/admin/users" element={<UserManagement />} />
             <Route path="/admin/agencies" element={<AgencyManagement />} />
-            <Route path="/admin/settings" element={<PlatformSettings />} />
             <Route path="/admin/audit" element={<AuditMonitoring />} />
             <Route path="/admin/data" element={<div>Data Management</div>} />
           </Routes>
