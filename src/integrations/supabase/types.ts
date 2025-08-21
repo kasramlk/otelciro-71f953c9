@@ -2001,6 +2001,7 @@ export type Database = {
           source: string | null
           special_requests: string[] | null
           status: string
+          total_amount: number | null
           total_price: number
           updated_at: string
         }
@@ -2035,6 +2036,7 @@ export type Database = {
           source?: string | null
           special_requests?: string[] | null
           status?: string
+          total_amount?: number | null
           total_price: number
           updated_at?: string
         }
@@ -2069,6 +2071,7 @@ export type Database = {
           source?: string | null
           special_requests?: string[] | null
           status?: string
+          total_amount?: number | null
           total_price?: number
           updated_at?: string
         }
@@ -2525,7 +2528,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_user_org_id: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
     }
     Enums: {
       [_ in never]: never
