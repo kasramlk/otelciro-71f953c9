@@ -284,7 +284,7 @@ export const NewReservationModal = ({ open, onClose }: NewReservationModalProps)
             adults: formData.adults,
             children: formData.children,
             room_type_id: formData.roomType || '550e8400-e29b-41d4-a716-446655440010',
-            rate_plan_id: formData.ratePlan || '550e8400-e29b-41d4-a716-446655440020'
+            rate_plan_id: formData.ratePlan || '550e8400-e29b-41d4-a716-446655440020',
             total_price: 199.99, // Calculate based on room type and dates
             payment_method: formData.paymentMethod,
             deposit_amount: formData.depositAmount,
