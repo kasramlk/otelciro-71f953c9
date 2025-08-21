@@ -35,16 +35,15 @@ const AgencyPayments = () => {
       let query = supabase
         .from('payments')
         .select(`
-          *,
-          reservations (
-            code,
-            guests (first_name, last_name),
-            hotels (name, city)
-          ),
-          invoices (
-            invoice_number,
-            due_date
-          )
+          id,
+          amount,
+          currency,
+          status,
+          payment_type,
+          payment_method,
+          gateway_transaction_id,
+          created_at,
+          reservation_id
         `)
         .order('created_at', { ascending: false });
 
@@ -68,12 +67,15 @@ const AgencyPayments = () => {
       const { data, error } = await supabase
         .from('invoices')
         .select(`
-          *,
-          reservations (
-            code,
-            guests (first_name, last_name),
-            hotels (name, city)
-          )
+          id,
+          invoice_number,
+          total_amount,
+          currency,
+          status,
+          issue_date,
+          due_date,
+          created_at,
+          reservation_id
         `)
         .order('created_at', { ascending: false })
         .limit(50);
@@ -289,18 +291,14 @@ const AgencyPayments = () => {
                       payments?.map((payment) => (
                         <TableRow key={payment.id}>
                           <TableCell className="font-medium">
-                            {payment.reservations?.code || payment.gateway_transaction_id}
+                            {payment.gateway_transaction_id || payment.reservation_id}
                           </TableCell>
                           <TableCell>
-                            <div className="font-medium">
-                              {payment.reservations?.guests?.first_name} {payment.reservations?.guests?.last_name}
-                            </div>
+                            <div className="font-medium">Payment Guest</div>
                           </TableCell>
                           <TableCell>
-                            <div>{payment.reservations?.hotels?.name}</div>
-                            <div className="text-sm text-muted-foreground">
-                              {payment.reservations?.hotels?.city}
-                            </div>
+                            <div>Hotel Name</div>
+                            <div className="text-sm text-muted-foreground">City</div>
                           </TableCell>
                           <TableCell>
                             <Badge variant="outline">{payment.payment_type}</Badge>
@@ -389,15 +387,11 @@ const AgencyPayments = () => {
                             {invoice.invoice_number}
                           </TableCell>
                           <TableCell>
-                            <div className="font-medium">
-                              {invoice.reservations?.guests?.first_name} {invoice.reservations?.guests?.last_name}
-                            </div>
+                            <div className="font-medium">Invoice Guest</div>
                           </TableCell>
                           <TableCell>
-                            <div>{invoice.reservations?.hotels?.name}</div>
-                            <div className="text-sm text-muted-foreground">
-                              {invoice.reservations?.hotels?.city}
-                            </div>
+                            <div>Hotel Name</div>
+                            <div className="text-sm text-muted-foreground">City</div>
                           </TableCell>
                           <TableCell>
                             {new Date(invoice.issue_date).toLocaleDateString()}

@@ -31,7 +31,7 @@ export const AgencyBranding = ({ children, agencyId }: AgencyBrandingProps) => {
       
       const { data, error } = await supabase
         .from('agencies')
-        .select('name, contact_email, address, branding_config')
+        .select('name, contact_email, address, branding_config, logo_url, custom_domain')
         .eq('id', agencyId)
         .single();
         
@@ -42,8 +42,8 @@ export const AgencyBranding = ({ children, agencyId }: AgencyBrandingProps) => {
   });
 
   useEffect(() => {
-    if (agency?.branding_config) {
-      const branding: BrandingConfig = { ...defaultBranding, ...agency.branding_config };
+    if (agency?.branding_config && typeof agency.branding_config === 'object') {
+      const branding: BrandingConfig = { ...defaultBranding, ...(agency.branding_config as BrandingConfig) };
       
       // Apply custom CSS variables for white-label theming
       const root = document.documentElement;

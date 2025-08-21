@@ -15,7 +15,8 @@ import {
   Briefcase,
   Globe,
   Moon,
-  Sun
+  Sun,
+  Home
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useTheme } from "next-themes";
@@ -23,6 +24,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
 const navigation = [
+  {
+    name: "Dashboard",
+    href: "/agency",
+    icon: Home,
+    description: "Overview & analytics"
+  },
   {
     name: "Hotel Search",
     href: "/agency/search",

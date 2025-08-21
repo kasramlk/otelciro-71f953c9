@@ -161,7 +161,7 @@ const AgencyReports = () => {
     },
     { 
       title: "Unique Hotels", 
-      value: new Set(reportData?.map(b => b.hotels?.name)).size || 0, 
+      value: reportData ? new Set(reportData.map(b => b.hotels?.name).filter(Boolean)).size : 0, 
       change: "+8%", 
       icon: Building2,
       color: "text-secondary" 
@@ -356,10 +356,10 @@ const AgencyReports = () => {
                       <span className="font-medium">{item.hotel}</span>
                     </div>
                     <span className="font-bold">
-                      {item.revenue?.toLocaleString('en-US', {
+                      {typeof item.revenue === 'number' ? item.revenue.toLocaleString('en-US', {
                         style: 'currency',
                         currency: 'USD'
-                      })}
+                      }) : '$0'}
                     </span>
                   </div>
                 ))}

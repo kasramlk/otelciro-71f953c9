@@ -17,6 +17,7 @@ export type Database = {
       agencies: {
         Row: {
           address: string | null
+          branding_config: Json | null
           city: string | null
           contact_email: string | null
           contact_person: string | null
@@ -25,8 +26,10 @@ export type Database = {
           created_at: string
           credit_limit: number | null
           current_balance: number | null
+          custom_domain: string | null
           id: string
           is_active: boolean | null
+          logo_url: string | null
           name: string
           org_id: string
           payment_terms: number | null
@@ -35,6 +38,7 @@ export type Database = {
         }
         Insert: {
           address?: string | null
+          branding_config?: Json | null
           city?: string | null
           contact_email?: string | null
           contact_person?: string | null
@@ -43,8 +47,10 @@ export type Database = {
           created_at?: string
           credit_limit?: number | null
           current_balance?: number | null
+          custom_domain?: string | null
           id?: string
           is_active?: boolean | null
+          logo_url?: string | null
           name: string
           org_id: string
           payment_terms?: number | null
@@ -53,6 +59,7 @@ export type Database = {
         }
         Update: {
           address?: string | null
+          branding_config?: Json | null
           city?: string | null
           contact_email?: string | null
           contact_person?: string | null
@@ -61,8 +68,10 @@ export type Database = {
           created_at?: string
           credit_limit?: number | null
           current_balance?: number | null
+          custom_domain?: string | null
           id?: string
           is_active?: boolean | null
+          logo_url?: string | null
           name?: string
           org_id?: string
           payment_terms?: number | null
