@@ -585,7 +585,7 @@ const ARICalendar = () => {
           id: rt.id,
           room_number: `${rt.name}-001`,
           room_types: { name: rt.name },
-          status: 'clean'
+          status: 'Available'
         }))}
       />
     </div>

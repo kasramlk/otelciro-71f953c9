@@ -46,6 +46,7 @@ import Operations from "./pages/Operations";
 import FrontOffice from "./pages/FrontOffice";
 import GuestExperience from "./pages/GuestExperience";
 import Analytics from "./pages/Analytics";
+import QATestSuite from "./pages/QATestSuite";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -269,6 +270,11 @@ const AppContent = () => {
       <Route path="/guest-experience" element={
         <HotelManagerLayout>
           <GuestExperience />
+        </HotelManagerLayout>
+      } />
+      <Route path="/qa" element={
+        <HotelManagerLayout>
+          <QATestSuite />
         </HotelManagerLayout>
       } />
       
