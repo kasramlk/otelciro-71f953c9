@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
+import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -26,6 +27,7 @@ import { NewReservationModal } from "@/components/reservations/NewReservationMod
 import { useToast } from "@/hooks/use-toast";
 
 export default function Reservations() {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("all");
   const [showNewReservation, setShowNewReservation] = useState(false);
   const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list');
@@ -87,7 +89,7 @@ export default function Reservations() {
           </div>
           
           <Button 
-            onClick={() => setShowNewReservation(true)}
+            onClick={() => navigate('/reservations/new')}
             className="bg-gradient-primary text-white shadow-glow hover:shadow-xl transition-all duration-300"
           >
             <Plus className="mr-2 h-4 w-4" />

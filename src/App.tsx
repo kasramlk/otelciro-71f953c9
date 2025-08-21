@@ -9,6 +9,7 @@ import { ErrorBoundary } from "@/components/ui/error-boundary";
 import { setupGlobalErrorHandling } from "@/lib/error-handler";
 import Auth from "./pages/Auth";
 import Index from "./pages/Index";
+import NewReservation from "./pages/NewReservation";
 import Dashboard from "./pages/Dashboard";
 import Reservations from "./pages/Reservations";
 import Guests from "./pages/Guests";
@@ -190,6 +191,11 @@ const AppContent = () => {
       <Route path="/reservations" element={
         <HotelManagerLayout>
           <HotelReservations />
+        </HotelManagerLayout>
+      } />
+      <Route path="/reservations/new" element={
+        <HotelManagerLayout>
+          <NewReservation />
         </HotelManagerLayout>
       } />
       <Route path="/housekeeping" element={
