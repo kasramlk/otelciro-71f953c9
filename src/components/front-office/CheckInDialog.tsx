@@ -91,15 +91,38 @@ export default function CheckInDialog({ open, onOpenChange, guest }: CheckInDial
     },
   });
 
-  const onSubmit = (data: CheckInFormData) => {
-    console.log("Check-in data:", data);
-    toast({
-      title: "Check-in successful",
-      description: `${guest.guestName} has been checked into room ${data.roomNumber}`,
-    });
-    onOpenChange(false);
-    setCurrentStep(1);
-    form.reset();
+  const onSubmit = async (data: CheckInFormData) => {
+    try {
+      // Update reservation status and room assignment
+      const { error } = await supabase
+        .from('reservations')
+        .update({
+          status: 'Checked In',
+          room_id: data.roomNumber,
+          actual_checkin_time: new Date().toISOString(),
+          payment_method: data.paymentMethod,
+          pre_auth_amount: data.depositAmount
+        })
+        .eq('code', guest.reservationCode);
+
+      if (error) throw error;
+
+      toast({
+        title: "Check-in successful",
+        description: `${guest.guestName} has been checked into room ${data.roomNumber}`,
+      });
+      
+      onOpenChange(false);
+      setCurrentStep(1);
+      form.reset();
+    } catch (error) {
+      toast({
+        title: "Check-in failed",
+        description: "Please try again or contact support",
+        variant: "destructive",
+      });
+      console.error('Check-in error:', error);
+    }
   };
 
   const nextStep = () => setCurrentStep(prev => prev + 1);
