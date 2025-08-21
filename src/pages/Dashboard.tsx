@@ -84,7 +84,7 @@ const Dashboard = () => {
               <img 
                 src="/lovable-uploads/27a5c254-db11-4fe2-927e-a659f46eb769.png" 
                 alt="Otelciro PMS" 
-                className="h-8"
+                className="h-12"
               />
             </div>
             
