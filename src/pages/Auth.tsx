@@ -5,10 +5,12 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Separator } from "@/components/ui/separator";
 import { RoleSelector } from "@/components/auth/RoleSelector";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 import { useEffect } from "react";
+import { Facebook, Linkedin, Mail } from "lucide-react";
 
 const Auth = () => {
   const [email, setEmail] = useState("");
@@ -116,6 +118,31 @@ const Auth = () => {
     }
   };
 
+  const signInWithSocial = async (provider: 'google' | 'facebook' | 'linkedin_oidc') => {
+    setLoading(true);
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider,
+        options: {
+          redirectTo: `${window.location.origin}/`,
+          queryParams: {
+            role: role
+          }
+        }
+      });
+
+      if (error) throw error;
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   if (showRoleSelector) {
     return <RoleSelector onRoleSelect={handleRoleSelect} />;
   }
@@ -160,6 +187,51 @@ const Auth = () => {
             </TabsList>
             
             <TabsContent value="signin" className="space-y-4">
+              {role === 'hotel_manager' && (
+                <>
+                  <div className="space-y-2">
+                    <Button
+                      variant="outline"
+                      onClick={() => signInWithSocial('google')}
+                      className="w-full flex items-center gap-2"
+                      disabled={loading}
+                    >
+                      <Mail className="w-4 h-4" />
+                      Continue with Google
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={() => signInWithSocial('facebook')}
+                      className="w-full flex items-center gap-2"
+                      disabled={loading}
+                    >
+                      <Facebook className="w-4 h-4" />
+                      Continue with Facebook
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={() => signInWithSocial('linkedin_oidc')}
+                      className="w-full flex items-center gap-2"
+                      disabled={loading}
+                    >
+                      <Linkedin className="w-4 h-4" />
+                      Continue with LinkedIn
+                    </Button>
+                  </div>
+                  
+                  <div className="relative">
+                    <div className="absolute inset-0 flex items-center">
+                      <Separator className="w-full" />
+                    </div>
+                    <div className="relative flex justify-center text-xs uppercase">
+                      <span className="bg-background px-2 text-muted-foreground">
+                        Or continue with email
+                      </span>
+                    </div>
+                  </div>
+                </>
+              )}
+              
               <div className="space-y-2">
                 <Input
                   type="email"
