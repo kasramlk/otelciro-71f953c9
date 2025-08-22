@@ -208,6 +208,26 @@ const AppContent = () => {
           <HMSNewReservation />
         </HMSLayout>
       } />
+      <Route path="/channel/ari" element={
+        <HMSLayout>
+          <ARICalendar />
+        </HMSLayout>
+      } />
+      <Route path="/channel/mapping" element={
+        <HMSLayout>
+          <ChannelMapping />
+        </HMSLayout>
+      } />
+      <Route path="/channel/reconcile" element={
+        <HMSLayout>
+          <ChannelReconciliation />
+        </HMSLayout>
+      } />
+      <Route path="/channel/orders" element={
+        <HMSLayout>
+          <ChannelOrders />
+        </HMSLayout>
+      } />
       <Route path="/room-plan" element={
         <HMSLayout>
           <HMSRoomPlan />

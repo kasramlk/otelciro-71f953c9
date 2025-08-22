@@ -39,7 +39,7 @@ interface HMSNewReservationProps {
   onSave?: () => void;
 }
 
-export const HMSNewReservation = ({ onClose, onSave }: HMSNewReservationProps = {}) => {
+export const HMSNewReservation = ({ onClose, onSave }: HMSNewReservationProps = {} as HMSNewReservationProps) => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { addReservation, rooms, addAuditEntry } = useHMSStore();
