@@ -1927,6 +1927,57 @@ export type Database = {
         }
         Relationships: []
       }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          department: string | null
+          display_name: string | null
+          first_name: string | null
+          id: string
+          language: string | null
+          last_name: string | null
+          organization: string | null
+          phone: string | null
+          preferences: Json | null
+          theme: string | null
+          timezone: string | null
+          updated_at: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          department?: string | null
+          display_name?: string | null
+          first_name?: string | null
+          id: string
+          language?: string | null
+          last_name?: string | null
+          organization?: string | null
+          phone?: string | null
+          preferences?: Json | null
+          theme?: string | null
+          timezone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          department?: string | null
+          display_name?: string | null
+          first_name?: string | null
+          id?: string
+          language?: string | null
+          last_name?: string | null
+          organization?: string | null
+          phone?: string | null
+          preferences?: Json | null
+          theme?: string | null
+          timezone?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       promotions: {
         Row: {
           advance_booking_days: number | null
