@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { Calendar, TrendingUp, TrendingDown, Users, Building, DollarSign, Clock, Bell, Settings } from 'lucide-react';
+import { Calendar, TrendingUp, TrendingDown, Users, Building, DollarSign, Clock, Bell, Settings, Zap } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -9,11 +9,17 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useHMSStore } from '@/stores/hms-store';
 import { HOTEL_CONFIG, ROOM_TYPES } from '@/lib/mock-data';
 import { format } from 'date-fns';
+import { useToast } from '@/hooks/use-toast';
+import { useNavigate } from 'react-router-dom';
+import { NotificationsModal } from './NotificationsModal';
 
 export const HMSDashboard = () => {
-  const { occupancyData, selectedMonth, setSelectedMonth, refreshOccupancyData } = useHMSStore();
+  const { occupancyData, selectedMonth, setSelectedMonth, refreshOccupancyData, applyAISuggestion } = useHMSStore();
   const [selectedRoomType, setSelectedRoomType] = useState<string>('all');
   const [selectedChannel, setSelectedChannel] = useState<string>('all');
+  const [showNotifications, setShowNotifications] = useState(false);
+  const { toast } = useToast();
+  const navigate = useNavigate();
 
   // Calculate KPIs for selected month
   const kpis = useMemo(() => {
@@ -66,6 +72,22 @@ export const HMSDashboard = () => {
     return 'bg-red-500';
   };
 
+  // AI Suggestion: Apply suggested ADR for a day
+  const handleAISuggestion = (date: Date) => {
+    const currentDayData = occupancyData.find(d => d.date.toDateString() === date.toDateString());
+    if (!currentDayData) return;
+
+    // Mock AI suggestion - increase ADR by 5-15% based on occupancy
+    const suggestionFactor = currentDayData.occupancyRate > 0.8 ? 1.15 : 1.08;
+    const suggestedADR = Math.round(currentDayData.adr * suggestionFactor * 100) / 100;
+    
+    applyAISuggestion(date, suggestedADR);
+    toast({ 
+      title: 'AI Suggestion Applied', 
+      description: `ADR updated to €${suggestedADR} for ${format(date, 'MMM dd')}` 
+    });
+  };
+
   const TrendIcon = ({ trend }: { trend: 'up' | 'down' }) => 
     trend === 'up' ? 
       <TrendingUp className="h-4 w-4 text-green-500" /> : 
@@ -89,11 +111,11 @@ export const HMSDashboard = () => {
         </div>
         
         <div className="flex items-center gap-4">
-          <Button variant="outline" onClick={() => window.location.href = '/channel/ari'}>
+          <Button variant="outline" onClick={() => navigate('/channel/ari')}>
             <Settings className="h-4 w-4 mr-2" />
             ARI Calendar
           </Button>
-          <Button variant="outline">
+          <Button variant="outline" onClick={() => setShowNotifications(true)}>
             <Bell className="h-4 w-4 mr-2" />
             Notifications
           </Button>
@@ -315,9 +337,19 @@ export const HMSDashboard = () => {
                         <span className="font-mono">€{day.totalRevenue.toLocaleString()}</span>
                       </TableCell>
                       <TableCell>
-                        <Button variant="ghost" size="sm">
-                          View Details
-                        </Button>
+                        <div className="flex items-center gap-2">
+                          <Button variant="ghost" size="sm">
+                            View Details
+                          </Button>
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => handleAISuggestion(day.date)}
+                          >
+                            <Zap className="h-4 w-4 mr-1" />
+                            AI Suggest
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -326,6 +358,12 @@ export const HMSDashboard = () => {
           </div>
         </CardContent>
       </Card>
+
+      {/* Notifications Modal */}
+      <NotificationsModal 
+        open={showNotifications} 
+        onOpenChange={setShowNotifications} 
+      />
     </motion.div>
   );
 };

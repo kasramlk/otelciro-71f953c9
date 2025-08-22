@@ -128,6 +128,13 @@ interface HMSStore {
   setSelectedReservation: (reservationId: string | null) => void;
   setSelectedRoom: (roomId: string | null) => void;
   
+  // AI Revenue Optimization
+  applyAISuggestion: (date: Date, suggestedADR: number) => void;
+  
+  // Audit logging
+  auditLog: Array<{id: string; action: string; details: string; timestamp: Date}>;
+  addAuditEntry: (action: string, details: string) => void;
+  
   // Reservations
   addReservation: (reservation: Omit<Reservation, 'id'>) => void;
   updateReservation: (id: string, updates: Partial<Reservation>) => void;
@@ -171,6 +178,7 @@ export const useHMSStore = create<HMSStore>()(
         housekeepingTasks: mockData.housekeepingTasks,
         occupancyData: mockData.occupancyData,
         ariData: mockData.ariData,
+        auditLog: [],
         
         // UI State
         selectedMonth: new Date(),
@@ -340,6 +348,48 @@ export const useHMSStore = create<HMSStore>()(
           const newHistory = history.slice(0, historyIndex + 1);
           newHistory.push(state);
           set({ history: newHistory, historyIndex: newHistory.length - 1 });
+        },
+        
+        // AI Revenue Optimization - Apply suggested ADR and recalculate KPIs
+        applyAISuggestion: (date, suggestedADR) => {
+          set((state) => {
+            const updatedOccupancyData = state.occupancyData.map(day => {
+              if (day.date.toDateString() === date.toDateString()) {
+                const newRevenue = day.occupiedRooms * suggestedADR;
+                return {
+                  ...day,
+                  adr: suggestedADR,
+                  totalRevenue: Math.round(newRevenue * 100) / 100
+                };
+              }
+              return day;
+            });
+            
+            // Add audit entry
+            const auditEntry = {
+              id: `audit-${Date.now()}`,
+              action: 'AI Suggestion Applied',
+              details: `ADR updated to €${suggestedADR} for ${date.toDateString()}`,
+              timestamp: new Date()
+            };
+            
+            return {
+              occupancyData: updatedOccupancyData,
+              auditLog: [...state.auditLog, auditEntry]
+            };
+          });
+        },
+        
+        // Add audit entry
+        addAuditEntry: (action, details) => {
+          set((state) => ({
+            auditLog: [...state.auditLog, {
+              id: `audit-${Date.now()}`,
+              action,
+              details,
+              timestamp: new Date()
+            }]
+          }));
         }
       })),
       {

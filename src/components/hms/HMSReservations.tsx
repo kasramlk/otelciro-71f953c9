@@ -11,7 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger, DropdownMenuItem } from '@/components/ui/dropdown-menu';
 import { useHMSStore } from '@/stores/hms-store';
 import { format } from 'date-fns';
-// import { HMSNewReservation } from './HMSNewReservation';
+import { HMSNewReservation } from './HMSNewReservation';
 
 export const HMSReservations = () => {
   const { reservations } = useHMSStore();
@@ -128,7 +128,12 @@ export const HMSReservations = () => {
               <DialogHeader>
                 <DialogTitle>Create New Reservation</DialogTitle>
               </DialogHeader>
-              <div>New Reservation form will be implemented here</div>
+              <HMSNewReservation 
+                onClose={() => setIsNewReservationOpen(false)}
+                onSave={() => {
+                  // Refresh reservations list - already handled by store
+                }}
+              />
             </DialogContent>
           </Dialog>
         </div>
