@@ -34,6 +34,9 @@ import ARICalendar from "./pages/hotel/ARICalendar";
 import HotelReservations from "./pages/hotel/HotelReservations";
 import HousekeepingModule from "./pages/hotel/HousekeepingModule";
 import { HotelManagerLayout } from "./layouts/HotelManagerLayout";
+import { HMSLayout } from "./layouts/HMSLayout";
+import { HMSDashboard } from "./components/hms/HMSDashboard";
+import { HMSReservations } from "./components/hms/HMSReservations";
 import { TravelAgencyLayout } from "./layouts/TravelAgencyLayout";
 import { AdminLayout } from "./layouts/AdminLayout";
 import AdminDashboard from "./pages/admin/AdminDashboard";
@@ -179,11 +182,16 @@ const AppContent = () => {
         </HotelManagerLayout>
       ) : <Index />} />
       
-      {/* Hotel Manager Routes */}
+      {/* HMS Routes */}
       <Route path="/dashboard" element={
-        <HotelManagerLayout>
-          <HotelDashboard />
-        </HotelManagerLayout>
+        <HMSLayout>
+          <HMSDashboard />
+        </HMSLayout>
+      } />
+      <Route path="/reservations" element={
+        <HMSLayout>
+          <HMSReservations />
+        </HMSLayout>
       } />
       <Route path="/ari-calendar" element={
         <HotelManagerLayout>
