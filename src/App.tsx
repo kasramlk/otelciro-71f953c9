@@ -46,6 +46,8 @@ import { HMSChannelMapping } from "./components/hms/HMSChannelMapping";
 import { HMSChannelReconciliation } from "./components/hms/HMSChannelReconciliation";
 import { HMSRevenueAI } from "./components/hms/HMSRevenueAI";
 import { HMSNewReservation } from "./components/hms/HMSNewReservation";
+import { NotificationCenter } from "./components/realtime/NotificationCenter";
+import { OnlineUsers } from "./components/realtime/OnlineUsers";
 import ChannelARICalendar from "./components/channel/ARICalendar";
 import ChannelMapping from "./components/channel/ChannelMapping";
 import ChannelReconciliation from "./components/channel/ChannelReconciliation";
@@ -267,12 +269,28 @@ const AppContent = () => {
           <HMSRevenueAI />
         </HMSLayout>
       } />
-        <Route path="/profile" element={
-          <HMSLayout>
-            <UserProfilePage />
-          </HMSLayout>
-        } />
-        <Route path="/reports" element={
+      <Route path="/notifications" element={
+        <HMSLayout>
+          <div className="p-6">
+            <h1 className="text-3xl font-bold mb-6">Notifications</h1>
+            <NotificationCenter />
+          </div>
+        </HMSLayout>
+      } />
+      <Route path="/online-users" element={
+        <HMSLayout>
+          <div className="p-6">
+            <h1 className="text-3xl font-bold mb-6">Online Users</h1>
+            <OnlineUsers />
+          </div>
+        </HMSLayout>
+      } />
+      <Route path="/profile" element={
+        <HMSLayout>
+          <UserProfilePage />
+        </HMSLayout>
+      } />
+      <Route path="/reports" element={
         <HMSLayout>
           <Reports />
         </HMSLayout>
