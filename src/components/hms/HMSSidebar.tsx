@@ -243,11 +243,20 @@ export const HMSSidebar = () => {
             className="px-4 pb-4"
           >
             <div className="grid grid-cols-2 gap-2">
-              <Button size="sm" className="bg-gradient-primary text-white hover:opacity-90">
+              <Button 
+                size="sm" 
+                className="bg-gradient-primary text-white hover:opacity-90"
+                onClick={() => navigate('/reservations/new')}
+              >
                 <Plus className="h-4 w-4 mr-1" />
                 Booking
               </Button>
-              <Button size="sm" variant="outline" className="border-sidebar-border">
+              <Button 
+                size="sm" 
+                variant="outline" 
+                className="border-sidebar-border"
+                onClick={() => navigate('/guests')}
+              >
                 <Users className="h-4 w-4 mr-1" />
                 Guest
               </Button>
