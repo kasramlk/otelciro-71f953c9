@@ -3,6 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Link } from 'react-router-dom';
 import { 
   Share2, 
   Zap, 
@@ -123,21 +124,68 @@ export const SocialMediaDashboard: React.FC = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: index * 0.1 }}
           >
-            <Card className="cursor-pointer hover:shadow-lg transition-all group">
-              <CardContent className="p-6">
-                <div className="flex items-center gap-4">
-                  <div className={`p-3 rounded-xl ${action.color} text-white group-hover:scale-110 transition-transform`}>
-                    {action.icon}
+            <Link to={action.href}>
+              <Card className="cursor-pointer hover:shadow-lg transition-all group">
+                <CardContent className="p-6">
+                  <div className="flex items-center gap-4">
+                    <div className={`p-3 rounded-xl ${action.color} text-white group-hover:scale-110 transition-transform`}>
+                      {action.icon}
+                    </div>
+                    <div>
+                      <h3 className="font-semibold">{action.title}</h3>
+                      <p className="text-sm text-muted-foreground">Click to get started</p>
+                    </div>
                   </div>
-                  <div>
-                    <h3 className="font-semibold">{action.title}</h3>
-                    <p className="text-sm text-muted-foreground">Click to get started</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            </Link>
           </motion.div>
         ))}
+      </div>
+
+      {/* Analytics & Advanced Features */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <BarChart3 className="h-5 w-5" />
+              Analytics Overview
+            </CardTitle>
+            <CardDescription>Performance insights and metrics</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <p className="text-sm text-muted-foreground">
+              Track your social media performance with detailed analytics and AI-powered insights
+            </p>
+            <Button variant="outline" asChild>
+              <Link to="/social-media/analytics">
+                <BarChart3 className="h-4 w-4 mr-2" />
+                View Analytics
+              </Link>
+            </Button>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <TrendingUp className="h-5 w-5" />
+              Advanced Features
+            </CardTitle>
+            <CardDescription>AI automation and competitor analysis</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <p className="text-sm text-muted-foreground">
+              Access advanced analytics, automation rules, and competitor insights
+            </p>
+            <Button variant="outline" asChild>
+              <Link to="/social-media/advanced">
+                <TrendingUp className="h-4 w-4 mr-2" />
+                Advanced Tools
+              </Link>
+            </Button>
+          </CardContent>
+        </Card>
       </div>
 
       {/* KPI Overview */}
