@@ -1,7 +1,8 @@
 // Mock Data Layer for Hotel Management System
-// USE_SUPABASE = false by default - toggle to use real Supabase data
+// PRODUCTION MODE: Switch to real Supabase data
+// This file is being phased out in favor of production services
 
-export const USE_SUPABASE = false;
+export const USE_SUPABASE = true; // CHANGED: Now using real Supabase data
 
 // Hotel Configuration
 export const HOTEL_CONFIG = {
