@@ -37,6 +37,12 @@ import { HotelManagerLayout } from "./layouts/HotelManagerLayout";
 import { HMSLayout } from "./layouts/HMSLayout";
 import { HMSDashboard } from "./components/hms/HMSDashboard";
 import { HMSReservations } from "./components/hms/HMSReservations";
+import { HMSRoomPlan } from "./components/hms/HMSRoomPlan";
+import { HMSHousekeeping } from "./components/hms/HMSHousekeeping";
+import { HMSFrontOffice } from "./components/hms/HMSFrontOffice";
+import { HMSGuests } from "./components/hms/HMSGuests";
+import { HMSAnalytics } from "./components/hms/HMSAnalytics";
+import { HMSRevenueAI } from "./components/hms/HMSRevenueAI";
 import { TravelAgencyLayout } from "./layouts/TravelAgencyLayout";
 import { AdminLayout } from "./layouts/AdminLayout";
 import AdminDashboard from "./pages/admin/AdminDashboard";
@@ -193,14 +199,39 @@ const AppContent = () => {
           <HMSReservations />
         </HMSLayout>
       } />
+      <Route path="/room-plan" element={
+        <HMSLayout>
+          <HMSRoomPlan />
+        </HMSLayout>
+      } />
+      <Route path="/housekeeping" element={
+        <HMSLayout>
+          <HMSHousekeeping />
+        </HMSLayout>
+      } />
+      <Route path="/front-office" element={
+        <HMSLayout>
+          <HMSFrontOffice />
+        </HMSLayout>
+      } />
+      <Route path="/guests" element={
+        <HMSLayout>
+          <HMSGuests />
+        </HMSLayout>
+      } />
+      <Route path="/analytics" element={
+        <HMSLayout>
+          <HMSAnalytics />
+        </HMSLayout>
+      } />
+      <Route path="/revenue-ai" element={
+        <HMSLayout>
+          <HMSRevenueAI />
+        </HMSLayout>
+      } />
       <Route path="/ari-calendar" element={
         <HotelManagerLayout>
           <ARICalendar />
-        </HotelManagerLayout>
-      } />
-      <Route path="/reservations" element={
-        <HotelManagerLayout>
-          <HotelReservations />
         </HotelManagerLayout>
       } />
       <Route path="/reservations/new" element={
@@ -211,16 +242,6 @@ const AppContent = () => {
       <Route path="/housekeeping" element={
         <HotelManagerLayout>
           <HousekeepingModule />
-        </HotelManagerLayout>
-      } />
-      <Route path="/front-office" element={
-        <HotelManagerLayout>
-          <FrontOffice />
-        </HotelManagerLayout>
-      } />
-      <Route path="/guests" element={
-        <HotelManagerLayout>
-          <Guests />
         </HotelManagerLayout>
       } />
       <Route path="/room-plan" element={
