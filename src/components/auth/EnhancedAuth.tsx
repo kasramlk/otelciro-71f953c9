@@ -27,9 +27,10 @@ import {
 interface EnhancedAuthProps {
   role: 'hotel_manager' | 'travel_agency' | 'admin' | 'social_media';
   onBackToRoleSelector: () => void;
+  onBackToHome?: () => void;
 }
 
-export const EnhancedAuth = ({ role, onBackToRoleSelector }: EnhancedAuthProps) => {
+export const EnhancedAuth = ({ role, onBackToRoleSelector, onBackToHome }: EnhancedAuthProps) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
@@ -185,7 +186,7 @@ export const EnhancedAuth = ({ role, onBackToRoleSelector }: EnhancedAuthProps) 
             initial={{ opacity: 0, x: -50 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.6 }}
-            className="mb-6"
+            className="mb-6 flex justify-between items-center"
           >
             <Button 
               variant="ghost" 
@@ -195,6 +196,17 @@ export const EnhancedAuth = ({ role, onBackToRoleSelector }: EnhancedAuthProps) 
               <ArrowLeft className="mr-2 h-4 w-4" />
               {t('common.changeRole')}
             </Button>
+            
+            {onBackToHome && (
+              <Button 
+                variant="ghost" 
+                onClick={onBackToHome}
+                className="text-white/80 hover:text-white hover:bg-white/10 backdrop-blur-sm"
+              >
+                <ArrowLeft className="mr-2 h-4 w-4" />
+                {t('common.back')}
+              </Button>
+            )}
           </motion.div>
 
           {/* Main Card */}

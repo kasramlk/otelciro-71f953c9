@@ -2,10 +2,12 @@ import { useState } from "react";
 import { EnhancedRoleSelector } from "@/components/auth/EnhancedRoleSelector";
 import { EnhancedAuth } from "@/components/auth/EnhancedAuth";
 import { TranslationContext, translations, Language } from "@/hooks/useTranslation";
+import { useNavigate } from "react-router-dom";
 
 const Auth = () => {
   const [role, setRole] = useState<'hotel_manager' | 'travel_agency' | 'admin' | 'social_media' | null>(null);
   const [language, setLanguage] = useState<Language>('en');
+  const navigate = useNavigate();
 
   const t = (key: string): string => {
     const keys = key.split('.');
@@ -30,15 +32,23 @@ const Auth = () => {
     setRole(null);
   };
 
+  const handleBackToHome = () => {
+    navigate('/');
+  };
+
   return (
     <TranslationContext.Provider value={{ language, setLanguage, t }}>
       {role ? (
         <EnhancedAuth 
           role={role} 
-          onBackToRoleSelector={handleBackToRoleSelector} 
+          onBackToRoleSelector={handleBackToRoleSelector}
+          onBackToHome={handleBackToHome}
         />
       ) : (
-        <EnhancedRoleSelector onRoleSelect={handleRoleSelect} />
+        <EnhancedRoleSelector 
+          onRoleSelect={handleRoleSelect}
+          onBackToHome={handleBackToHome}
+        />
       )}
     </TranslationContext.Provider>
   );

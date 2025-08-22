@@ -18,11 +18,14 @@ import {
   BarChart3,
   Users,
   Target,
-  Zap
+  Zap,
+  Home,
+  ArrowLeft
 } from "lucide-react";
 
 interface EnhancedRoleSelectorProps {
   onRoleSelect: (role: 'hotel_manager' | 'travel_agency' | 'admin' | 'social_media') => void;
+  onBackToHome?: () => void;
 }
 
 const roleIcons = {
@@ -46,7 +49,7 @@ const roleBorders = {
   social_media: 'border-accent/30 hover:border-accent/50'
 };
 
-export const EnhancedRoleSelector = ({ onRoleSelect }: EnhancedRoleSelectorProps) => {
+export const EnhancedRoleSelector = ({ onRoleSelect, onBackToHome }: EnhancedRoleSelectorProps) => {
   const [selectedRole, setSelectedRole] = useState<string | null>(null);
   const { t } = useTranslation();
 
@@ -74,6 +77,26 @@ export const EnhancedRoleSelector = ({ onRoleSelect }: EnhancedRoleSelectorProps
       </div>
 
       <LanguageSwitcher />
+
+      {/* Back to Home Button */}
+      {onBackToHome && (
+        <motion.div
+          initial={{ opacity: 0, x: -50 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.6 }}
+          className="fixed top-6 left-6 z-50"
+        >
+          <Button
+            variant="outline"
+            onClick={onBackToHome}
+            className="bg-white/10 backdrop-blur-sm border-white/20 text-white hover:bg-white/20 transition-all duration-300 group"
+          >
+            <ArrowLeft className="h-4 w-4 mr-2 group-hover:-translate-x-1 transition-transform" />
+            <Home className="h-4 w-4 mr-2" />
+            {t('common.back')}
+          </Button>
+        </motion.div>
+      )}
 
       <div className="relative z-10 flex items-center justify-center min-h-screen p-6">
         <div className="max-w-7xl mx-auto">
@@ -172,7 +195,7 @@ export const EnhancedRoleSelector = ({ onRoleSelect }: EnhancedRoleSelectorProps
                       {/* Badge for new features */}
                       {role === 'social_media' && (
                         <Badge className="absolute -top-2 -right-2 bg-accent text-primary font-bold animate-pulse">
-                          {t('roles.socialMedia.badge')}
+                          {t('roles.social_media.badge')}
                         </Badge>
                       )}
                       
