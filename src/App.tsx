@@ -42,7 +42,11 @@ import { HMSHousekeeping } from "./components/hms/HMSHousekeeping";
 import { HMSFrontOffice } from "./components/hms/HMSFrontOffice";
 import { HMSGuests } from "./components/hms/HMSGuests";
 import { HMSAnalytics } from "./components/hms/HMSAnalytics";
+import { HMSGuestCRM } from "./components/hms/HMSGuestCRM";
+import { HMSChannelMapping } from "./components/hms/HMSChannelMapping";
+import { HMSChannelReconciliation } from "./components/hms/HMSChannelReconciliation";
 import { HMSRevenueAI } from "./components/hms/HMSRevenueAI";
+import { HMSNewReservation } from "./components/hms/HMSNewReservation";
 import { TravelAgencyLayout } from "./layouts/TravelAgencyLayout";
 import { AdminLayout } from "./layouts/AdminLayout";
 import AdminDashboard from "./pages/admin/AdminDashboard";
@@ -199,6 +203,11 @@ const AppContent = () => {
           <HMSReservations />
         </HMSLayout>
       } />
+      <Route path="/reservations/new" element={
+        <HMSLayout>
+          <HMSNewReservation />
+        </HMSLayout>
+      } />
       <Route path="/room-plan" element={
         <HMSLayout>
           <HMSRoomPlan />
@@ -219,6 +228,11 @@ const AppContent = () => {
           <HMSGuests />
         </HMSLayout>
       } />
+      <Route path="/guest-crm" element={
+        <HMSLayout>
+          <HMSGuestCRM />
+        </HMSLayout>
+      } />
       <Route path="/analytics" element={
         <HMSLayout>
           <HMSAnalytics />
@@ -227,6 +241,36 @@ const AppContent = () => {
       <Route path="/revenue-ai" element={
         <HMSLayout>
           <HMSRevenueAI />
+        </HMSLayout>
+      } />
+      <Route path="/channel/ari" element={
+        <HMSLayout>
+          <ARICalendar />
+        </HMSLayout>
+      } />
+      <Route path="/channel/mapping" element={
+        <HMSLayout>
+          <HMSChannelMapping />
+        </HMSLayout>
+      } />
+      <Route path="/channel/reconcile" element={
+        <HMSLayout>
+          <HMSChannelReconciliation />
+        </HMSLayout>
+      } />
+      <Route path="/reports" element={
+        <HMSLayout>
+          <Reports />
+        </HMSLayout>
+      } />
+      <Route path="/settings" element={
+        <HMSLayout>
+          <Settings />
+        </HMSLayout>
+      } />
+      <Route path="/audit-log" element={
+        <HMSLayout>
+          <AuditLog />
         </HMSLayout>
       } />
       <Route path="/ari-calendar" element={
