@@ -76,6 +76,7 @@ import SocialMediaCalendar from "./pages/SocialMediaCalendar";
 import SocialMediaAnalyticsPage from "./pages/SocialMediaAnalytics";
 import SocialMediaAdvanced from "./pages/SocialMediaAdvanced";
 import SocialMediaIntegration from "./pages/SocialMediaIntegration";
+import SocialMediaEnterprise from "./pages/SocialMediaEnterprise";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -332,6 +333,11 @@ const AppContent = () => {
       <Route path="/social-media/integrations" element={
         <HMSLayout>
           <SocialMediaIntegration />
+        </HMSLayout>
+      } />
+      <Route path="/social-media/enterprise" element={
+        <HMSLayout>
+          <SocialMediaEnterprise />
         </HMSLayout>
       } />
       
