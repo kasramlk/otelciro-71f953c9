@@ -165,8 +165,18 @@ export function VirtualizedTable<T>({
 
   // Create a properly typed wrapper for the TableRow component
   const RowRenderer = useCallback(({ index, style }: { index: number; style: React.CSSProperties }) => {
+    const TypedTableRow = TableRow as React.ComponentType<{
+      index: number;
+      style: React.CSSProperties;
+      data: {
+        items: T[];
+        columns: ColumnDefinition<T>[];
+        onRowClick?: (row: T, index: number) => void;
+      };
+    }>;
+
     return (
-      <TableRow<T>
+      <TypedTableRow
         index={index}
         style={style}
         data={{
