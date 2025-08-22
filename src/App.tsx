@@ -266,21 +266,6 @@ const AppContent = () => {
           <HMSRevenueAI />
         </HMSLayout>
       } />
-      <Route path="/channel/ari" element={
-        <HMSLayout>
-          <ChannelARICalendar />
-        </HMSLayout>
-      } />
-      <Route path="/channel/mapping" element={
-        <HMSLayout>
-          <HMSChannelMapping />
-        </HMSLayout>
-      } />
-      <Route path="/channel/reconcile" element={
-        <HMSLayout>
-          <HMSChannelReconciliation />
-        </HMSLayout>
-      } />
       <Route path="/reports" element={
         <HMSLayout>
           <Reports />
@@ -301,21 +286,6 @@ const AppContent = () => {
           <ChannelARICalendar />
         </HotelManagerLayout>
       } />
-      <Route path="/reservations/new" element={
-        <HotelManagerLayout>
-          <NewReservation />
-        </HotelManagerLayout>
-      } />
-      <Route path="/housekeeping" element={
-        <HotelManagerLayout>
-          <HousekeepingModule />
-        </HotelManagerLayout>
-      } />
-      <Route path="/room-plan" element={
-        <HotelManagerLayout>
-          <RoomPlan />
-        </HotelManagerLayout>
-      } />
       <Route path="/room-status" element={
         <HotelManagerLayout>
           <RoomStatus />
@@ -324,16 +294,6 @@ const AppContent = () => {
       <Route path="/occupancy" element={
         <HotelManagerLayout>
           <Occupancy />
-        </HotelManagerLayout>
-      } />
-      <Route path="/analytics" element={
-        <HotelManagerLayout>
-          <Analytics />
-        </HotelManagerLayout>
-      } />
-      <Route path="/reports" element={
-        <HotelManagerLayout>
-          <Reports />
         </HotelManagerLayout>
       } />
       <Route path="/sales" element={
@@ -346,29 +306,9 @@ const AppContent = () => {
           <Cashier />
         </HotelManagerLayout>
       } />
-      <Route path="/guest-crm" element={
-        <HotelManagerLayout>
-          <GuestCRM />
-        </HotelManagerLayout>
-      } />
-      <Route path="/revenue-ai" element={
-        <HotelManagerLayout>
-          <RevenueAI />
-        </HotelManagerLayout>
-      } />
       <Route path="/operations" element={
         <HotelManagerLayout>
           <Operations />
-        </HotelManagerLayout>
-      } />
-      <Route path="/audit-log" element={
-        <HotelManagerLayout>
-          <AuditLog />
-        </HotelManagerLayout>
-      } />
-      <Route path="/settings" element={
-        <HotelManagerLayout>
-          <Settings />
         </HotelManagerLayout>
       } />
       <Route path="/guest-experience" element={
