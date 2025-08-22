@@ -3,6 +3,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { motion } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
 import { Calendar, Users, Receipt, FileText, StickyNote, Check, X, Upload, Download, Send } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -34,11 +35,12 @@ const reservationSchema = z.object({
 type ReservationForm = z.infer<typeof reservationSchema>;
 
 interface HMSNewReservationProps {
-  onClose: () => void;
-  onSave: () => void;
+  onClose?: () => void;
+  onSave?: () => void;
 }
 
-export const HMSNewReservation = ({ onClose, onSave }: HMSNewReservationProps) => {
+export const HMSNewReservation = ({ onClose, onSave }: HMSNewReservationProps = {}) => {
+  const navigate = useNavigate();
   const { toast } = useToast();
   const { addReservation, rooms, addAuditEntry } = useHMSStore();
   const [activeTab, setActiveTab] = useState('rooms');
@@ -162,8 +164,16 @@ export const HMSNewReservation = ({ onClose, onSave }: HMSNewReservationProps) =
       addAuditEntry('Reservation Created', `New reservation ${newReservation.code} for ${data.guestName}`);
       
       toast({ title: 'Reservation created successfully' });
-      onSave();
-      onClose();
+      
+      // Call optional callbacks if provided
+      onSave?.();
+      
+      // Navigate to reservations if used as standalone route, otherwise close modal
+      if (onClose) {
+        onClose();
+      } else {
+        navigate('/reservations');
+      }
     } catch (error) {
       toast({ title: 'Error', description: 'Failed to create reservation', variant: 'destructive' });
     }
@@ -457,7 +467,7 @@ export const HMSNewReservation = ({ onClose, onSave }: HMSNewReservationProps) =
                 </Button>
               </div>
               
-              <Button type="button" onClick={onClose} variant="outline">
+              <Button type="button" onClick={() => onClose ? onClose() : navigate('/reservations')} variant="outline">
                 Cancel
               </Button>
               <Button type="submit" className="bg-gradient-primary">
