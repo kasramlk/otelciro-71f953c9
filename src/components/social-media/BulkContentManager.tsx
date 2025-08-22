@@ -167,9 +167,9 @@ export const BulkContentManager: React.FC = () => {
     
     // Generate content for all items in parallel (with some delay to avoid rate limits)
     const promises = waitingItems.map((item, index) => 
-      new Promise(resolve => 
+      new Promise<void>(resolve => 
         setTimeout(() => {
-          generateContent(item).finally(resolve);
+          generateContent(item).finally(() => resolve());
         }, index * 1000) // Stagger requests by 1 second
       )
     );
