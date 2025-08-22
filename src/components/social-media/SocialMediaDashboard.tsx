@@ -20,6 +20,8 @@ import {
   ArrowUpRight
 } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { SocialMediaKPICard } from './SocialMediaKPICard';
+import { PMSContentSuggestions } from './PMSContentSuggestions';
 
 interface KPICardProps {
   title: string;
@@ -169,6 +171,9 @@ export const SocialMediaDashboard: React.FC = () => {
           trend="up"
         />
       </div>
+
+      {/* PMS Content Suggestions */}
+      <PMSContentSuggestions />
 
       {/* Content Overview */}
       <Tabs defaultValue="recent" className="space-y-4">

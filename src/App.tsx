@@ -71,6 +71,7 @@ import QATestSuite from "./pages/QATestSuite";
 import UserProfilePage from "./pages/UserProfile";
 import SocialMedia from "./pages/SocialMedia";
 import SocialMediaBrandKit from "./pages/SocialMediaBrandKit";
+import SocialMediaGenerator from "./pages/SocialMediaGenerator";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -316,12 +317,7 @@ const AppContent = () => {
       } />
       <Route path="/social-media/generator" element={
         <HMSLayout>
-          <div className="p-6">
-            <h1 className="text-3xl font-bold mb-6">AI Content Generator</h1>
-            <div className="bg-muted/50 rounded-lg p-8 text-center">
-              <p className="text-muted-foreground">AI Content Generator coming soon...</p>
-            </div>
-          </div>
+          <SocialMediaGenerator />
         </HMSLayout>
       } />
       <Route path="/social-media/analytics" element={
