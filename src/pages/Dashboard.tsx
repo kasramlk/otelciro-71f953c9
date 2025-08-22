@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/use-auth";
 import { useProductionData } from "@/hooks/use-production-data";
+import { checkSocialMediaAccess, features } from "@/lib/config";
 import { 
   Hotel, 
   Users, 
@@ -13,11 +14,13 @@ import {
   Bed,
   Clock,
   AlertTriangle,
-  CheckCircle
+  CheckCircle,
+  Megaphone,
+  ArrowRight
 } from "lucide-react";
 import { KPICard } from "@/components/dashboard/KPICard";
 import { StatCard } from "@/components/dashboard/StatCard";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, ResponsiveContainer, PieChart, Pie, Cell, BarChart, Bar } from "recharts";
@@ -25,6 +28,10 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, ResponsiveContainer, PieC
 const Dashboard = () => {
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
+  
+  // Get user role from user metadata
+  const userRole = user?.user_metadata?.role || 'hotel_manager';
+  const canAccessSocialMedia = checkSocialMediaAccess(userRole);
   
   const { 
     hotels, 
@@ -133,6 +140,148 @@ const Dashboard = () => {
           </Button>
         </div>
       </motion.div>
+
+      {/* Platform Feature Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+        >
+          <Card className="relative overflow-hidden cursor-pointer hover:shadow-lg transition-all group">
+            <CardHeader className="text-center pb-3">
+              <div className="mx-auto mb-4 p-4 rounded-full bg-primary/10 group-hover:bg-primary/20 transition-colors">
+                <Calendar className="h-8 w-8 text-primary" />
+              </div>
+              <CardTitle className="text-lg">Hotel Operations</CardTitle>
+              <CardDescription className="text-sm">
+                Complete property management and operations
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="pt-0">
+              <ul className="text-sm space-y-1.5 mb-4">
+                <li>• Reservations & Check-ins</li>
+                <li>• Room Management</li>
+                <li>• Housekeeping</li>
+                <li>• Guest Services</li>
+              </ul>
+              <Button 
+                className="w-full bg-primary hover:bg-primary/90" 
+                onClick={() => navigate('/reservations')}
+              >
+                Manage Operations
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
+            </CardContent>
+          </Card>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+        >
+          <Card className="relative overflow-hidden cursor-pointer hover:shadow-lg transition-all group">
+            <CardHeader className="text-center pb-3">
+              <div className="mx-auto mb-4 p-4 rounded-full bg-secondary/10 group-hover:bg-secondary/20 transition-colors">
+                <TrendingUp className="h-8 w-8 text-secondary" />
+              </div>
+              <CardTitle className="text-lg">Revenue Analytics</CardTitle>
+              <CardDescription className="text-sm">
+                AI-powered revenue optimization
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="pt-0">
+              <ul className="text-sm space-y-1.5 mb-4">
+                <li>• Dynamic Pricing</li>
+                <li>• Occupancy Forecasting</li>
+                <li>• Performance Analytics</li>
+                <li>• Market Intelligence</li>
+              </ul>
+              <Button 
+                variant="secondary" 
+                className="w-full" 
+                onClick={() => navigate('/analytics')}
+              >
+                View Analytics
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
+            </CardContent>
+          </Card>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+        >
+          <Card className="relative overflow-hidden cursor-pointer hover:shadow-lg transition-all group">
+            <CardHeader className="text-center pb-3">
+              <div className="mx-auto mb-4 p-4 rounded-full bg-accent/10 group-hover:bg-accent/20 transition-colors">
+                <Users className="h-8 w-8 text-accent" />
+              </div>
+              <CardTitle className="text-lg">Guest Experience</CardTitle>
+              <CardDescription className="text-sm">
+                Digital services and guest engagement
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="pt-0">
+              <ul className="text-sm space-y-1.5 mb-4">
+                <li>• Mobile Check-in</li>
+                <li>• Digital Services</li>
+                <li>• Guest Communications</li>
+                <li>• Service Requests</li>
+              </ul>
+              <Button 
+                variant="outline" 
+                className="w-full border-accent text-accent hover:bg-accent hover:text-white" 
+                onClick={() => navigate('/guest-experience')}
+              >
+                Manage Experience
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
+            </CardContent>
+          </Card>
+        </motion.div>
+
+        {canAccessSocialMedia && features.socialMedia && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4 }}
+          >
+            <Card className="relative overflow-hidden cursor-pointer hover:shadow-lg transition-all group border-blue-200">
+              <div className="absolute top-3 right-3 z-10">
+                <Badge className="bg-blue-600 text-white text-xs">NEW</Badge>
+              </div>
+              <CardHeader className="text-center pb-3">
+                <div className="mx-auto mb-4 p-4 rounded-full bg-blue-100 group-hover:bg-blue-200 transition-colors">
+                  <Megaphone className="h-8 w-8 text-blue-600" />
+                </div>
+                <CardTitle className="text-lg">Social Media Studio</CardTitle>
+                <CardDescription className="text-sm">
+                  Create, schedule, and analyze AI-generated content
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="pt-0">
+                <ul className="text-sm space-y-1.5 mb-4">
+                  <li>• AI Content Generator</li>
+                  <li>• Social Calendar</li>
+                  <li>• Auto-Publishing</li>
+                  <li>• Analytics & ROI</li>
+                </ul>
+                <Button 
+                  className="w-full bg-blue-600 hover:bg-blue-700 text-white" 
+                  onClick={() => navigate('/social-media')}
+                >
+                  Access Social Media
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+              </CardContent>
+            </Card>
+          </motion.div>
+        )}
+      </div>
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">

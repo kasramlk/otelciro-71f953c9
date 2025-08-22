@@ -7,6 +7,7 @@ import { BrowserRouter, Routes, Route, useLocation, Navigate } from "react-route
 import { supabase } from "@/integrations/supabase/client";
 import { ErrorBoundary } from "@/components/ui/error-boundary";
 import { setupGlobalErrorHandling } from "@/lib/error-handler";
+import { ProtectedSocialMediaRoute } from "@/components/auth/ProtectedSocialMediaRoute";
 import Auth from "./pages/Auth";
 import Index from "./pages/Index";
 import NewReservation from "./pages/NewReservation";
@@ -299,45 +300,61 @@ const AppContent = () => {
         </HMSLayout>
       } />
       
-      {/* Social Media Routes */}
+      {/* Social Media Routes - Protected */}
       <Route path="/social-media" element={
         <HMSLayout>
-          <SocialMedia />
+          <ProtectedSocialMediaRoute>
+            <SocialMedia />
+          </ProtectedSocialMediaRoute>
         </HMSLayout>
       } />
       <Route path="/social-media/brand-kit" element={
         <HMSLayout>
-          <SocialMediaBrandKit />
+          <ProtectedSocialMediaRoute>
+            <SocialMediaBrandKit />
+          </ProtectedSocialMediaRoute>
         </HMSLayout>
       } />
       <Route path="/social-media/calendar" element={
         <HMSLayout>
-          <SocialMediaCalendar />
+          <ProtectedSocialMediaRoute>
+            <SocialMediaCalendar />
+          </ProtectedSocialMediaRoute>
         </HMSLayout>
       } />
       <Route path="/social-media/generator" element={
         <HMSLayout>
-          <SocialMediaGenerator />
+          <ProtectedSocialMediaRoute>
+            <SocialMediaGenerator />
+          </ProtectedSocialMediaRoute>
         </HMSLayout>
       } />
       <Route path="/social-media/analytics" element={
         <HMSLayout>
-          <SocialMediaAnalyticsPage />
+          <ProtectedSocialMediaRoute>
+            <SocialMediaAnalyticsPage />
+          </ProtectedSocialMediaRoute>
         </HMSLayout>
       } />
       <Route path="/social-media/advanced" element={
         <HMSLayout>
-          <SocialMediaAdvanced />
+          <ProtectedSocialMediaRoute>
+            <SocialMediaAdvanced />
+          </ProtectedSocialMediaRoute>
         </HMSLayout>
       } />
       <Route path="/social-media/integrations" element={
         <HMSLayout>
-          <SocialMediaIntegration />
+          <ProtectedSocialMediaRoute>
+            <SocialMediaIntegration />
+          </ProtectedSocialMediaRoute>
         </HMSLayout>
       } />
       <Route path="/social-media/enterprise" element={
         <HMSLayout>
-          <SocialMediaEnterprise />
+          <ProtectedSocialMediaRoute>
+            <SocialMediaEnterprise />
+          </ProtectedSocialMediaRoute>
         </HMSLayout>
       } />
       

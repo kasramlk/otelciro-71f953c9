@@ -1,9 +1,11 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Link } from 'react-router-dom';
+import { useAuth } from '@/hooks/use-auth';
+import { useSocialMediaStore } from '@/stores/social-media-store';
 import { 
   Share2, 
   Zap, 
@@ -19,7 +21,9 @@ import {
   Heart,
   MessageCircle,
   ArrowUpRight,
-  Link as LinkIcon
+  Link as LinkIcon,
+  RefreshCw,
+  Linkedin
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { SocialMediaKPICard } from './SocialMediaKPICard';
@@ -52,7 +56,7 @@ const KPICard: React.FC<KPICardProps> = ({ title, value, change, icon, trend }) 
 interface ContentPreviewProps {
   platform: string;
   title: string;
-  status: 'draft' | 'scheduled' | 'published';
+  status: 'draft' | 'scheduled' | 'published' | 'failed' | 'archived';
   engagement?: number;
   scheduledFor?: string;
 }
@@ -71,6 +75,7 @@ const ContentPreview: React.FC<ContentPreviewProps> = ({
           {platform === 'instagram' && <Instagram className="h-4 w-4 text-pink-600" />}
           {platform === 'facebook' && <Facebook className="h-4 w-4 text-blue-600" />}
           {platform === 'twitter' && <Twitter className="h-4 w-4 text-blue-400" />}
+          {platform === 'linkedin' && <Linkedin className="h-4 w-4 text-blue-700" />}
           <span className="text-sm font-medium capitalize">{platform}</span>
         </div>
         <Badge variant={status === 'published' ? 'default' : status === 'scheduled' ? 'secondary' : 'outline'}>
@@ -79,7 +84,7 @@ const ContentPreview: React.FC<ContentPreviewProps> = ({
       </div>
       <h4 className="font-medium text-sm mb-2 line-clamp-2">{title}</h4>
       {status === 'scheduled' && scheduledFor && (
-        <p className="text-xs text-muted-foreground">Scheduled for {scheduledFor}</p>
+        <p className="text-xs text-muted-foreground">Scheduled for {new Date(scheduledFor).toLocaleDateString()}</p>
       )}
       {status === 'published' && engagement && (
         <div className="flex items-center gap-4 text-xs text-muted-foreground mt-2">
@@ -94,27 +99,83 @@ const ContentPreview: React.FC<ContentPreviewProps> = ({
 );
 
 export const SocialMediaDashboard: React.FC = () => {
+  const { user } = useAuth();
+  const { 
+    accounts, 
+    content, 
+    currentBrandKit, 
+    loading, 
+    error,
+    fetchAccounts,
+    fetchContent,
+    fetchBrandKits,
+    seedDemoData,
+    resetDemoData
+  } = useSocialMediaStore();
+
+  const hotelId = user?.id || 'demo-hotel-id';
+
+  // Initialize data on component mount
+  useEffect(() => {
+    const initializeData = async () => {
+      if (content.length === 0 && accounts.length === 0) {
+        // Seed demo data if no data exists
+        await seedDemoData(hotelId);
+      } else {
+        // Fetch real data if available
+        await Promise.all([
+          fetchAccounts(hotelId),
+          fetchContent(hotelId),
+          fetchBrandKits(hotelId)
+        ]);
+      }
+    };
+
+    initializeData();
+  }, [hotelId, content.length, accounts.length]);
+
   const quickActions = [
     { title: 'AI Post Generator', icon: <Zap className="h-4 w-4" />, href: '/social-media/generator', color: 'bg-gradient-primary' },
-    { title: 'Upload Content', icon: <Plus className="h-4 w-4" />, href: '/social-media/upload', color: 'bg-secondary' },
-    { title: 'Schedule Post', icon: <Calendar className="h-4 w-4" />, href: '/social-media/calendar', color: 'bg-accent' }
+    { title: 'Content Calendar', icon: <Calendar className="h-4 w-4" />, href: '/social-media/calendar', color: 'bg-secondary' },
+    { title: 'Schedule Post', icon: <Plus className="h-4 w-4" />, href: '/social-media/calendar', color: 'bg-accent' }
   ];
 
-  const recentContent = [
-    { platform: 'instagram', title: 'Stunning sunset from our rooftop terrace 🌅', status: 'published' as const, engagement: 1240 },
-    { platform: 'facebook', title: 'Special weekend offer - 20% off luxury suites', status: 'scheduled' as const, scheduledFor: 'Today 6:00 PM' },
-    { platform: 'twitter', title: 'Welcome our new guests from Germany! 🇩🇪', status: 'draft' as const },
-    { platform: 'instagram', title: 'Behind the scenes: Our chef preparing tonight\'s special', status: 'scheduled' as const, scheduledFor: 'Tomorrow 2:00 PM' }
-  ];
+  // Get stats from actual data
+  const stats = {
+    totalPosts: content.length,
+    scheduledPosts: content.filter(c => c.status === 'scheduled').length,
+    draftPosts: content.filter(c => c.status === 'draft').length,
+    publishedPosts: content.filter(c => c.status === 'published').length,
+    connectedAccounts: accounts.filter(a => a.is_connected).length
+  };
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Social Media Content Studio</h1>
-        <p className="text-muted-foreground">
-          Create, schedule, and analyze AI-powered social media content for your hotel
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Social Media Content Studio</h1>
+          <p className="text-muted-foreground">
+            Create, schedule, and analyze AI-powered social media content for your hotel
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => resetDemoData(hotelId)}
+            disabled={loading}
+          >
+            <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+            Reset Demo Data
+          </Button>
+        </div>
       </div>
+
+      {error && (
+        <div className="bg-red-50 border border-red-200 rounded-md p-4">
+          <p className="text-red-600 text-sm">{error}</p>
+        </div>
+      )}
 
       {/* Quick Actions */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -198,9 +259,16 @@ export const SocialMediaDashboard: React.FC = () => {
       {/* KPI Overview */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <KPICard
-          title="Total Reach"
-          value="12.4K"
+          title="Scheduled Posts"
+          value={stats.scheduledPosts.toString()}
           change="+12.5%"
+          icon={<Calendar className="h-4 w-4 text-muted-foreground" />}
+          trend="up"
+        />
+        <KPICard
+          title="Published This Week"
+          value={stats.publishedPosts.toString()}
+          change="+8.3%"
           icon={<Eye className="h-4 w-4 text-muted-foreground" />}
           trend="up"
         />
@@ -212,15 +280,8 @@ export const SocialMediaDashboard: React.FC = () => {
           trend="up"
         />
         <KPICard
-          title="New Followers"
-          value="186"
-          change="+24.2%"
-          icon={<Users className="h-4 w-4 text-muted-foreground" />}
-          trend="up"
-        />
-        <KPICard
-          title="Bookings from Social"
-          value="28"
+          title="CTR"
+          value="2.1%"
           change="+18.3%"
           icon={<TrendingUp className="h-4 w-4 text-muted-foreground" />}
           trend="up"
@@ -246,8 +307,14 @@ export const SocialMediaDashboard: React.FC = () => {
             </Button>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            {recentContent.map((content, index) => (
-              <ContentPreview key={index} {...content} />
+            {content.slice(0, 8).map((item) => (
+              <ContentPreview 
+                key={item.id} 
+                platform={item.platform}
+                title={item.title || item.caption}
+                status={item.status}
+                scheduledFor={item.scheduled_for}
+              />
             ))}
           </div>
         </TabsContent>
@@ -261,8 +328,14 @@ export const SocialMediaDashboard: React.FC = () => {
             </Button>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            {recentContent.filter(c => c.status === 'scheduled').map((content, index) => (
-              <ContentPreview key={index} {...content} />
+            {content.filter(c => c.status === 'scheduled').map((item) => (
+              <ContentPreview 
+                key={item.id} 
+                platform={item.platform}
+                title={item.title || item.caption}
+                status={item.status}
+                scheduledFor={item.scheduled_for}
+              />
             ))}
           </div>
         </TabsContent>
@@ -276,8 +349,14 @@ export const SocialMediaDashboard: React.FC = () => {
             </Button>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            {recentContent.filter(c => c.status === 'draft').map((content, index) => (
-              <ContentPreview key={index} {...content} />
+            {content.filter(c => c.status === 'draft').map((item) => (
+              <ContentPreview 
+                key={item.id} 
+                platform={item.platform}
+                title={item.title || item.caption}
+                status={item.status}
+                scheduledFor={item.scheduled_for}
+              />
             ))}
           </div>
         </TabsContent>
@@ -293,36 +372,28 @@ export const SocialMediaDashboard: React.FC = () => {
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="flex items-center justify-between p-4 border rounded-lg">
-              <div className="flex items-center gap-3">
-                <Instagram className="h-5 w-5 text-pink-600" />
-                <div>
-                  <p className="font-medium">Instagram</p>
-                  <p className="text-sm text-muted-foreground">@yourhotel</p>
+            {accounts.map((account) => (
+              <div key={account.id} className="flex items-center justify-between p-4 border rounded-lg">
+                <div className="flex items-center gap-3">
+                  {account.platform === 'instagram' && <Instagram className="h-5 w-5 text-pink-600" />}
+                  {account.platform === 'facebook' && <Facebook className="h-5 w-5 text-blue-600" />}
+                  {account.platform === 'twitter' && <Twitter className="h-5 w-5 text-blue-400" />}
+                  {account.platform === 'linkedin' && <Linkedin className="h-5 w-5 text-blue-700" />}
+                  <div>
+                    <p className="font-medium capitalize">{account.platform}</p>
+                    <p className="text-sm text-muted-foreground">{account.account_name}</p>
+                  </div>
                 </div>
+                <Badge variant={account.is_connected ? "secondary" : "outline"}>
+                  {account.is_connected ? "Connected" : "Not Connected"}
+                </Badge>
               </div>
-              <Badge variant="secondary">Connected</Badge>
-            </div>
-            <div className="flex items-center justify-between p-4 border rounded-lg">
-              <div className="flex items-center gap-3">
-                <Facebook className="h-5 w-5 text-blue-600" />
-                <div>
-                  <p className="font-medium">Facebook</p>
-                  <p className="text-sm text-muted-foreground">Your Hotel Page</p>
-                </div>
+            ))}
+            {accounts.length === 0 && (
+              <div className="col-span-3 text-center py-8 text-muted-foreground">
+                No social media accounts configured yet.
               </div>
-              <Badge variant="secondary">Connected</Badge>
-            </div>
-            <div className="flex items-center justify-between p-4 border rounded-lg">
-              <div className="flex items-center gap-3">
-                <Twitter className="h-5 w-5 text-blue-400" />
-                <div>
-                  <p className="font-medium">Twitter</p>
-                  <p className="text-sm text-muted-foreground">Not connected</p>
-                </div>
-              </div>
-              <Button variant="outline" size="sm">Connect</Button>
-            </div>
+            )}
           </div>
         </CardContent>
       </Card>
