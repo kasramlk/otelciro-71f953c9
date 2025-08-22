@@ -27,7 +27,12 @@ import {
   Moon,
   Sun,
   LogOut,
-  Building
+  Building,
+  Share2,
+  Image,
+  Calendar1,
+  Palette,
+  Zap
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -69,6 +74,14 @@ const channelItems: SidebarItem[] = [
   { title: "Reconciliation", href: "/channel/reconcile", icon: Target, badge: "3" }
 ];
 
+const socialMediaItems: SidebarItem[] = [
+  { title: "Content Studio", href: "/social-media", icon: Share2, color: "text-accent" },
+  { title: "Brand Kit", href: "/social-media/brand-kit", icon: Palette },
+  { title: "Calendar", href: "/social-media/calendar", icon: Calendar1, badge: "7" },
+  { title: "AI Generator", href: "/social-media/generator", icon: Zap, color: "text-accent" },
+  { title: "Analytics", href: "/social-media/analytics", icon: BarChart3 }
+];
+
 const systemItems: SidebarItem[] = [
   { title: "Settings", href: "/settings", icon: Settings },
   { title: "Audit Log", href: "/audit-log", icon: BookOpen }
@@ -80,6 +93,7 @@ export const HMSSidebar = () => {
   const [expandedGroups, setExpandedGroups] = useState({
     operations: true,
     business: true,
+    social: true,
     channels: true,
     system: false
   });
@@ -270,6 +284,8 @@ export const HMSSidebar = () => {
         {renderNavGroup("Operations", operationsItems, "operations")}
         <Separator className="bg-sidebar-border" />
         {renderNavGroup("Business", businessItems, "business")}
+        <Separator className="bg-sidebar-border" />
+        {renderNavGroup("Social Media", socialMediaItems, "social")}
         <Separator className="bg-sidebar-border" />
         {renderNavGroup("Channel Manager", channelItems, "channels")}
         <Separator className="bg-sidebar-border" />

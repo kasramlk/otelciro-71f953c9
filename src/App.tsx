@@ -69,6 +69,8 @@ import GuestExperience from "./pages/GuestExperience";
 import Analytics from "./pages/Analytics";
 import QATestSuite from "./pages/QATestSuite";
 import UserProfilePage from "./pages/UserProfile";
+import SocialMedia from "./pages/SocialMedia";
+import SocialMediaBrandKit from "./pages/SocialMediaBrandKit";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -290,6 +292,49 @@ const AppContent = () => {
           <UserProfilePage />
         </HMSLayout>
       } />
+      
+      {/* Social Media Routes */}
+      <Route path="/social-media" element={
+        <HMSLayout>
+          <SocialMedia />
+        </HMSLayout>
+      } />
+      <Route path="/social-media/brand-kit" element={
+        <HMSLayout>
+          <SocialMediaBrandKit />
+        </HMSLayout>
+      } />
+      <Route path="/social-media/calendar" element={
+        <HMSLayout>
+          <div className="p-6">
+            <h1 className="text-3xl font-bold mb-6">Social Media Calendar</h1>
+            <div className="bg-muted/50 rounded-lg p-8 text-center">
+              <p className="text-muted-foreground">Social Media Calendar coming soon...</p>
+            </div>
+          </div>
+        </HMSLayout>
+      } />
+      <Route path="/social-media/generator" element={
+        <HMSLayout>
+          <div className="p-6">
+            <h1 className="text-3xl font-bold mb-6">AI Content Generator</h1>
+            <div className="bg-muted/50 rounded-lg p-8 text-center">
+              <p className="text-muted-foreground">AI Content Generator coming soon...</p>
+            </div>
+          </div>
+        </HMSLayout>
+      } />
+      <Route path="/social-media/analytics" element={
+        <HMSLayout>
+          <div className="p-6">
+            <h1 className="text-3xl font-bold mb-6">Social Media Analytics</h1>
+            <div className="bg-muted/50 rounded-lg p-8 text-center">
+              <p className="text-muted-foreground">Social Media Analytics coming soon...</p>
+            </div>
+          </div>
+        </HMSLayout>
+      } />
+      
       <Route path="/reports" element={
         <HMSLayout>
           <Reports />

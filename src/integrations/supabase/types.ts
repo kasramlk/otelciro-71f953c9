@@ -253,6 +253,65 @@ export type Database = {
         }
         Relationships: []
       }
+      brand_kits: {
+        Row: {
+          accent_color: string
+          brand_voice: Json | null
+          created_at: string
+          font_primary: string
+          font_secondary: string | null
+          hotel_id: string
+          id: string
+          is_active: boolean | null
+          logo_url: string | null
+          name: string
+          primary_color: string
+          secondary_color: string
+          templates: Json | null
+          updated_at: string
+        }
+        Insert: {
+          accent_color?: string
+          brand_voice?: Json | null
+          created_at?: string
+          font_primary?: string
+          font_secondary?: string | null
+          hotel_id: string
+          id?: string
+          is_active?: boolean | null
+          logo_url?: string | null
+          name?: string
+          primary_color?: string
+          secondary_color?: string
+          templates?: Json | null
+          updated_at?: string
+        }
+        Update: {
+          accent_color?: string
+          brand_voice?: Json | null
+          created_at?: string
+          font_primary?: string
+          font_secondary?: string | null
+          hotel_id?: string
+          id?: string
+          is_active?: boolean | null
+          logo_url?: string | null
+          name?: string
+          primary_color?: string
+          secondary_color?: string
+          templates?: Json | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "brand_kits_hotel_id_fkey"
+            columns: ["hotel_id"]
+            isOneToOne: false
+            referencedRelation: "hotels"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       cashier_sessions: {
         Row: {
           card_collected: number | null
@@ -614,6 +673,195 @@ export type Database = {
           source?: string
         }
         Relationships: []
+      }
+      content_approvals: {
+        Row: {
+          approver_id: string | null
+          comments: string | null
+          content_id: string
+          created_at: string
+          hotel_id: string
+          id: string
+          reviewed_at: string | null
+          revision_notes: string | null
+          status: string
+          submitted_at: string
+          submitted_by: string
+          updated_at: string
+        }
+        Insert: {
+          approver_id?: string | null
+          comments?: string | null
+          content_id: string
+          created_at?: string
+          hotel_id: string
+          id?: string
+          reviewed_at?: string | null
+          revision_notes?: string | null
+          status?: string
+          submitted_at?: string
+          submitted_by: string
+          updated_at?: string
+        }
+        Update: {
+          approver_id?: string | null
+          comments?: string | null
+          content_id?: string
+          created_at?: string
+          hotel_id?: string
+          id?: string
+          reviewed_at?: string | null
+          revision_notes?: string | null
+          status?: string
+          submitted_at?: string
+          submitted_by?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "content_approvals_content_id_fkey"
+            columns: ["content_id"]
+            isOneToOne: false
+            referencedRelation: "social_content"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "content_approvals_hotel_id_fkey"
+            columns: ["hotel_id"]
+            isOneToOne: false
+            referencedRelation: "hotels"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      content_calendar: {
+        Row: {
+          ai_suggested: boolean | null
+          approval_status: string | null
+          approved_at: string | null
+          approved_by: string | null
+          auto_generated: boolean | null
+          content_id: string
+          created_at: string
+          hotel_id: string
+          id: string
+          notes: string | null
+          scheduled_date: string
+          scheduled_time: string
+          timezone: string | null
+          updated_at: string
+        }
+        Insert: {
+          ai_suggested?: boolean | null
+          approval_status?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
+          auto_generated?: boolean | null
+          content_id: string
+          created_at?: string
+          hotel_id: string
+          id?: string
+          notes?: string | null
+          scheduled_date: string
+          scheduled_time: string
+          timezone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          ai_suggested?: boolean | null
+          approval_status?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
+          auto_generated?: boolean | null
+          content_id?: string
+          created_at?: string
+          hotel_id?: string
+          id?: string
+          notes?: string | null
+          scheduled_date?: string
+          scheduled_time?: string
+          timezone?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "content_calendar_content_id_fkey"
+            columns: ["content_id"]
+            isOneToOne: false
+            referencedRelation: "social_content"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "content_calendar_hotel_id_fkey"
+            columns: ["hotel_id"]
+            isOneToOne: false
+            referencedRelation: "hotels"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      content_templates: {
+        Row: {
+          ai_prompt: string | null
+          brand_kit_id: string | null
+          category: string
+          content_type: string
+          created_at: string
+          hotel_id: string
+          id: string
+          is_active: boolean | null
+          name: string
+          platform: string
+          template_data: Json
+          updated_at: string
+          usage_count: number | null
+        }
+        Insert: {
+          ai_prompt?: string | null
+          brand_kit_id?: string | null
+          category: string
+          content_type: string
+          created_at?: string
+          hotel_id: string
+          id?: string
+          is_active?: boolean | null
+          name: string
+          platform: string
+          template_data?: Json
+          updated_at?: string
+          usage_count?: number | null
+        }
+        Update: {
+          ai_prompt?: string | null
+          brand_kit_id?: string | null
+          category?: string
+          content_type?: string
+          created_at?: string
+          hotel_id?: string
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          platform?: string
+          template_data?: Json
+          updated_at?: string
+          usage_count?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "content_templates_brand_kit_id_fkey"
+            columns: ["brand_kit_id"]
+            isOneToOne: false
+            referencedRelation: "brand_kits"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "content_templates_hotel_id_fkey"
+            columns: ["hotel_id"]
+            isOneToOne: false
+            referencedRelation: "hotels"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       currencies: {
         Row: {
@@ -2610,6 +2858,237 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      social_analytics: {
+        Row: {
+          analytics_date: string
+          bookings_attributed: number | null
+          clicks: number | null
+          comments: number | null
+          content_id: string | null
+          created_at: string
+          ctr: number | null
+          engagement_rate: number | null
+          hotel_id: string
+          id: string
+          impressions: number | null
+          likes: number | null
+          platform: string
+          post_id: string | null
+          raw_data: Json | null
+          reach: number | null
+          revenue_attributed: number | null
+          saves: number | null
+          shares: number | null
+          updated_at: string
+        }
+        Insert: {
+          analytics_date?: string
+          bookings_attributed?: number | null
+          clicks?: number | null
+          comments?: number | null
+          content_id?: string | null
+          created_at?: string
+          ctr?: number | null
+          engagement_rate?: number | null
+          hotel_id: string
+          id?: string
+          impressions?: number | null
+          likes?: number | null
+          platform: string
+          post_id?: string | null
+          raw_data?: Json | null
+          reach?: number | null
+          revenue_attributed?: number | null
+          saves?: number | null
+          shares?: number | null
+          updated_at?: string
+        }
+        Update: {
+          analytics_date?: string
+          bookings_attributed?: number | null
+          clicks?: number | null
+          comments?: number | null
+          content_id?: string | null
+          created_at?: string
+          ctr?: number | null
+          engagement_rate?: number | null
+          hotel_id?: string
+          id?: string
+          impressions?: number | null
+          likes?: number | null
+          platform?: string
+          post_id?: string | null
+          raw_data?: Json | null
+          reach?: number | null
+          revenue_attributed?: number | null
+          saves?: number | null
+          shares?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "social_analytics_content_id_fkey"
+            columns: ["content_id"]
+            isOneToOne: false
+            referencedRelation: "social_content"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "social_analytics_hotel_id_fkey"
+            columns: ["hotel_id"]
+            isOneToOne: false
+            referencedRelation: "hotels"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      social_content: {
+        Row: {
+          ai_metadata: Json | null
+          brand_kit_id: string | null
+          caption: string
+          content_type: string
+          created_at: string
+          created_by: string | null
+          hashtags: string[] | null
+          hotel_id: string
+          id: string
+          language: string | null
+          media_urls: string[] | null
+          performance_data: Json | null
+          platform: string
+          pms_data: Json | null
+          published_at: string | null
+          scheduled_for: string | null
+          status: string
+          template_id: string | null
+          thumbnail_url: string | null
+          title: string | null
+          updated_at: string
+        }
+        Insert: {
+          ai_metadata?: Json | null
+          brand_kit_id?: string | null
+          caption: string
+          content_type: string
+          created_at?: string
+          created_by?: string | null
+          hashtags?: string[] | null
+          hotel_id: string
+          id?: string
+          language?: string | null
+          media_urls?: string[] | null
+          performance_data?: Json | null
+          platform: string
+          pms_data?: Json | null
+          published_at?: string | null
+          scheduled_for?: string | null
+          status?: string
+          template_id?: string | null
+          thumbnail_url?: string | null
+          title?: string | null
+          updated_at?: string
+        }
+        Update: {
+          ai_metadata?: Json | null
+          brand_kit_id?: string | null
+          caption?: string
+          content_type?: string
+          created_at?: string
+          created_by?: string | null
+          hashtags?: string[] | null
+          hotel_id?: string
+          id?: string
+          language?: string | null
+          media_urls?: string[] | null
+          performance_data?: Json | null
+          platform?: string
+          pms_data?: Json | null
+          published_at?: string | null
+          scheduled_for?: string | null
+          status?: string
+          template_id?: string | null
+          thumbnail_url?: string | null
+          title?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "social_content_brand_kit_id_fkey"
+            columns: ["brand_kit_id"]
+            isOneToOne: false
+            referencedRelation: "brand_kits"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "social_content_hotel_id_fkey"
+            columns: ["hotel_id"]
+            isOneToOne: false
+            referencedRelation: "hotels"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "social_content_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "content_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      social_media_accounts: {
+        Row: {
+          access_token: string | null
+          account_handle: string | null
+          account_metadata: Json | null
+          account_name: string
+          created_at: string
+          hotel_id: string
+          id: string
+          is_active: boolean | null
+          is_connected: boolean | null
+          platform: string
+          refresh_token: string | null
+          updated_at: string
+        }
+        Insert: {
+          access_token?: string | null
+          account_handle?: string | null
+          account_metadata?: Json | null
+          account_name: string
+          created_at?: string
+          hotel_id: string
+          id?: string
+          is_active?: boolean | null
+          is_connected?: boolean | null
+          platform: string
+          refresh_token?: string | null
+          updated_at?: string
+        }
+        Update: {
+          access_token?: string | null
+          account_handle?: string | null
+          account_metadata?: Json | null
+          account_name?: string
+          created_at?: string
+          hotel_id?: string
+          id?: string
+          is_active?: boolean | null
+          is_connected?: boolean | null
+          platform?: string
+          refresh_token?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "social_media_accounts_hotel_id_fkey"
+            columns: ["hotel_id"]
+            isOneToOne: false
+            referencedRelation: "hotels"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       staff: {
         Row: {
