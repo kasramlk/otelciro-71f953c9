@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -31,6 +31,8 @@ import {
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { format, subDays, startOfMonth, endOfMonth } from "date-fns";
+import { useProductionData } from "@/hooks/use-production-data";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   BarChart,
   Bar,
@@ -127,16 +129,87 @@ export default function Reports() {
   const [roomTypeFilter, setRoomTypeFilter] = useState("all");
   const [sourceFilter, setSourceFilter] = useState("all");
   const { toast } = useToast();
+  
+  const { 
+    hotels, 
+    reservations, 
+    analytics, 
+    rooms,
+    loading,
+    error,
+    refreshData 
+  } = useProductionData();
 
+  // Real-time data updates
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (!loading) {
+        refreshData();
+      }
+    }, 30000); // Refresh every 30 seconds
+
+    return () => clearInterval(interval);
+  }, [loading, refreshData]);
+
+  // Calculate real metrics from production data
   const currentMetrics = {
-    occupancy: 85.5,
-    adr: 158.75,
-    revpar: 135.73,
-    totalRooms: 45,
-    occupiedRooms: 38,
-    availableRooms: 7,
-    revenue: 6050.00,
+    occupancy: analytics?.avgOccupancyRate || 0,
+    adr: analytics?.adr || 0,
+    revpar: analytics?.revPAR || 0,
+    totalRooms: rooms?.length || 0,
+    occupiedRooms: Math.round((analytics?.avgOccupancyRate || 0) * (rooms?.length || 0) / 100),
+    availableRooms: (rooms?.length || 0) - Math.round((analytics?.avgOccupancyRate || 0) * (rooms?.length || 0) / 100),
+    revenue: analytics?.totalRevenue || 0,
   };
+
+  // Transform real reservation data for charts
+  const occupancyData = analytics?.occupancyData?.slice(-7).map((day, index) => ({
+    date: format(new Date(day.date), 'MMM dd'),
+    occupancy: Math.round(day.occupancyRate),
+    revenue: day.totalRevenue
+  })) || mockOccupancyData;
+
+  // Calculate source distribution from real reservations
+  const sourceDistribution = reservations?.reduce((acc: any, reservation: any) => {
+    const source = reservation.source || 'Direct';
+    if (!acc[source]) {
+      acc[source] = { name: source, count: 0, value: 0 };
+    }
+    acc[source].count++;
+    return acc;
+  }, {});
+
+  const sourceData = sourceDistribution ? Object.values(sourceDistribution).map((source: any) => ({
+    ...source,
+    value: Math.round((source.count / reservations.length) * 100)
+  })) : mockSourceData;
+
+  // Get today's arrivals and departures from real data
+  const today = format(new Date(), 'yyyy-MM-dd');
+  const todayArrivals = reservations?.filter((res: any) => 
+    res.check_in === today && res.status === 'confirmed'
+  ).map((res: any) => ({
+    id: res.id,
+    code: res.code,
+    guest: res.guest_name || `${res.first_name} ${res.last_name}`,
+    room: res.room_number || 'TBD',
+    source: res.source || 'Direct',
+    checkIn: new Date(res.check_in + 'T' + (res.arrival_time || '15:00')),
+    adults: res.adults,
+    children: res.children
+  })) || mockArrivals;
+
+  const todayDepartures = reservations?.filter((res: any) => 
+    res.check_out === today && res.status === 'confirmed'
+  ).map((res: any) => ({
+    id: res.id,
+    code: res.code,
+    guest: res.guest_name || `${res.first_name} ${res.last_name}`,
+    room: res.room_number || 'TBD',
+    source: res.source || 'Direct',
+    checkOut: new Date(res.check_out + 'T12:00'),
+    total: res.total_amount || 0
+  })) || mockDepartures;
 
   const handleExport = (format: 'csv' | 'pdf') => {
     toast({
@@ -152,16 +225,24 @@ export default function Reports() {
           <BarChart3 className="mr-2 h-8 w-8" />
           Reports & Analytics
         </h2>
-        <div className="flex items-center space-x-2">
-          <Button variant="outline" onClick={() => handleExport('csv')}>
-            <Download className="mr-2 h-4 w-4" />
-            Export CSV
-          </Button>
-          <Button variant="outline" onClick={() => handleExport('pdf')}>
-            <Download className="mr-2 h-4 w-4" />
-            Export PDF
-          </Button>
-        </div>
+          <div className="flex items-center space-x-2">
+            <Button 
+              variant="outline" 
+              onClick={() => refreshData()}
+              disabled={loading}
+            >
+              <TrendingUp className="mr-2 h-4 w-4" />
+              {loading ? 'Refreshing...' : 'Refresh Data'}
+            </Button>
+            <Button variant="outline" onClick={() => handleExport('csv')}>
+              <Download className="mr-2 h-4 w-4" />
+              Export CSV
+            </Button>
+            <Button variant="outline" onClick={() => handleExport('pdf')}>
+              <Download className="mr-2 h-4 w-4" />
+              Export PDF
+            </Button>
+          </div>
       </div>
 
       {/* Filters */}
@@ -194,8 +275,11 @@ export default function Reports() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Hotels</SelectItem>
-                <SelectItem value="hotel1">Grand Plaza Manhattan</SelectItem>
-                <SelectItem value="hotel2">Sunset Beach Resort</SelectItem>
+                {hotels?.map((hotel: any) => (
+                  <SelectItem key={hotel.id} value={hotel.id}>
+                    {hotel.name}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
 
@@ -237,7 +321,11 @@ export default function Reports() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{currentMetrics.occupancy}%</div>
+            {loading ? (
+              <Skeleton className="h-8 w-16" />
+            ) : (
+              <div className="text-2xl font-bold">{currentMetrics.occupancy.toFixed(1)}%</div>
+            )}
             <div className="text-xs text-muted-foreground">
               {currentMetrics.occupiedRooms} of {currentMetrics.totalRooms} rooms
             </div>
@@ -252,7 +340,11 @@ export default function Reports() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">${currentMetrics.adr}</div>
+            {loading ? (
+              <Skeleton className="h-8 w-20" />
+            ) : (
+              <div className="text-2xl font-bold">${currentMetrics.adr.toFixed(0)}</div>
+            )}
             <div className="text-xs text-muted-foreground">Average Daily Rate</div>
           </CardContent>
         </Card>
@@ -265,7 +357,11 @@ export default function Reports() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">${currentMetrics.revpar}</div>
+            {loading ? (
+              <Skeleton className="h-8 w-20" />
+            ) : (
+              <div className="text-2xl font-bold">${currentMetrics.revpar.toFixed(0)}</div>
+            )}
             <div className="text-xs text-muted-foreground">Revenue per Available Room</div>
           </CardContent>
         </Card>
@@ -278,7 +374,11 @@ export default function Reports() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">${currentMetrics.revenue.toLocaleString()}</div>
+            {loading ? (
+              <Skeleton className="h-8 w-24" />
+            ) : (
+              <div className="text-2xl font-bold">${currentMetrics.revenue.toLocaleString()}</div>
+            )}
             <div className="text-xs text-muted-foreground">Today's Revenue</div>
           </CardContent>
         </Card>
@@ -302,7 +402,7 @@ export default function Reports() {
             <CardContent>
               <div className="h-80">
                 <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={mockOccupancyData}>
+                  <LineChart data={occupancyData}>
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="date" />
                     <YAxis yAxisId="left" />
@@ -329,7 +429,7 @@ export default function Reports() {
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
                       <Pie
-                        data={mockSourceData}
+                        data={sourceData}
                         cx="50%"
                         cy="50%"
                         labelLine={false}
@@ -338,7 +438,7 @@ export default function Reports() {
                         fill="#8884d8"
                         dataKey="value"
                       >
-                        {mockSourceData.map((entry, index) => (
+                        {sourceData.map((entry, index) => (
                           <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                         ))}
                       </Pie>
@@ -356,7 +456,7 @@ export default function Reports() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {mockSourceData.map((source, index) => (
+                  {sourceData.map((source, index) => (
                     <div key={source.name} className="flex items-center justify-between p-3 border rounded-lg">
                       <div className="flex items-center space-x-3">
                         <div 
@@ -385,7 +485,7 @@ export default function Reports() {
                 Today's Arrivals
               </CardTitle>
               <CardDescription>
-                {mockArrivals.length} guests checking in today
+                {todayArrivals.length} guests checking in today
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -401,7 +501,7 @@ export default function Reports() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {mockArrivals.map((arrival) => (
+                  {todayArrivals.map((arrival) => (
                     <TableRow key={arrival.id}>
                       <TableCell>
                         <Badge variant="outline">{arrival.code}</Badge>
@@ -436,7 +536,7 @@ export default function Reports() {
                 Today's Departures
               </CardTitle>
               <CardDescription>
-                {mockDepartures.length} guests checking out today
+                {todayDepartures.length} guests checking out today
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -452,7 +552,7 @@ export default function Reports() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {mockDepartures.map((departure) => (
+                  {todayDepartures.map((departure) => (
                     <TableRow key={departure.id}>
                       <TableCell>
                         <Badge variant="outline">{departure.code}</Badge>

@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { User } from "@supabase/supabase-js";
+import { useProductionData } from "@/hooks/use-production-data";
 import { 
   Hotel, 
   Users, 
@@ -24,8 +25,17 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, ResponsiveContainer, PieC
 
 const Dashboard = () => {
   const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [authLoading, setAuthLoading] = useState(true);
   const navigate = useNavigate();
+  
+  const { 
+    hotels, 
+    reservations, 
+    analytics, 
+    rooms,
+    loading: dataLoading,
+    refreshData 
+  } = useProductionData();
 
   // Mock data for charts
   const occupancyData = [
@@ -61,7 +71,7 @@ const Dashboard = () => {
         return;
       }
       setUser(user);
-      setLoading(false);
+      setAuthLoading(false);
     };
 
     getUser();
@@ -77,7 +87,29 @@ const Dashboard = () => {
     return () => subscription.unsubscribe();
   }, [navigate]);
 
-  if (loading) {
+  // Real-time updates
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (!dataLoading && !authLoading) {
+        refreshData();
+      }
+    }, 60000); // Refresh every minute
+
+    return () => clearInterval(interval);
+  }, [dataLoading, authLoading, refreshData]);
+
+  // Calculate real metrics
+  const currentMetrics = {
+    occupancy: analytics?.avgOccupancyRate || 0,
+    adr: analytics?.adr || 0,
+    revpar: analytics?.revPAR || 0,
+    revenue: analytics?.totalRevenue || 0,
+    totalRooms: rooms?.length || 0,
+    arrivals: analytics?.totalArrivals || 0,
+    departures: analytics?.totalDepartures || 0
+  };
+
+  if (authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <motion.div
@@ -126,28 +158,28 @@ const Dashboard = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <KPICard
           title="Occupancy Rate"
-          value="87.5%"
+          value={dataLoading ? "..." : `${currentMetrics.occupancy.toFixed(1)}%`}
           change={{ value: 5.2, type: 'increase', period: 'vs last month' }}
           icon={<Hotel className="h-6 w-6" />}
           color="primary"
         />
         <KPICard
           title="Average Daily Rate"
-          value="$148"
+          value={dataLoading ? "..." : `$${currentMetrics.adr.toFixed(0)}`}
           change={{ value: 3.1, type: 'increase', period: 'vs last month' }}
           icon={<TrendingUp className="h-6 w-6" />}
           color="secondary"
         />
         <KPICard
           title="RevPAR"
-          value="$129"
+          value={dataLoading ? "..." : `$${currentMetrics.revpar.toFixed(0)}`}
           change={{ value: 8.7, type: 'increase', period: 'vs last month' }}
           icon={<CreditCard className="h-6 w-6" />}
           color="accent"
         />
         <KPICard
           title="Total Revenue"
-          value="$68,420"
+          value={dataLoading ? "..." : `$${currentMetrics.revenue.toLocaleString()}`}
           change={{ value: 12.3, type: 'increase', period: 'this month' }}
           icon={<TrendingUp className="h-6 w-6" />}
           color="success"
@@ -158,7 +190,7 @@ const Dashboard = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatCard
           title="Today's Arrivals"
-          value="14"
+          value={dataLoading ? "..." : currentMetrics.arrivals.toString()}
           subtitle="Expected check-ins"
           icon={<UserCheck className="h-4 w-4" />}
           trend={{ direction: 'up', value: '+2', label: 'vs yesterday' }}
@@ -166,15 +198,15 @@ const Dashboard = () => {
         />
         <StatCard
           title="Departures"
-          value="11"
+          value={dataLoading ? "..." : currentMetrics.departures.toString()}
           subtitle="Expected check-outs"
           icon={<Clock className="h-4 w-4" />}
           color="green"
         />
         <StatCard
           title="Rooms Available"
-          value="8"
-          subtitle="Out of 65 rooms"
+          value={dataLoading ? "..." : (currentMetrics.totalRooms - Math.round(currentMetrics.occupancy * currentMetrics.totalRooms / 100)).toString()}
+          subtitle={`Out of ${currentMetrics.totalRooms} rooms`}
           icon={<Bed className="h-4 w-4" />}
           trend={{ direction: 'down', value: '-3', label: 'vs yesterday' }}
           color="yellow"

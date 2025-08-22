@@ -379,3 +379,53 @@ export function usePrefetchHotelData(hotelId: string) {
     }
   };
 }
+
+// Main composite hook for production data
+export function useProductionData(hotelId?: string) {
+  // Use first available hotel if none specified
+  const { data: hotels, isLoading: hotelsLoading, error: hotelsError } = useHotels();
+  const currentHotelId = hotelId || hotels?.[0]?.id;
+  
+  // Get current date range (last 30 days)
+  const endDate = new Date().toISOString().split('T')[0];
+  const startDate = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+  
+  const { data: reservations, isLoading: reservationsLoading, error: reservationsError } = useReservations(
+    currentHotelId || '', 
+    { startDate, endDate }
+  );
+  
+  const { data: guests, isLoading: guestsLoading, error: guestsError } = useGuests(currentHotelId || '');
+  
+  const { data: rooms, isLoading: roomsLoading, error: roomsError } = useRooms(currentHotelId || '');
+  
+  const { data: analytics, isLoading: analyticsLoading, error: analyticsError } = useAnalytics(
+    currentHotelId || '', 
+    startDate, 
+    endDate
+  );
+  
+  const queryClient = useQueryClient();
+  
+  const refreshData = async () => {
+    if (currentHotelId) {
+      await queryClient.invalidateQueries({ queryKey: QUERY_KEYS.hotels });
+      await queryClient.invalidateQueries({ queryKey: QUERY_KEYS.reservations(currentHotelId) });
+      await queryClient.invalidateQueries({ queryKey: QUERY_KEYS.guests(currentHotelId) });
+      await queryClient.invalidateQueries({ queryKey: QUERY_KEYS.rooms(currentHotelId) });
+      await queryClient.invalidateQueries({ queryKey: QUERY_KEYS.analytics(currentHotelId, startDate, endDate) });
+    }
+  };
+  
+  return {
+    hotels,
+    reservations,
+    guests,
+    rooms,
+    analytics,
+    loading: hotelsLoading || reservationsLoading || guestsLoading || roomsLoading || analyticsLoading,
+    error: hotelsError || reservationsError || guestsError || roomsError || analyticsError,
+    refreshData,
+    currentHotelId
+  };
+}
