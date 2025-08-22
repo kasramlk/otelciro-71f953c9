@@ -3,11 +3,10 @@
 
 import { supabase } from '@/integrations/supabase/client';
 import { Database } from '@/integrations/supabase/types';
-import { errorHandler } from '@/lib/error-handler';
 
 type Tables = Database['public']['Tables'];
 
-// Type definitions for our entities
+// Type definitions for our entities - using actual database types
 export type HotelEntity = Tables['hotels']['Row'];
 export type ReservationEntity = Tables['reservations']['Row']; 
 export type GuestEntity = Tables['guests']['Row'];
@@ -24,7 +23,8 @@ abstract class BaseService {
       const { data, error } = await operation();
       
       if (error) {
-        throw errorHandler.handleSupabaseError(error, { operation: context });
+        console.error(`Error in ${context}:`, error);
+        throw new Error(error.message || `Operation failed: ${context}`);
       }
       
       if (data === null) {
@@ -33,7 +33,8 @@ abstract class BaseService {
       
       return data;
     } catch (error) {
-      throw errorHandler.handleError(error as Error, { operation: context });
+      console.error(`Service error in ${context}:`, error);
+      throw error;
     }
   }
 
@@ -45,12 +46,14 @@ abstract class BaseService {
       const { data, error } = await operation();
       
       if (error) {
-        throw errorHandler.handleSupabaseError(error, { operation: context });
+        console.error(`Error in ${context}:`, error);
+        throw new Error(error.message || `Operation failed: ${context}`);
       }
       
       return data;
     } catch (error) {
-      throw errorHandler.handleError(error as Error, { operation: context });
+      console.error(`Service error in ${context}:`, error);
+      throw error;
     }
   }
 }
@@ -84,7 +87,7 @@ export class HotelService extends BaseService {
     );
   }
 
-  async updateHotel(id: string, updates: Partial<HotelEntity>): Promise<HotelEntity> {
+  async updateHotel(id: string, updates: Tables['hotels']['Update']): Promise<HotelEntity> {
     return this.handleOperation(
       async () => {
         const result = await supabase
@@ -220,7 +223,7 @@ export class ReservationService extends BaseService {
         
         if (occupancyData) {
           occupancyData.occupiedRooms++;
-          occupancyData.totalRevenue += reservation.rate_amount || 0;
+          occupancyData.totalRevenue += reservation.total_amount || 0;
           
           if (currentDate.toDateString() === checkIn.toDateString()) {
             occupancyData.arrivals++;
@@ -252,43 +255,55 @@ export class GuestService extends BaseService {
     vipOnly?: boolean;
     limit?: number;
   }): Promise<GuestEntity[]> {
-    let query = supabase
-      .from('guests')
-      .select('*')
-      .eq('hotel_id', hotelId);
+    return this.handleOperation(
+      async () => {
+        let query = supabase
+          .from('guests')
+          .select('*')
+          .eq('hotel_id', hotelId);
 
-    if (filters?.search) {
-      query = query.or(`first_name.ilike.%${filters.search}%,last_name.ilike.%${filters.search}%,email.ilike.%${filters.search}%`);
-    }
+        if (filters?.search) {
+          query = query.or(`first_name.ilike.%${filters.search}%,last_name.ilike.%${filters.search}%,email.ilike.%${filters.search}%`);
+        }
 
-    if (filters?.limit) {
-      query = query.limit(filters.limit);
-    }
+        if (filters?.limit) {
+          query = query.limit(filters.limit);
+        }
 
-    query = query.order('created_at', { ascending: false });
+        query = query.order('created_at', { ascending: false });
 
-    return this.handleOperation(() => query, 'guests');
+        const result = await query;
+        return result;
+      },
+      'guests'
+    );
   }
 
-  async createGuest(guest: Omit<GuestEntity, 'id' | 'created_at' | 'updated_at'>): Promise<GuestEntity> {
+  async createGuest(guest: Tables['guests']['Insert']): Promise<GuestEntity> {
     return this.handleOperation(
-      () => supabase
-        .from('guests')
-        .insert(guest)
-        .select()
-        .single(),
+      async () => {
+        const result = await supabase
+          .from('guests')
+          .insert(guest)
+          .select()
+          .single();
+        return result;
+      },
       'guest creation'
     );
   }
 
-  async updateGuest(id: string, updates: Partial<GuestEntity>): Promise<GuestEntity> {
+  async updateGuest(id: string, updates: Tables['guests']['Update']): Promise<GuestEntity> {
     return this.handleOperation(
-      () => supabase
-        .from('guests')
-        .update(updates)
-        .eq('id', id)
-        .select()
-        .single(),
+      async () => {
+        const result = await supabase
+          .from('guests')
+          .update(updates)
+          .eq('id', id)
+          .select()
+          .single();
+        return result;
+      },
       `guest update ${id}`
     );
   }
@@ -298,27 +313,33 @@ export class GuestService extends BaseService {
 export class RoomService extends BaseService {
   async getRooms(hotelId: string): Promise<RoomEntity[]> {
     return this.handleOperation(
-      () => supabase
-        .from('rooms') 
-        .select('*')
-        .eq('hotel_id', hotelId)
-        .order('number', { ascending: true }),
+      async () => {
+        const result = await supabase
+          .from('rooms') 
+          .select('*')
+          .eq('hotel_id', hotelId)
+          .order('number', { ascending: true });
+        return result;
+      },
       'rooms'
     );
   }
 
   async updateRoomStatus(id: string, status: string, notes?: string): Promise<RoomEntity> {
     return this.handleOperation(
-      () => supabase
-        .from('rooms')
-        .update({ 
-          status,
-          notes: notes || undefined,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', id)
-        .select()
-        .single(),
+      async () => {
+        const result = await supabase
+          .from('rooms')
+          .update({ 
+            status,
+            notes: notes || undefined,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', id)
+          .select()
+          .single();
+        return result;
+      },
       `room status update ${id}`
     );
   }
@@ -331,51 +352,60 @@ export class HousekeepingService extends BaseService {
     assignedTo?: string;
     roomId?: string;
   }): Promise<HousekeepingTaskEntity[]> {
-    let query = supabase
-      .from('housekeeping_tasks')
-      .select(`
-        *,
-        room:rooms(*)
-      `)
-      .eq('hotel_id', hotelId);
+    return this.handleOperation(
+      async () => {
+        let query = supabase
+          .from('housekeeping_tasks')
+          .select('*')
+          .eq('hotel_id', hotelId);
 
-    if (filters?.status) {
-      query = query.eq('status', filters.status);
-    }
-    if (filters?.assignedTo) {
-      query = query.eq('assigned_to', filters.assignedTo);
-    }
-    if (filters?.roomId) {
-      query = query.eq('room_id', filters.roomId);
-    }
+        if (filters?.status) {
+          query = query.eq('status', filters.status);
+        }
+        if (filters?.assignedTo) {
+          query = query.eq('assigned_to', filters.assignedTo);
+        }
+        if (filters?.roomId) {
+          query = query.eq('room_id', filters.roomId);
+        }
 
-    query = query.order('created_at', { ascending: false });
+        query = query.order('created_at', { ascending: false });
 
-    return this.handleOperation(() => query, 'housekeeping tasks');
+        const result = await query;
+        return result;
+      },
+      'housekeeping tasks'
+    );
   }
 
-  async createTask(task: Omit<HousekeepingTaskEntity, 'id' | 'created_at' | 'updated_at'>): Promise<HousekeepingTaskEntity> {
+  async createTask(task: Tables['housekeeping_tasks']['Insert']): Promise<HousekeepingTaskEntity> {
     return this.handleOperation(
-      () => supabase
-        .from('housekeeping_tasks')
-        .insert(task)
-        .select()
-        .single(),
+      async () => {
+        const result = await supabase
+          .from('housekeeping_tasks')
+          .insert(task)
+          .select()
+          .single();
+        return result;
+      },
       'housekeeping task creation'
     );
   }
 
-  async updateTask(id: string, updates: Partial<HousekeepingTaskEntity>): Promise<HousekeepingTaskEntity> {
+  async updateTask(id: string, updates: Tables['housekeeping_tasks']['Update']): Promise<HousekeepingTaskEntity> {
     return this.handleOperation(
-      () => supabase
-        .from('housekeeping_tasks')
-        .update({
-          ...updates,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', id)
-        .select()
-        .single(),
+      async () => {
+        const result = await supabase
+          .from('housekeeping_tasks')
+          .update({
+            ...updates,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', id)
+          .select()
+          .single();
+        return result;
+      },
       `housekeeping task update ${id}`
     );
   }
@@ -401,7 +431,7 @@ export class AnalyticsService extends BaseService {
       adr: Math.round(adr * 100) / 100,
       revPAR: Math.round(revPAR * 100) / 100,
       totalArrivals: occupancyData.reduce((sum, day) => sum + day.arrivals, 0),
-      totalDepartures: occupancyData.reduce((sum, day) => day.departures, 0),
+      totalDepartures: occupancyData.reduce((sum, day) => sum + day.departures, 0),
       occupancyData
     };
   }

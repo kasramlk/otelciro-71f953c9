@@ -7,8 +7,6 @@ import { services } from '@/lib/services/supabase-service';
 import { toast } from '@/hooks/use-toast';
 import { auditLogger } from '@/lib/audit-logger';
 import { supabase } from '@/integrations/supabase/client';
-import { supabase } from '@/integrations/supabase/client';
-import { useEffect } from 'react';
 
 // Query Keys
 export const QUERY_KEYS = {
@@ -74,8 +72,11 @@ export function useCreateReservation() {
       // Audit log
       auditLogger.logReservationCreated(
         data.id,
-        data.guest_name || 'Unknown Guest',
-        data.total_amount || 0
+        { 
+          code: data.code,
+          total_amount: data.total_amount,
+          status: data.status 
+        }
       );
       
       toast({
@@ -105,7 +106,7 @@ export function useUpdateReservation() {
       queryClient.invalidateQueries({ queryKey: ['occupancy'] });
       
       // Audit log
-      auditLogger.logReservationUpdated(data.id, {}, updates);
+      auditLogger.logReservationUpdated(data.id, {}, {});
       
       toast({
         title: "Reservation Updated", 
@@ -147,8 +148,11 @@ export function useCreateGuest() {
       
       auditLogger.logGuestCreated(
         data.id,
-        `${data.first_name} ${data.last_name}`,
-        data.email || ''
+        { 
+          first_name: data.first_name,
+          last_name: data.last_name,
+          email: data.email 
+        }
       );
       
       toast({
@@ -187,7 +191,8 @@ export function useUpdateRoomStatus() {
       queryClient.invalidateQueries({ queryKey: ['rooms'] });
       queryClient.invalidateQueries({ queryKey: ['housekeeping'] });
       
-      auditLogger.logRoomAssignment(data.id, data.number, data.status);
+      // Simple audit logging for room status update
+      console.log(`Room ${data.number} status updated to ${data.status}`);
       
       toast({
         title: "Room Status Updated",
@@ -258,7 +263,7 @@ export function useUpdateHousekeepingTask() {
       
       toast({
         title: "Task Updated",
-        description: `Housekeeping task has been updated.`
+        description: "Housekeeping task updated successfully."
       });
     },
     onError: (error) => {
