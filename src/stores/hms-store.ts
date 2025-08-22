@@ -400,7 +400,63 @@ export const useHMSStore = create<HMSStore>()(
           rooms: state.rooms,
           guests: state.guests,
           housekeepingTasks: state.housekeepingTasks
-        })
+        }),
+        storage: {
+          getItem: (name) => {
+            const str = localStorage.getItem(name);
+            if (!str) return null;
+            try {
+              const data = JSON.parse(str);
+              // Convert selectedMonth string back to Date object
+              if (data.state?.selectedMonth && typeof data.state.selectedMonth === 'string') {
+                data.state.selectedMonth = new Date(data.state.selectedMonth);
+              }
+              // Convert Date strings in reservations back to Date objects
+              if (data.state?.reservations) {
+                data.state.reservations = data.state.reservations.map((res: any) => ({
+                  ...res,
+                  checkIn: new Date(res.checkIn),
+                  checkOut: new Date(res.checkOut),
+                  createdAt: new Date(res.createdAt)
+                }));
+              }
+              // Convert Date strings in rooms back to Date objects
+              if (data.state?.rooms) {
+                data.state.rooms = data.state.rooms.map((room: any) => ({
+                  ...room,
+                  lastCleaned: new Date(room.lastCleaned)
+                }));
+              }
+              // Convert Date strings in guests back to Date objects
+              if (data.state?.guests) {
+                data.state.guests = data.state.guests.map((guest: any) => ({
+                  ...guest,
+                  dateOfBirth: new Date(guest.dateOfBirth),
+                  lastStay: new Date(guest.lastStay)
+                }));
+              }
+              // Convert Date strings in housekeeping tasks back to Date objects
+              if (data.state?.housekeepingTasks) {
+                data.state.housekeepingTasks = data.state.housekeepingTasks.map((task: any) => ({
+                  ...task,
+                  dueDate: new Date(task.dueDate),
+                  createdAt: new Date(task.createdAt),
+                  completedAt: task.completedAt ? new Date(task.completedAt) : null
+                }));
+              }
+              return data;
+            } catch (error) {
+              console.error('Error parsing persisted HMS store data:', error);
+              return null;
+            }
+          },
+          setItem: (name, value) => {
+            localStorage.setItem(name, JSON.stringify(value));
+          },
+          removeItem: (name) => {
+            localStorage.removeItem(name);
+          }
+        }
       }
     ),
     { name: 'HMS Store' }
