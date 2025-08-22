@@ -135,7 +135,7 @@ export const HMSAnalytics = () => {
   };
 
   // Handle export
-  const handleExport = (format: 'pdf' | 'csv' | 'excel') => {
+  const handleExport = (exportFormat: 'pdf' | 'csv' | 'excel') => {
     const exportData = chartData.map(item => 
       `${item.date},${item.occupancy}%,€${item.adr},€${item.revenue},${item.arrivals},${item.departures}`
     );
@@ -147,12 +147,12 @@ export const HMSAnalytics = () => {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `analytics_${format}_${format(new Date(), 'yyyy-MM-dd')}.${format === 'csv' ? 'csv' : format}`;
+    a.download = `analytics_${exportFormat}_${format(new Date(), 'yyyy-MM-dd')}.${exportFormat === 'csv' ? 'csv' : exportFormat}`;
     a.click();
     URL.revokeObjectURL(url);
     
-    addAuditEntry('Analytics Export', `${format.toUpperCase()} export generated for ${dateRange.from} to ${dateRange.to}`);
-    toast({ title: `${format.toUpperCase()} exported successfully` });
+    addAuditEntry('Analytics Export', `${exportFormat.toUpperCase()} export generated for ${dateRange.from} to ${dateRange.to}`);
+    toast({ title: `${exportFormat.toUpperCase()} exported successfully` });
     setShowExportModal(false);
   };
 
