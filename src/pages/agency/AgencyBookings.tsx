@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { NewBookingModal } from "@/components/agency/NewBookingModal";
 import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -29,6 +30,7 @@ const AgencyBookings = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [dateRange, setDateRange] = useState("30");
+  const [isNewBookingOpen, setIsNewBookingOpen] = useState(false);
 
   const { data: bookings, isLoading } = useQuery({
     queryKey: ['agency-bookings', searchQuery, statusFilter, dateRange],
@@ -121,10 +123,17 @@ const AgencyBookings = () => {
             <Download className="h-4 w-4" />
             Export
           </Button>
-          <Button className="bg-gradient-to-r from-primary to-secondary hover:opacity-90 gap-2">
+          <Button className="bg-gradient-to-r from-primary to-secondary hover:opacity-90 gap-2" onClick={() => setIsNewBookingOpen(true)}>
             <Calendar className="h-4 w-4" />
             New Booking
           </Button>
+        </div>
+      </div>
+
+      <NewBookingModal 
+        isOpen={isNewBookingOpen} 
+        onOpenChange={setIsNewBookingOpen}
+      />
         </div>
       </div>
 

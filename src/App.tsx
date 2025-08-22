@@ -27,6 +27,8 @@ import AgencyDashboard from "./pages/agency/AgencyDashboard";
 import AgencyBookings from "./pages/agency/AgencyBookings";
 import AgencyReports from "./pages/agency/AgencyReports";
 import AgencyPayments from "./pages/agency/AgencyPayments";
+import AgencyNegotiations from "./pages/agency/AgencyNegotiations";
+import AgencyProfile from "./pages/agency/AgencyProfile";
 import HotelDashboard from "./pages/hotel/HotelDashboard";
 import ARICalendar from "./pages/hotel/ARICalendar";
 import HotelReservations from "./pages/hotel/HotelReservations";
@@ -129,10 +131,10 @@ const AppContent = () => {
             <Route path="/agency" element={<AgencyDashboard />} />
             <Route path="/agency/search" element={<HotelSearch />} />
             <Route path="/agency/bookings" element={<AgencyBookings />} />
-            <Route path="/agency/contracts" element={<div>Negotiations</div>} />
+            <Route path="/agency/contracts" element={<AgencyNegotiations />} />
             <Route path="/agency/payments" element={<AgencyPayments />} />
             <Route path="/agency/analytics" element={<AgencyReports />} />
-            <Route path="/agency/profile" element={<div>Profile</div>} />
+            <Route path="/agency/profile" element={<AgencyProfile />} />
           </Routes>
         </TravelAgencyLayout>
       );

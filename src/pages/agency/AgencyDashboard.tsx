@@ -85,7 +85,7 @@ const AgencyDashboard = () => {
               </div>
           <Button 
             className="bg-gradient-to-r from-green-500 to-blue-500 hover:opacity-90 text-white"
-            onClick={() => navigate('/agency/bookings')}
+            onClick={() => navigate('/agency/search')}
           >
             Start Booking
             <ArrowUpRight className="ml-2 h-4 w-4" />
