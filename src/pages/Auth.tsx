@@ -64,6 +64,8 @@ const Auth = () => {
             name,
             org_name: orgName,
             role: role,
+            first_name: name.split(' ')[0] || '',
+            last_name: name.split(' ').slice(1).join(' ') || ''
           }
         }
       });

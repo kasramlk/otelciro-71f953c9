@@ -66,6 +66,7 @@ import FrontOffice from "./pages/FrontOffice";
 import GuestExperience from "./pages/GuestExperience";
 import Analytics from "./pages/Analytics";
 import QATestSuite from "./pages/QATestSuite";
+import UserProfilePage from "./pages/UserProfile";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -266,7 +267,12 @@ const AppContent = () => {
           <HMSRevenueAI />
         </HMSLayout>
       } />
-      <Route path="/reports" element={
+        <Route path="/profile" element={
+          <HMSLayout>
+            <UserProfilePage />
+          </HMSLayout>
+        } />
+        <Route path="/reports" element={
         <HMSLayout>
           <Reports />
         </HMSLayout>
