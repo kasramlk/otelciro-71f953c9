@@ -51,7 +51,7 @@ interface RowProps<T> {
   };
 }
 
-function TableRow<T>({ index, style, data }: RowProps<T>) {
+const TableRow = <T,>({ index, style, data }: RowProps<T>) => {
   const { items, columns, onRowClick } = data;
   const row = items[index];
 
@@ -79,7 +79,7 @@ function TableRow<T>({ index, style, data }: RowProps<T>) {
       </motion.div>
     </div>
   );
-}
+};
 
 export function VirtualizedTable<T>({
   data,
@@ -163,6 +163,21 @@ export function VirtualizedTable<T>({
     }));
   }, []);
 
+  // Create a properly typed wrapper for the TableRow component
+  const RowRenderer = useCallback(({ index, style }: { index: number; style: React.CSSProperties }) => {
+    return (
+      <TableRow<T>
+        index={index}
+        style={style}
+        data={{
+          items: processedData,
+          columns,
+          onRowClick
+        }}
+      />
+    );
+  }, [processedData, columns, onRowClick]);
+
   if (loading) {
     return (
       <div className="space-y-4">
@@ -237,15 +252,11 @@ export function VirtualizedTable<T>({
         {processedData.length > 0 ? (
           <List
             height={height}
+            width="100%"
             itemCount={processedData.length}
             itemSize={itemHeight}
-            itemData={{
-              items: processedData,
-              columns,
-              onRowClick
-            }}
           >
-            {TableRow}
+            {RowRenderer}
           </List>
         ) : (
           <div className="p-8 text-center text-muted-foreground">
