@@ -27,7 +27,7 @@ import {
   DollarSign
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useSocialMediaStore } from '@/stores/social-media-store';
 

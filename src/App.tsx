@@ -72,6 +72,8 @@ import UserProfilePage from "./pages/UserProfile";
 import SocialMedia from "./pages/SocialMedia";
 import SocialMediaBrandKit from "./pages/SocialMediaBrandKit";
 import SocialMediaGenerator from "./pages/SocialMediaGenerator";
+import SocialMediaCalendar from "./pages/SocialMediaCalendar";
+import SocialMediaAnalyticsPage from "./pages/SocialMediaAnalytics";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -307,12 +309,7 @@ const AppContent = () => {
       } />
       <Route path="/social-media/calendar" element={
         <HMSLayout>
-          <div className="p-6">
-            <h1 className="text-3xl font-bold mb-6">Social Media Calendar</h1>
-            <div className="bg-muted/50 rounded-lg p-8 text-center">
-              <p className="text-muted-foreground">Social Media Calendar coming soon...</p>
-            </div>
-          </div>
+          <SocialMediaCalendar />
         </HMSLayout>
       } />
       <Route path="/social-media/generator" element={
@@ -322,12 +319,7 @@ const AppContent = () => {
       } />
       <Route path="/social-media/analytics" element={
         <HMSLayout>
-          <div className="p-6">
-            <h1 className="text-3xl font-bold mb-6">Social Media Analytics</h1>
-            <div className="bg-muted/50 rounded-lg p-8 text-center">
-              <p className="text-muted-foreground">Social Media Analytics coming soon...</p>
-            </div>
-          </div>
+          <SocialMediaAnalyticsPage />
         </HMSLayout>
       } />
       
