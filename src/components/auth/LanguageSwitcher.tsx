@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { useTranslation, Language } from "@/hooks/useTranslation";
+import { useTranslation } from "@/hooks/useTranslation";
 import { Globe } from "lucide-react";
 
 export const LanguageSwitcher = () => {

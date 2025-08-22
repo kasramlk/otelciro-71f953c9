@@ -1,4 +1,4 @@
-import { useState, createContext, useContext } from 'react';
+import { useState, createContext, useContext, ReactNode } from 'react';
 
 export type Language = 'en' | 'tr';
 
@@ -11,36 +11,40 @@ interface TranslationContextType {
 const translations = {
   en: {
     // Common
-    'common.email': 'Email',
-    'common.password': 'Password',
-    'common.fullName': 'Full Name',
-    'common.loading': 'Loading...',
-    'common.error': 'Error',
-    'common.success': 'Success',
-    'common.back': 'Back',
-    'common.continue': 'Continue',
-    'common.getStarted': 'Get Started',
-    'common.signIn': 'Sign In',
-    'common.signUp': 'Sign Up',
-    'common.createAccount': 'Create Account',
-    'common.changeRole': 'Change Role',
+    'common': {
+      'email': 'Email',
+      'password': 'Password',
+      'fullName': 'Full Name',
+      'loading': 'Loading...',
+      'error': 'Error',
+      'success': 'Success',
+      'back': 'Back',
+      'continue': 'Continue',
+      'getStarted': 'Get Started',
+      'signIn': 'Sign In',
+      'signUp': 'Sign Up',
+      'createAccount': 'Create Account',
+      'changeRole': 'Change Role'
+    },
     
     // Auth Page
-    'auth.title': 'Welcome to OtelCiro',
-    'auth.subtitle': 'AI-Powered Hospitality Ecosystem',
-    'auth.description': 'Transform your hotel operations with intelligent automation',
-    'auth.selectRole': 'Select your role to access the appropriate dashboard',
-    'auth.signingIn': 'Signing in...',
-    'auth.creatingAccount': 'Creating account...',
-    'auth.fillAllFields': 'Please fill in all fields',
-    'auth.checkEmail': 'Please check your email to confirm your account',
-    'auth.continueWithGoogle': 'Continue with Google',
-    'auth.continueWithFacebook': 'Continue with Facebook',
-    'auth.continueWithLinkedIn': 'Continue with LinkedIn',
-    'auth.orContinueWithEmail': 'Or continue with email',
-    'auth.alreadyHaveAccount': 'Already have an account?',
-    'auth.dontHaveAccount': "Don't have an account?",
-    'auth.forgotPassword': 'Forgot your password?',
+    'auth': {
+      'title': 'Welcome to OtelCiro',
+      'subtitle': 'AI-Powered Hospitality Ecosystem',
+      'description': 'Transform your hotel operations with intelligent automation',
+      'selectRole': 'Select your role to access the appropriate dashboard',
+      'signingIn': 'Signing in...',
+      'creatingAccount': 'Creating account...',
+      'fillAllFields': 'Please fill in all fields',
+      'checkEmail': 'Please check your email to confirm your account',
+      'continueWithGoogle': 'Continue with Google',
+      'continueWithFacebook': 'Continue with Facebook',
+      'continueWithLinkedIn': 'Continue with LinkedIn',
+      'orContinueWithEmail': 'Or continue with email',
+      'alreadyHaveAccount': 'Already have an account?',
+      'dontHaveAccount': "Don't have an account?",
+      'forgotPassword': 'Forgot your password?'
+    },
     
     // Role Selector
     'roles': {
@@ -112,36 +116,40 @@ const translations = {
   },
   tr: {
     // Common
-    'common.email': 'E-posta',
-    'common.password': 'Şifre',
-    'common.fullName': 'Ad Soyad',
-    'common.loading': 'Yükleniyor...',
-    'common.error': 'Hata',
-    'common.success': 'Başarılı',
-    'common.back': 'Geri',
-    'common.continue': 'Devam Et',
-    'common.getStarted': 'Başlayın',
-    'common.signIn': 'Giriş Yap',
-    'common.signUp': 'Kaydol',
-    'common.createAccount': 'Hesap Oluştur',
-    'common.changeRole': 'Rol Değiştir',
+    'common': {
+      'email': 'E-posta',
+      'password': 'Şifre',
+      'fullName': 'Ad Soyad',
+      'loading': 'Yükleniyor...',
+      'error': 'Hata',
+      'success': 'Başarılı',
+      'back': 'Geri',
+      'continue': 'Devam Et',
+      'getStarted': 'Başlayın',
+      'signIn': 'Giriş Yap',
+      'signUp': 'Kaydol',
+      'createAccount': 'Hesap Oluştur',
+      'changeRole': 'Rol Değiştir'
+    },
     
     // Auth Page
-    'auth.title': "OtelCiro'ya Hoş Geldiniz",
-    'auth.subtitle': 'AI-Destekli Konaklama Ekosistemi',
-    'auth.description': 'Otel operasyonlarınızı akıllı otomasyon ile dönüştürün',
-    'auth.selectRole': 'Uygun panele erişmek için rolünüzü seçin',
-    'auth.signingIn': 'Giriş yapılıyor...',
-    'auth.creatingAccount': 'Hesap oluşturuluyor...',
-    'auth.fillAllFields': 'Lütfen tüm alanları doldurun',
-    'auth.checkEmail': 'Hesabınızı onaylamak için lütfen e-postanızı kontrol edin',
-    'auth.continueWithGoogle': 'Google ile devam et',
-    'auth.continueWithFacebook': 'Facebook ile devam et',
-    'auth.continueWithLinkedIn': 'LinkedIn ile devam et',
-    'auth.orContinueWithEmail': 'Veya e-posta ile devam et',
-    'auth.alreadyHaveAccount': 'Zaten hesabınız var mı?',
-    'auth.dontHaveAccount': 'Hesabınız yok mu?',
-    'auth.forgotPassword': 'Şifrenizi mi unuttunuz?',
+    'auth': {
+      'title': "OtelCiro'ya Hoş Geldiniz",
+      'subtitle': 'AI-Destekli Konaklama Ekosistemi',
+      'description': 'Otel operasyonlarınızı akıllı otomasyon ile dönüştürün',
+      'selectRole': 'Uygun panele erişmek için rolünüzü seçin',
+      'signingIn': 'Giriş yapılıyor...',
+      'creatingAccount': 'Hesap oluşturuluyor...',
+      'fillAllFields': 'Lütfen tüm alanları doldurun',
+      'checkEmail': 'Hesabınızı onaylamak için lütfen e-postanızı kontrol edin',
+      'continueWithGoogle': 'Google ile devam et',
+      'continueWithFacebook': 'Facebook ile devam et',
+      'continueWithLinkedIn': 'LinkedIn ile devam et',
+      'orContinueWithEmail': 'Veya e-posta ile devam et',
+      'alreadyHaveAccount': 'Zaten hesabınız var mı?',
+      'dontHaveAccount': 'Hesabınız yok mu?',
+      'forgotPassword': 'Şifrenizi mi unuttunuz?'
+    },
     
     // Role Selector
     'roles': {
@@ -215,26 +223,37 @@ const translations = {
 
 const TranslationContext = createContext<TranslationContextType | undefined>(undefined);
 
+export const TranslationProvider = ({ children, language, setLanguage }: { 
+  children: ReactNode; 
+  language: Language; 
+  setLanguage: (lang: Language) => void; 
+}) => {
+  const t = (key: string): string => {
+    const keys = key.split('.');
+    let value: any = translations[language];
+    
+    for (const k of keys) {
+      if (value && typeof value === 'object' && k in value) {
+        value = value[k];
+      } else {
+        return key; // Return key if translation not found
+      }
+    }
+    
+    return typeof value === 'string' ? value : key;
+  };
+
+  return (
+    <TranslationContext.Provider value={{ language, setLanguage, t }}>
+      {children}
+    </TranslationContext.Provider>
+  );
+};
+
 export const useTranslation = () => {
   const context = useContext(TranslationContext);
   if (!context) {
-    // Fallback hook when used outside provider
-    const [language, setLanguage] = useState<Language>('en');
-    const t = (key: string): string => {
-      const keys = key.split('.');
-      let value: any = translations[language];
-      
-      for (const k of keys) {
-        if (value && typeof value === 'object' && k in value) {
-          value = value[k];
-        } else {
-          return key; // Return key if translation not found
-        }
-      }
-      
-      return typeof value === 'string' ? value : key;
-    };
-    return { language, setLanguage, t };
+    throw new Error('useTranslation must be used within a TranslationProvider');
   }
   return context;
 };
