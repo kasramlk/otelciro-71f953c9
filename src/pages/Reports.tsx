@@ -27,12 +27,17 @@ import {
   TrendingUp,
   Users,
   DollarSign,
-  Bed
+  Bed,
+  Activity,
+  Zap
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { format, subDays, startOfMonth, endOfMonth } from "date-fns";
 import { useProductionData } from "@/hooks/use-production-data";
 import { Skeleton } from "@/components/ui/skeleton";
+import { PerformanceMonitor } from "@/components/performance/PerformanceMonitor";
+import { CacheManager } from "@/components/performance/CacheManager";
+import { VirtualizedTable, ReservationsVirtualTable } from "@/components/performance/VirtualizedTable";
 import {
   BarChart,
   Bar,
@@ -386,11 +391,13 @@ export default function Reports() {
 
       {/* Charts and Data */}
       <Tabs defaultValue="occupancy" className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="occupancy">Occupancy Trend</TabsTrigger>
-          <TabsTrigger value="sources">Source Distribution</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-6">
+          <TabsTrigger value="occupancy">Occupancy</TabsTrigger>
+          <TabsTrigger value="sources">Sources</TabsTrigger>
           <TabsTrigger value="arrivals">Arrivals</TabsTrigger>
           <TabsTrigger value="departures">Departures</TabsTrigger>
+          <TabsTrigger value="performance">Performance</TabsTrigger>
+          <TabsTrigger value="system">System</TabsTrigger>
         </TabsList>
         
         <TabsContent value="occupancy" className="space-y-4">
@@ -575,6 +582,49 @@ export default function Reports() {
               </Table>
             </CardContent>
           </Card>
+        </TabsContent>
+        
+        <TabsContent value="performance" className="space-y-6">
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">System Performance</CardTitle>
+                <Activity className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">98.5%</div>
+                <p className="text-xs text-muted-foreground">Uptime this month</p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Response Time</CardTitle>
+                <Zap className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">245ms</div>
+                <p className="text-xs text-muted-foreground">Average response time</p>
+              </CardContent>
+            </Card>
+          </div>
+
+          <PerformanceMonitor />
+          
+          <Card>
+            <CardHeader>
+              <CardTitle>Virtualized Reservations Table</CardTitle>
+              <CardDescription>
+                High-performance table for large datasets with real-time search and sorting
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ReservationsVirtualTable />
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="system" className="space-y-6">
+          <CacheManager />
         </TabsContent>
       </Tabs>
     </div>
