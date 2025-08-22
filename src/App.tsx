@@ -30,7 +30,6 @@ import AgencyPayments from "./pages/agency/AgencyPayments";
 import AgencyNegotiations from "./pages/agency/AgencyNegotiations";
 import AgencyProfile from "./pages/agency/AgencyProfile";
 import HotelDashboard from "./pages/hotel/HotelDashboard";
-import ARICalendar from "./pages/hotel/ARICalendar";
 import HotelReservations from "./pages/hotel/HotelReservations";
 import HousekeepingModule from "./pages/hotel/HousekeepingModule";
 import { HotelManagerLayout } from "./layouts/HotelManagerLayout";
@@ -47,6 +46,10 @@ import { HMSChannelMapping } from "./components/hms/HMSChannelMapping";
 import { HMSChannelReconciliation } from "./components/hms/HMSChannelReconciliation";
 import { HMSRevenueAI } from "./components/hms/HMSRevenueAI";
 import { HMSNewReservation } from "./components/hms/HMSNewReservation";
+import ChannelARICalendar from "./components/channel/ARICalendar";
+import ChannelMapping from "./components/channel/ChannelMapping";
+import ChannelReconciliation from "./components/channel/ChannelReconciliation";
+import ChannelOrders from "./components/channel/ChannelOrders";
 import { TravelAgencyLayout } from "./layouts/TravelAgencyLayout";
 import { AdminLayout } from "./layouts/AdminLayout";
 import AdminDashboard from "./pages/admin/AdminDashboard";
@@ -210,7 +213,7 @@ const AppContent = () => {
       } />
       <Route path="/channel/ari" element={
         <HMSLayout>
-          <ARICalendar />
+          <ChannelARICalendar />
         </HMSLayout>
       } />
       <Route path="/channel/mapping" element={
@@ -265,7 +268,7 @@ const AppContent = () => {
       } />
       <Route path="/channel/ari" element={
         <HMSLayout>
-          <ARICalendar />
+          <ChannelARICalendar />
         </HMSLayout>
       } />
       <Route path="/channel/mapping" element={
@@ -295,7 +298,7 @@ const AppContent = () => {
       } />
       <Route path="/ari-calendar" element={
         <HotelManagerLayout>
-          <ARICalendar />
+          <ChannelARICalendar />
         </HotelManagerLayout>
       } />
       <Route path="/reservations/new" element={
