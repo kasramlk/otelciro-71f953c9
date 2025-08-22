@@ -18,7 +18,8 @@ import {
   Eye,
   Heart,
   MessageCircle,
-  ArrowUpRight
+  ArrowUpRight,
+  Link as LinkIcon
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { SocialMediaKPICard } from './SocialMediaKPICard';
@@ -178,12 +179,18 @@ export const SocialMediaDashboard: React.FC = () => {
             <p className="text-sm text-muted-foreground">
               Access advanced analytics, automation rules, and competitor insights
             </p>
-            <Button variant="outline" asChild>
-              <Link to="/social-media/advanced">
-                <TrendingUp className="h-4 w-4 mr-2" />
-                Advanced Tools
-              </Link>
-            </Button>
+          <Button variant="outline" asChild>
+            <Link to="/social-media/advanced">
+              <TrendingUp className="h-4 w-4 mr-2" />
+              Advanced Tools
+            </Link>
+          </Button>
+          <Button variant="outline" asChild>
+            <Link to="/social-media/integrations">
+              <LinkIcon className="h-4 w-4 mr-2" />
+              Integrations
+            </Link>
+          </Button>
           </CardContent>
         </Card>
       </div>
