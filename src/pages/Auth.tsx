@@ -8,7 +8,18 @@ const Auth = () => {
   const [language, setLanguage] = useState<Language>('en');
 
   const t = (key: string): string => {
-    return translations[language][key as keyof typeof translations['en']] || key;
+    const keys = key.split('.');
+    let value: any = translations[language];
+    
+    for (const k of keys) {
+      if (value && typeof value === 'object' && k in value) {
+        value = value[k];
+      } else {
+        return key; // Return key if translation not found
+      }
+    }
+    
+    return typeof value === 'string' ? value : key;
   };
 
   const handleRoleSelect = (selectedRole: 'hotel_manager' | 'travel_agency' | 'admin' | 'social_media') => {

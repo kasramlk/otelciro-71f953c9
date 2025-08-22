@@ -245,7 +245,7 @@ export const EnhancedAuth = ({ role, onBackToRoleSelector }: EnhancedAuthProps) 
                   {t(`roles.${role}.title`)}
                   {role === 'social_media' && (
                     <span className="bg-white/20 px-2 py-0.5 rounded-full text-xs">
-                      {t('roles.socialMedia.badge')}
+                      {t('roles.social_media.badge')}
                     </span>
                   )}
                 </motion.div>
@@ -436,10 +436,10 @@ export const EnhancedAuth = ({ role, onBackToRoleSelector }: EnhancedAuthProps) 
                             <SelectValue placeholder={t('form.selectRole')} />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="hotel_manager">{t('roles.hotelManager.title')}</SelectItem>
-                            <SelectItem value="travel_agency">{t('roles.travelAgency.title')}</SelectItem>
+                            <SelectItem value="hotel_manager">{t('roles.hotel_manager.title')}</SelectItem>
+                            <SelectItem value="travel_agency">{t('roles.travel_agency.title')}</SelectItem>
                             <SelectItem value="admin">{t('roles.admin.title')}</SelectItem>
-                            <SelectItem value="social_media">{t('roles.socialMedia.title')}</SelectItem>
+                            <SelectItem value="social_media">{t('roles.social_media.title')}</SelectItem>
                           </SelectContent>
                         </Select>
                       </motion.div>

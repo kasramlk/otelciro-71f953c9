@@ -1,4 +1,4 @@
-import { useState, createContext, useContext, ReactNode } from 'react';
+import { useState, createContext, useContext } from 'react';
 
 export type Language = 'en' | 'tr';
 
@@ -43,53 +43,72 @@ const translations = {
     'auth.forgotPassword': 'Forgot your password?',
     
     // Role Selector
-    'roles.hotelManager.title': 'Hotel Manager',
-    'roles.hotelManager.description': 'Manage your property, reservations, and operations',
-    'roles.hotelManager.portal': 'Hotel Manager Portal',
-    'roles.hotelManager.access': 'Access your Property Management System',
-    'roles.hotelManager.features.0': 'Smart Revenue Optimization',
-    'roles.hotelManager.features.1': 'Predictive Analytics Dashboard',
-    'roles.hotelManager.features.2': 'Automated Guest Preferences',
-    'roles.hotelManager.features.3': 'Real-time Demand Forecasting',
-    
-    'roles.travelAgency.title': 'Travel Agency', 
-    'roles.travelAgency.description': 'Search, book and manage hotel inventory',
-    'roles.travelAgency.portal': 'Travel Agency Portal',
-    'roles.travelAgency.access': 'Search and book hotel inventory',
-    'roles.travelAgency.features.0': 'Mini-GDS Search Engine',
-    'roles.travelAgency.features.1': 'Real-time Booking System',
-    'roles.travelAgency.features.2': 'Negotiated Rate Management',
-    'roles.travelAgency.features.3': 'Commission Tracking',
-    
-    'roles.admin.title': 'System Admin',
-    'roles.admin.description': 'Manage platform users and global settings',
-    'roles.admin.portal': 'System Admin Portal',
-    'roles.admin.access': 'Manage platform users and settings',
-    'roles.admin.features.0': 'User Management Dashboard',
-    'roles.admin.features.1': 'Global Platform Settings',
-    'roles.admin.features.2': 'Advanced Analytics',
-    'roles.admin.features.3': 'System Monitoring',
-    
-    'roles.socialMedia.title': 'Social Media Kit',
-    'roles.socialMedia.description': 'AI-powered social media management platform', 
-    'roles.socialMedia.portal': 'Social Media Kit Platform',
-    'roles.socialMedia.access': 'AI-powered social media management',
-    'roles.socialMedia.features.0': 'AI Content Generation',
-    'roles.socialMedia.features.1': 'Social Calendar Management',
-    'roles.socialMedia.features.2': 'Auto-Publishing System',
-    'roles.socialMedia.features.3': 'Analytics & ROI Tracking',
-    'roles.socialMedia.badge': 'NEW',
+    'roles': {
+      'hotel_manager': {
+        'title': 'Hotel Manager',
+        'description': 'Manage your property, reservations, and operations',
+        'portal': 'Hotel Manager Portal',
+        'access': 'Access your Property Management System',
+        'features': {
+          '0': 'Smart Revenue Optimization',
+          '1': 'Predictive Analytics Dashboard',
+          '2': 'Automated Guest Preferences',
+          '3': 'Real-time Demand Forecasting'
+        }
+      },
+      'travel_agency': {
+        'title': 'Travel Agency',
+        'description': 'Search, book and manage hotel inventory',
+        'portal': 'Travel Agency Portal',
+        'access': 'Search and book hotel inventory',
+        'features': {
+          '0': 'Mini-GDS Search Engine',
+          '1': 'Real-time Booking System',
+          '2': 'Negotiated Rate Management',
+          '3': 'Commission Tracking'
+        }
+      },
+      'admin': {
+        'title': 'System Admin',
+        'description': 'Manage platform users and global settings',
+        'portal': 'System Admin Portal',
+        'access': 'Manage platform users and settings',
+        'features': {
+          '0': 'User Management Dashboard',
+          '1': 'Global Platform Settings',
+          '2': 'Advanced Analytics',
+          '3': 'System Monitoring'
+        }
+      },
+      'social_media': {
+        'title': 'Social Media Kit',
+        'description': 'AI-powered social media management platform',
+        'portal': 'Social Media Kit Platform',
+        'access': 'AI-powered social media management',
+        'features': {
+          '0': 'AI Content Generation',
+          '1': 'Social Calendar Management',
+          '2': 'Auto-Publishing System',
+          '3': 'Analytics & ROI Tracking'
+        },
+        'badge': 'NEW'
+      }
+    },
     
     // Form Labels
-    'form.hotelName': 'Hotel/Organization Name',
-    'form.agencyName': 'Agency Name',
-    'form.selectRole': 'Select your role',
+    'form': {
+      'hotelName': 'Hotel/Organization Name',
+      'agencyName': 'Agency Name',
+      'selectRole': 'Select your role'
+    },
     
     // Platform Features
-    'platform.multiTenant': 'Multi-tenant SaaS',
-    'platform.realTimeARI': 'Real-time ARI',
-    'platform.aiPowered': 'AI-powered',
-    'platform.trustedBy': 'Trusted by leading hotel chains worldwide'
+    'platform': {
+      'multiTenant': 'Multi-tenant SaaS',
+      'realTimeARI': 'Real-time ARI',
+      'aiPowered': 'AI-powered',
+      'trustedBy': 'Trusted by leading hotel chains worldwide'
+    }
   },
   tr: {
     // Common
@@ -125,53 +144,72 @@ const translations = {
     'auth.forgotPassword': 'Şifrenizi mi unuttunuz?',
     
     // Role Selector
-    'roles.hotelManager.title': 'Otel Müdürü',
-    'roles.hotelManager.description': 'Oteli, rezervasyonları ve operasyonları yönetin',
-    'roles.hotelManager.portal': 'Otel Müdürü Paneli',
-    'roles.hotelManager.access': 'Mülk Yönetim Sisteminize erişin',
-    'roles.hotelManager.features.0': 'Akıllı Gelir Optimizasyonu',
-    'roles.hotelManager.features.1': 'Tahmine Dayalı Analitik Panosu',
-    'roles.hotelManager.features.2': 'Otomatik Misafir Tercihleri',
-    'roles.hotelManager.features.3': 'Gerçek Zamanlı Talep Tahmini',
-    
-    'roles.travelAgency.title': 'Seyahat Acentesi',
-    'roles.travelAgency.description': 'Otel envanterini arayın, rezerve edin ve yönetin',
-    'roles.travelAgency.portal': 'Seyahat Acentesi Paneli',
-    'roles.travelAgency.access': 'Otel envanterini arayın ve rezerve edin',
-    'roles.travelAgency.features.0': 'Mini-GDS Arama Motoru',
-    'roles.travelAgency.features.1': 'Gerçek Zamanlı Rezervasyon Sistemi',
-    'roles.travelAgency.features.2': 'Müzakere Edilmiş Fiyat Yönetimi',
-    'roles.travelAgency.features.3': 'Komisyon Takibi',
-    
-    'roles.admin.title': 'Sistem Yöneticisi',
-    'roles.admin.description': 'Platform kullanıcılarını ve genel ayarları yönetin',
-    'roles.admin.portal': 'Sistem Yöneticisi Paneli',
-    'roles.admin.access': 'Platform kullanıcılarını ve ayarları yönetin',
-    'roles.admin.features.0': 'Kullanıcı Yönetim Panosu',
-    'roles.admin.features.1': 'Genel Platform Ayarları',
-    'roles.admin.features.2': 'Gelişmiş Analitik',
-    'roles.admin.features.3': 'Sistem İzleme',
-    
-    'roles.socialMedia.title': 'Sosyal Medya Kiti',
-    'roles.socialMedia.description': 'AI-destekli sosyal medya yönetim platformu',
-    'roles.socialMedia.portal': 'Sosyal Medya Kit Platformu', 
-    'roles.socialMedia.access': 'AI-destekli sosyal medya yönetimi',
-    'roles.socialMedia.features.0': 'AI İçerik Üretimi',
-    'roles.socialMedia.features.1': 'Sosyal Takvim Yönetimi',
-    'roles.socialMedia.features.2': 'Otomatik Yayınlama Sistemi',
-    'roles.socialMedia.features.3': 'Analitik & ROI Takibi',
-    'roles.socialMedia.badge': 'YENİ',
+    'roles': {
+      'hotel_manager': {
+        'title': 'Otel Müdürü',
+        'description': 'Oteli, rezervasyonları ve operasyonları yönetin',
+        'portal': 'Otel Müdürü Paneli',
+        'access': 'Mülk Yönetim Sisteminize erişin',
+        'features': {
+          '0': 'Akıllı Gelir Optimizasyonu',
+          '1': 'Tahmine Dayalı Analitik Panosu',
+          '2': 'Otomatik Misafir Tercihleri',
+          '3': 'Gerçek Zamanlı Talep Tahmini'
+        }
+      },
+      'travel_agency': {
+        'title': 'Seyahat Acentesi',
+        'description': 'Otel envanterini arayın, rezerve edin ve yönetin',
+        'portal': 'Seyahat Acentesi Paneli',
+        'access': 'Otel envanterini arayın ve rezerve edin',
+        'features': {
+          '0': 'Mini-GDS Arama Motoru',
+          '1': 'Gerçek Zamanlı Rezervasyon Sistemi',
+          '2': 'Müzakere Edilmiş Fiyat Yönetimi',
+          '3': 'Komisyon Takibi'
+        }
+      },
+      'admin': {
+        'title': 'Sistem Yöneticisi',
+        'description': 'Platform kullanıcılarını ve genel ayarları yönetin',
+        'portal': 'Sistem Yöneticisi Paneli',
+        'access': 'Platform kullanıcılarını ve ayarları yönetin',
+        'features': {
+          '0': 'Kullanıcı Yönetim Panosu',
+          '1': 'Genel Platform Ayarları',
+          '2': 'Gelişmiş Analitik',
+          '3': 'Sistem İzleme'
+        }
+      },
+      'social_media': {
+        'title': 'Sosyal Medya Kiti',
+        'description': 'AI-destekli sosyal medya yönetim platformu',
+        'portal': 'Sosyal Medya Kit Platformu',
+        'access': 'AI-destekli sosyal medya yönetimi',
+        'features': {
+          '0': 'AI İçerik Üretimi',
+          '1': 'Sosyal Takvim Yönetimi',
+          '2': 'Otomatik Yayınlama Sistemi',
+          '3': 'Analitik & ROI Takibi'
+        },
+        'badge': 'YENİ'
+      }
+    },
     
     // Form Labels
-    'form.hotelName': 'Otel/Organizasyon Adı',
-    'form.agencyName': 'Acente Adı',
-    'form.selectRole': 'Rolünüzü seçin',
+    'form': {
+      'hotelName': 'Otel/Organizasyon Adı',
+      'agencyName': 'Acente Adı',
+      'selectRole': 'Rolünüzü seçin'
+    },
     
     // Platform Features
-    'platform.multiTenant': 'Çok Kiracılı SaaS',
-    'platform.realTimeARI': 'Gerçek Zamanlı ARI',
-    'platform.aiPowered': 'AI-destekli',
-    'platform.trustedBy': 'Önde gelen otel zincirlerinin güvendiği platform'
+    'platform': {
+      'multiTenant': 'Çok Kiracılı SaaS',
+      'realTimeARI': 'Gerçek Zamanlı ARI',
+      'aiPowered': 'AI-destekli',
+      'trustedBy': 'Önde gelen otel zincirlerinin güvendiği platform'
+    }
   }
 };
 
@@ -183,7 +221,18 @@ export const useTranslation = () => {
     // Fallback hook when used outside provider
     const [language, setLanguage] = useState<Language>('en');
     const t = (key: string): string => {
-      return translations[language][key as keyof typeof translations['en']] || key;
+      const keys = key.split('.');
+      let value: any = translations[language];
+      
+      for (const k of keys) {
+        if (value && typeof value === 'object' && k in value) {
+          value = value[k];
+        } else {
+          return key; // Return key if translation not found
+        }
+      }
+      
+      return typeof value === 'string' ? value : key;
     };
     return { language, setLanguage, t };
   }
