@@ -17,7 +17,7 @@ const Auth = () => {
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
   const [orgName, setOrgName] = useState("");
-  const [role, setRole] = useState<'hotel_manager' | 'travel_agency' | 'admin'>('hotel_manager');
+  const [role, setRole] = useState<'hotel_manager' | 'travel_agency' | 'admin' | 'social_media'>('hotel_manager');
   const [showRoleSelector, setShowRoleSelector] = useState(true);
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
@@ -32,6 +32,8 @@ const Auth = () => {
           navigate("/agency");
         } else if (userRole === 'admin') {
           navigate("/admin");
+        } else if (userRole === 'social_media') {
+          navigate("/social-media");
         } else {
           navigate("/");
         }
@@ -40,7 +42,7 @@ const Auth = () => {
     return () => subscription.unsubscribe();
   }, [navigate]);
 
-  const handleRoleSelect = (selectedRole: 'hotel_manager' | 'travel_agency' | 'admin') => {
+  const handleRoleSelect = (selectedRole: 'hotel_manager' | 'travel_agency' | 'admin' | 'social_media') => {
     setRole(selectedRole);
     setShowRoleSelector(false);
   };
@@ -152,6 +154,7 @@ const Auth = () => {
       case 'hotel_manager': return 'Hotel Manager Portal';
       case 'travel_agency': return 'Travel Agency Portal';  
       case 'admin': return 'System Admin Portal';
+      case 'social_media': return 'Social Media Kit Platform';
       default: return 'OtelCiro Platform';
     }
   };
@@ -161,6 +164,7 @@ const Auth = () => {
       case 'hotel_manager': return 'Access your Property Management System';
       case 'travel_agency': return 'Search and book hotel inventory';
       case 'admin': return 'Manage platform users and settings';
+      case 'social_media': return 'AI-powered social media management';
       default: return 'Multi-tenant Hotel Platform';
     }
   };
@@ -283,7 +287,7 @@ const Auth = () => {
                 />
                 <Select 
                   value={role} 
-                  onValueChange={(value) => setRole(value as 'hotel_manager' | 'travel_agency' | 'admin')}
+                  onValueChange={(value) => setRole(value as 'hotel_manager' | 'travel_agency' | 'admin' | 'social_media')}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select your role" />
@@ -292,6 +296,7 @@ const Auth = () => {
                     <SelectItem value="hotel_manager">Hotel Manager</SelectItem>
                     <SelectItem value="travel_agency">Travel Agency</SelectItem>
                     <SelectItem value="admin">System Admin</SelectItem>
+                    <SelectItem value="social_media">Social Media Kit</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

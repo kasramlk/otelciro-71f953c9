@@ -11,11 +11,12 @@ import {
   MapPin, 
   Calendar,
   TrendingUp,
-  Globe
+  Globe,
+  Megaphone
 } from "lucide-react";
 
 interface RoleSelectorProps {
-  onRoleSelect: (role: 'hotel_manager' | 'travel_agency' | 'admin') => void;
+  onRoleSelect: (role: 'hotel_manager' | 'travel_agency' | 'admin' | 'social_media') => void;
 }
 
 const roles = [
@@ -45,6 +46,16 @@ const roles = [
     features: ['User Management', 'Global Settings', 'Platform Analytics', 'System Monitoring'],
     color: 'bg-purple-500',
     gradient: 'from-purple-500 to-purple-600'
+  },
+  {
+    id: 'social_media',
+    title: 'Social Media Kit',
+    description: 'AI-powered social media management platform',
+    icon: Megaphone,
+    features: ['AI Content Generator', 'Social Calendar', 'Auto-Publishing', 'Analytics & ROI'],
+    color: 'bg-indigo-500',
+    gradient: 'from-indigo-500 to-indigo-600',
+    badge: 'NEW'
   }
 ];
 
@@ -91,7 +102,7 @@ export const RoleSelector = ({ onRoleSelect }: RoleSelectorProps) => {
           </div>
         </motion.div>
 
-        <div className="grid md:grid-cols-3 gap-6">
+        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
           {roles.map((role, index) => (
             <motion.div
               key={role.id}
@@ -112,8 +123,13 @@ export const RoleSelector = ({ onRoleSelect }: RoleSelectorProps) => {
                 onClick={() => handleRoleSelect(role.id)}
               >
                 <CardHeader className="text-center">
-                  <div className={`mx-auto w-16 h-16 rounded-full bg-gradient-to-r ${role.gradient} flex items-center justify-center mb-4`}>
+                  <div className={`mx-auto w-16 h-16 rounded-full bg-gradient-to-r ${role.gradient} flex items-center justify-center mb-4 relative`}>
                     <role.icon className="h-8 w-8 text-white" />
+                    {role.badge && (
+                      <Badge className="absolute -top-2 -right-2 bg-orange-500 text-white text-xs px-2 py-1">
+                        {role.badge}
+                      </Badge>
+                    )}
                   </div>
                   <CardTitle className="text-xl">{role.title}</CardTitle>
                   <CardDescription className="text-sm">
