@@ -1,3 +1,6 @@
+import { supabase } from '@/integrations/supabase/client';
+
+// Airbnb API interfaces
 export interface AirbnbListing {
   id: string;
   name: string;
@@ -68,259 +71,283 @@ export interface AirbnbCalendar {
 export interface AirbnbConnection {
   accessToken: string;
   refreshToken: string;
-  userId: string;
-  connectedAt: string;
+  expiresAt: Date;
+  accountId: string;
+  accountName: string;
 }
 
 class AirbnbService {
-  private baseUrl = 'https://api.airbnb.com';
-  private accessToken: string | null = null;
+  private baseURL = 'https://api.airbnb.com/v1';
 
-  // Initialize the service with stored access token from localStorage
-  async initialize() {
-    try {
-      const storedConnection = localStorage.getItem('airbnb_connection');
-      if (storedConnection) {
-        const connection: AirbnbConnection = JSON.parse(storedConnection);
-        this.accessToken = connection.accessToken;
-        return true;
-      }
-      return false;
-    } catch (error) {
-      console.error('Failed to initialize Airbnb service:', error);
-      return false;
-    }
+  constructor() {
+    // Service now uses Supabase backend instead of localStorage
   }
 
-  // Generic API request method
-  private async apiRequest<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
-    if (!this.accessToken) {
-      throw new Error('Airbnb service not initialized or no access token available');
-    }
-
-    const url = `${this.baseUrl}${endpoint}`;
-    const response = await fetch(url, {
-      ...options,
-      headers: {
-        'Authorization': `Bearer ${this.accessToken}`,
-        'Content-Type': 'application/json',
-        'X-Airbnb-API-Key': 'your-api-key', // This would come from environment
-        ...options.headers,
-      },
-    });
-
-    if (!response.ok) {
-      if (response.status === 401) {
-        // Token expired, try to refresh
-        await this.refreshAccessToken();
-        // Retry the request once
-        return this.apiRequest<T>(endpoint, options);
-      }
-      throw new Error(`Airbnb API error: ${response.status} ${response.statusText}`);
-    }
-
-    return response.json();
+  // Start OAuth flow
+  startOAuthFlow(hotelId: string): string {
+    const state = `airbnb_auth_${Date.now()}_${hotelId}`;
+    const clientId = '32b224761b3a9b3ba365c3bd81855e11'; // Your Airbnb API key
+    const redirectUri = encodeURIComponent(`${window.location.origin}/auth/airbnb/callback`);
+    
+    const authUrl = `https://www.airbnb.com/oauth/authorize` +
+      `?client_id=${clientId}` +
+      `&response_type=code` +
+      `&redirect_uri=${redirectUri}` +
+      `&state=${state}` +
+      `&scope=read_write`;
+    
+    // Store state for validation
+    localStorage.setItem('airbnb_oauth_state', state);
+    
+    return authUrl;
   }
 
-  // Refresh access token using refresh token
-  private async refreshAccessToken(): Promise<void> {
+  // Handle OAuth callback
+  async handleOAuthCallback(code: string, state: string, hotelId: string): Promise<AirbnbConnection> {
+    // Validate state
+    const storedState = localStorage.getItem('airbnb_oauth_state');
+    if (state !== storedState) {
+      throw new Error('Invalid state parameter');
+    }
+
     try {
-      const storedConnection = localStorage.getItem('airbnb_connection');
-      if (!storedConnection) {
-        throw new Error('No refresh token available');
-      }
-
-      const connection: AirbnbConnection = JSON.parse(storedConnection);
-
-      // Call Airbnb token refresh endpoint
-      const response = await fetch(`${this.baseUrl}/oauth/access_token`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          grant_type: 'refresh_token',
-          refresh_token: connection.refreshToken,
-          client_id: 'your-client-id', // This would come from secrets
-          client_secret: 'your-client-secret', // This would come from secrets
-        }),
+      const { data, error } = await supabase.functions.invoke('airbnb-oauth-token', {
+        body: { code, state, hotelId }
       });
 
-      if (!response.ok) {
-        throw new Error('Failed to refresh access token');
-      }
+      if (error) throw error;
+      if (!data.success) throw new Error(data.error);
 
-      const tokenData = await response.json();
-      
-      // Update stored tokens in localStorage
-      const updatedConnection: AirbnbConnection = {
-        ...connection,
-        accessToken: tokenData.access_token,
-        refreshToken: tokenData.refresh_token || connection.refreshToken,
+      localStorage.removeItem('airbnb_oauth_state');
+
+      return {
+        accessToken: 'stored_in_backend',
+        refreshToken: 'stored_in_backend',
+        expiresAt: new Date(Date.now() + 3600000),
+        accountId: data.connectionId,
+        accountName: data.accountName
       };
-      
-      localStorage.setItem('airbnb_connection', JSON.stringify(updatedConnection));
-      this.accessToken = tokenData.access_token;
     } catch (error) {
-      console.error('Failed to refresh Airbnb access token:', error);
-      throw error;
+      console.error('OAuth callback error:', error);
+      throw new Error('Failed to complete OAuth flow');
     }
   }
 
-  // Get all listings for the authenticated user
-  async getListings(): Promise<AirbnbListing[]> {
-    return this.apiRequest<AirbnbListing[]>('/v2/listings');
-  }
-
-  // Get specific listing details
-  async getListing(listingId: string): Promise<AirbnbListing> {
-    return this.apiRequest<AirbnbListing>(`/v2/listings/${listingId}`);
-  }
-
-  // Get reservations for a listing or all listings
-  async getReservations(listingId?: string, startDate?: string, endDate?: string): Promise<AirbnbReservation[]> {
-    let endpoint = '/v2/reservations';
-    const params = new URLSearchParams();
-    
-    if (listingId) params.append('listing_id', listingId);
-    if (startDate) params.append('start_date', startDate);
-    if (endDate) params.append('end_date', endDate);
-    
-    if (params.toString()) {
-      endpoint += `?${params.toString()}`;
-    }
-    
-    return this.apiRequest<AirbnbReservation[]>(endpoint);
-  }
-
-  // Get calendar availability and pricing
-  async getCalendar(listingId: string, startDate: string, endDate: string): Promise<AirbnbCalendar[]> {
-    const endpoint = `/v2/listings/${listingId}/calendar?start_date=${startDate}&end_date=${endDate}`;
-    return this.apiRequest<AirbnbCalendar[]>(endpoint);
-  }
-
-  // Update calendar availability and pricing
-  async updateCalendar(listingId: string, updates: Omit<AirbnbCalendar, 'listingId'>[]): Promise<void> {
-    await this.apiRequest(`/v2/listings/${listingId}/calendar`, {
-      method: 'PUT',
-      body: JSON.stringify({ calendar: updates }),
-    });
-  }
-
-  // Block dates (set as unavailable)
-  async blockDates(listingId: string, startDate: string, endDate: string, reason?: string): Promise<void> {
-    await this.apiRequest(`/v2/listings/${listingId}/calendar/block`, {
-      method: 'POST',
-      body: JSON.stringify({
-        start_date: startDate,
-        end_date: endDate,
-        reason: reason || 'Blocked via PMS',
-      }),
-    });
-  }
-
-  // Unblock dates (set as available)
-  async unblockDates(listingId: string, startDate: string, endDate: string): Promise<void> {
-    await this.apiRequest(`/v2/listings/${listingId}/calendar/unblock`, {
-      method: 'POST',
-      body: JSON.stringify({
-        start_date: startDate,
-        end_date: endDate,
-      }),
-    });
-  }
-
-  // Update listing details
-  async updateListing(listingId: string, updates: Partial<AirbnbListing>): Promise<AirbnbListing> {
-    return this.apiRequest<AirbnbListing>(`/v2/listings/${listingId}`, {
-      method: 'PUT',
-      body: JSON.stringify(updates),
-    });
-  }
-
-  // Sync rates from PMS to Airbnb (foundation - to be implemented with actual database integration)
-  async syncRates(listingId: string, roomTypeId: string, ratePlanId: string, startDate: string, endDate: string): Promise<void> {
+  // Get connection status for a hotel
+  async getConnectionStatus(hotelId: string): Promise<any> {
     try {
-      console.log(`Syncing rates for listing ${listingId}, room type ${roomTypeId}, rate plan ${ratePlanId} from ${startDate} to ${endDate}`);
-      
-      // This is the foundation - in production this would:
-      // 1. Fetch rates from your PMS/channel store
-      // 2. Convert rates to Airbnb calendar format
-      // 3. Update Airbnb calendar via API
-      // 4. Log sync activity
-      
-      // For now, mock the sync
-      const mockCalendarUpdates: Omit<AirbnbCalendar, 'listingId'>[] = [];
-      const startDateObj = new Date(startDate);
-      const endDateObj = new Date(endDate);
-      
-      for (let d = new Date(startDateObj); d <= endDateObj; d.setDate(d.getDate() + 1)) {
-        mockCalendarUpdates.push({
-          date: d.toISOString().split('T')[0],
-          available: true,
-          price: 100, // Mock price
-        });
+      const { data, error } = await supabase
+        .from('airbnb_connections')
+        .select('*')
+        .eq('hotel_id', hotelId)
+        .eq('is_active', true)
+        .single();
+
+      if (error && error.code !== 'PGRST116') {
+        throw error;
       }
 
-      await this.updateCalendar(listingId, mockCalendarUpdates);
-      console.log('Rates sync completed successfully');
-      
+      return data;
     } catch (error) {
-      console.error('Failed to sync rates to Airbnb:', error);
-      throw error;
+      console.error('Error fetching connection status:', error);
+      return null;
     }
   }
 
-  // Sync availability from PMS to Airbnb (foundation - to be implemented with actual database integration)
-  async syncAvailability(listingId: string, roomTypeId: string, startDate: string, endDate: string): Promise<void> {
+  // Get Airbnb listings for a hotel
+  async getListings(hotelId: string): Promise<any[]> {
     try {
-      console.log(`Syncing availability for listing ${listingId}, room type ${roomTypeId} from ${startDate} to ${endDate}`);
-      
-      // This is the foundation - in production this would:
-      // 1. Fetch inventory from your PMS
-      // 2. Convert inventory to Airbnb calendar format
-      // 3. Update Airbnb calendar via API
-      // 4. Log sync activity
-      
-      // For now, mock the sync
-      const mockCalendarUpdates: Omit<AirbnbCalendar, 'listingId'>[] = [];
-      const startDateObj = new Date(startDate);
-      const endDateObj = new Date(endDate);
-      
-      for (let d = new Date(startDateObj); d <= endDateObj; d.setDate(d.getDate() + 1)) {
-        mockCalendarUpdates.push({
-          date: d.toISOString().split('T')[0],
-          available: Math.random() > 0.2, // Mock availability
-        });
-      }
+      const { data, error } = await supabase
+        .from('airbnb_listings')
+        .select(`
+          *,
+          airbnb_connections!inner (
+            hotel_id,
+            is_active
+          )
+        `)
+        .eq('airbnb_connections.hotel_id', hotelId)
+        .eq('airbnb_connections.is_active', true);
 
-      await this.updateCalendar(listingId, mockCalendarUpdates);
-      console.log('Availability sync completed successfully');
-      
+      if (error) throw error;
+
+      return data || [];
     } catch (error) {
-      console.error('Failed to sync availability to Airbnb:', error);
-      throw error;
+      console.error('Error fetching listings:', error);
+      return [];
     }
   }
 
-  // Import reservations from Airbnb (foundation - to be implemented with actual database integration)
-  async importReservations(startDate?: string, endDate?: string): Promise<void> {
+  // Sync listings from Airbnb
+  async syncListings(connectionId: string): Promise<{ success: boolean; processed: number; failed: number }> {
     try {
-      console.log(`Importing reservations from Airbnb${startDate ? ` from ${startDate}` : ''}${endDate ? ` to ${endDate}` : ''}`);
-      
-      const reservations = await this.getReservations(undefined, startDate, endDate);
-      
-      // This is the foundation - in production this would:
-      // 1. Check if reservations already exist in your PMS
-      // 2. Insert new reservations or update existing ones
-      // 3. Log import activity
-      
-      console.log(`Found ${reservations.length} reservations to import`);
-      console.log('Reservations import completed successfully');
-      
+      const { data, error } = await supabase.functions.invoke('airbnb-sync', {
+        body: {
+          connectionId,
+          syncType: 'listings',
+          direction: 'pull'
+        }
+      });
+
+      if (error) throw error;
+      return data;
     } catch (error) {
-      console.error('Failed to import reservations from Airbnb:', error);
-      throw error;
+      console.error('Error syncing listings:', error);
+      throw new Error('Failed to sync listings from Airbnb');
+    }
+  }
+
+  // Sync rates to Airbnb
+  async syncRates(connectionId: string, startDate: string, endDate: string): Promise<{ success: boolean; processed: number; failed: number }> {
+    try {
+      const { data, error } = await supabase.functions.invoke('airbnb-sync', {
+        body: {
+          connectionId,
+          syncType: 'rates',
+          direction: 'push',
+          startDate,
+          endDate
+        }
+      });
+
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error('Error syncing rates:', error);
+      throw new Error('Failed to sync rates to Airbnb');
+    }
+  }
+
+  // Sync availability to Airbnb
+  async syncAvailability(connectionId: string, startDate: string, endDate: string): Promise<{ success: boolean; processed: number; failed: number }> {
+    try {
+      const { data, error } = await supabase.functions.invoke('airbnb-sync', {
+        body: {
+          connectionId,
+          syncType: 'availability',
+          direction: 'push',
+          startDate,
+          endDate
+        }
+      });
+
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error('Error syncing availability:', error);
+      throw new Error('Failed to sync availability to Airbnb');
+    }
+  }
+
+  // Import reservations from Airbnb
+  async importReservations(connectionId: string): Promise<{ success: boolean; imported: number; skipped: number; errors: number }> {
+    try {
+      const { data, error } = await supabase.functions.invoke('airbnb-reservations', {
+        body: {
+          connectionId,
+          action: 'import'
+        }
+      });
+
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error('Error importing reservations:', error);
+      throw new Error('Failed to import reservations from Airbnb');
+    }
+  }
+
+  // Get sync logs for a connection
+  async getSyncLogs(connectionId: string, limit: number = 50): Promise<any[]> {
+    try {
+      const { data, error } = await supabase
+        .from('airbnb_sync_logs')
+        .select('*')
+        .eq('connection_id', connectionId)
+        .order('created_at', { ascending: false })
+        .limit(limit);
+
+      if (error) throw error;
+      return data || [];
+    } catch (error) {
+      console.error('Error fetching sync logs:', error);
+      return [];
+    }
+  }
+
+  // Update listing mapping (room type association)
+  async updateListingMapping(listingId: string, roomTypeId: string): Promise<boolean> {
+    try {
+      const { error } = await supabase
+        .from('airbnb_listings')
+        .update({
+          room_type_id: roomTypeId,
+          is_active: roomTypeId !== '00000000-0000-0000-0000-000000000000'
+        })
+        .eq('id', listingId);
+
+      if (error) throw error;
+      return true;
+    } catch (error) {
+      console.error('Error updating listing mapping:', error);
+      return false;
+    }
+  }
+
+  // Update sync settings for a listing
+  async updateSyncSettings(listingId: string, settings: {
+    sync_rates?: boolean;
+    sync_availability?: boolean;
+    sync_restrictions?: boolean;
+  }): Promise<boolean> {
+    try {
+      const { error } = await supabase
+        .from('airbnb_listings')
+        .update(settings)
+        .eq('id', listingId);
+
+      if (error) throw error;
+      return true;
+    } catch (error) {
+      console.error('Error updating sync settings:', error);
+      return false;
+    }
+  }
+
+  // Disconnect Airbnb integration
+  async disconnect(connectionId: string): Promise<boolean> {
+    try {
+      const { error } = await supabase
+        .from('airbnb_connections')
+        .update({
+          is_active: false,
+          sync_status: 'disconnected'
+        })
+        .eq('id', connectionId);
+
+      if (error) throw error;
+      return true;
+    } catch (error) {
+      console.error('Error disconnecting Airbnb:', error);
+      return false;
+    }
+  }
+
+  // Get imported Airbnb reservations
+  async getAirbnbReservations(connectionId: string, limit: number = 100): Promise<any[]> {
+    try {
+      const { data, error } = await supabase
+        .from('airbnb_reservations')
+        .select('*')
+        .eq('connection_id', connectionId)
+        .order('created_at', { ascending: false })
+        .limit(limit);
+
+      if (error) throw error;
+      return data || [];
+    } catch (error) {
+      console.error('Error fetching Airbnb reservations:', error);
+      return [];
     }
   }
 }

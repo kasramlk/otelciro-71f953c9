@@ -15,3 +15,12 @@ verify_jwt = true
 
 [functions.publish-social-content]
 verify_jwt = true
+
+[functions.airbnb-oauth-token]
+verify_jwt = true
+
+[functions.airbnb-sync]
+verify_jwt = true
+
+[functions.airbnb-reservations]
+verify_jwt = true

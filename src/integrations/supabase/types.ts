@@ -136,6 +136,262 @@ export type Database = {
         }
         Relationships: []
       }
+      airbnb_connections: {
+        Row: {
+          access_token: string
+          account_id: string
+          account_name: string | null
+          created_at: string
+          hotel_id: string
+          id: string
+          is_active: boolean
+          last_sync: string | null
+          refresh_token: string | null
+          sync_errors: Json | null
+          sync_status: string | null
+          token_expires_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          access_token: string
+          account_id: string
+          account_name?: string | null
+          created_at?: string
+          hotel_id: string
+          id?: string
+          is_active?: boolean
+          last_sync?: string | null
+          refresh_token?: string | null
+          sync_errors?: Json | null
+          sync_status?: string | null
+          token_expires_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          access_token?: string
+          account_id?: string
+          account_name?: string | null
+          created_at?: string
+          hotel_id?: string
+          id?: string
+          is_active?: boolean
+          last_sync?: string | null
+          refresh_token?: string | null
+          sync_errors?: Json | null
+          sync_status?: string | null
+          token_expires_at?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "airbnb_connections_hotel_id_fkey"
+            columns: ["hotel_id"]
+            isOneToOne: false
+            referencedRelation: "hotels"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      airbnb_listings: {
+        Row: {
+          airbnb_listing_id: string
+          airbnb_listing_name: string | null
+          connection_id: string
+          created_at: string
+          hotel_id: string
+          id: string
+          is_active: boolean
+          room_type_id: string
+          sync_availability: boolean
+          sync_rates: boolean
+          sync_restrictions: boolean
+          updated_at: string
+        }
+        Insert: {
+          airbnb_listing_id: string
+          airbnb_listing_name?: string | null
+          connection_id: string
+          created_at?: string
+          hotel_id: string
+          id?: string
+          is_active?: boolean
+          room_type_id: string
+          sync_availability?: boolean
+          sync_rates?: boolean
+          sync_restrictions?: boolean
+          updated_at?: string
+        }
+        Update: {
+          airbnb_listing_id?: string
+          airbnb_listing_name?: string | null
+          connection_id?: string
+          created_at?: string
+          hotel_id?: string
+          id?: string
+          is_active?: boolean
+          room_type_id?: string
+          sync_availability?: boolean
+          sync_rates?: boolean
+          sync_restrictions?: boolean
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "airbnb_listings_connection_id_fkey"
+            columns: ["connection_id"]
+            isOneToOne: false
+            referencedRelation: "airbnb_connections"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "airbnb_listings_hotel_id_fkey"
+            columns: ["hotel_id"]
+            isOneToOne: false
+            referencedRelation: "hotels"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      airbnb_reservations: {
+        Row: {
+          adults: number
+          airbnb_listing_id: string
+          airbnb_reservation_id: string
+          airbnb_status: string
+          check_in: string
+          check_out: string
+          children: number
+          connection_id: string
+          created_at: string
+          currency: string
+          guest_email: string | null
+          guest_name: string
+          guest_phone: string | null
+          id: string
+          imported_at: string
+          reservation_data: Json | null
+          reservation_id: string | null
+          special_requests: string | null
+          status: string
+          total_amount: number
+          updated_at: string
+        }
+        Insert: {
+          adults?: number
+          airbnb_listing_id: string
+          airbnb_reservation_id: string
+          airbnb_status: string
+          check_in: string
+          check_out: string
+          children?: number
+          connection_id: string
+          created_at?: string
+          currency?: string
+          guest_email?: string | null
+          guest_name: string
+          guest_phone?: string | null
+          id?: string
+          imported_at?: string
+          reservation_data?: Json | null
+          reservation_id?: string | null
+          special_requests?: string | null
+          status: string
+          total_amount: number
+          updated_at?: string
+        }
+        Update: {
+          adults?: number
+          airbnb_listing_id?: string
+          airbnb_reservation_id?: string
+          airbnb_status?: string
+          check_in?: string
+          check_out?: string
+          children?: number
+          connection_id?: string
+          created_at?: string
+          currency?: string
+          guest_email?: string | null
+          guest_name?: string
+          guest_phone?: string | null
+          id?: string
+          imported_at?: string
+          reservation_data?: Json | null
+          reservation_id?: string | null
+          special_requests?: string | null
+          status?: string
+          total_amount?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "airbnb_reservations_connection_id_fkey"
+            columns: ["connection_id"]
+            isOneToOne: false
+            referencedRelation: "airbnb_connections"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "airbnb_reservations_reservation_id_fkey"
+            columns: ["reservation_id"]
+            isOneToOne: false
+            referencedRelation: "reservations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      airbnb_sync_logs: {
+        Row: {
+          completed_at: string | null
+          connection_id: string
+          created_at: string
+          error_details: Json | null
+          id: string
+          records_failed: number | null
+          records_processed: number | null
+          started_at: string
+          status: string
+          sync_data: Json | null
+          sync_direction: string
+          sync_type: string
+        }
+        Insert: {
+          completed_at?: string | null
+          connection_id: string
+          created_at?: string
+          error_details?: Json | null
+          id?: string
+          records_failed?: number | null
+          records_processed?: number | null
+          started_at?: string
+          status?: string
+          sync_data?: Json | null
+          sync_direction: string
+          sync_type: string
+        }
+        Update: {
+          completed_at?: string | null
+          connection_id?: string
+          created_at?: string
+          error_details?: Json | null
+          id?: string
+          records_failed?: number | null
+          records_processed?: number | null
+          started_at?: string
+          status?: string
+          sync_data?: Json | null
+          sync_direction?: string
+          sync_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "airbnb_sync_logs_connection_id_fkey"
+            columns: ["connection_id"]
+            isOneToOne: false
+            referencedRelation: "airbnb_connections"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       audit_log: {
         Row: {
           action: string
