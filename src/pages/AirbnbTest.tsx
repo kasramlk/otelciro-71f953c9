@@ -12,8 +12,8 @@ import type { Session } from '@supabase/supabase-js';
 const AirbnbTest: React.FC = () => {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
-  const [email, setEmail] = useState('admin@hotel-pms.com');
-  const [password, setPassword] = useState('admin123');
+  const [email, setEmail] = useState('kmaleki922@gmail.com');
+  const [password, setPassword] = useState('');
   const [signingIn, setSigningIn] = useState(false);
   const { toast } = useToast();
 
