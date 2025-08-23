@@ -1,24 +1,201 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ExternalLink, Database, Cloud, Key } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { ExternalLink, Database, Cloud, Key, User, LogIn } from 'lucide-react';
 import { AirbnbIntegration } from '@/components/channel/AirbnbIntegration';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
+import type { Session } from '@supabase/supabase-js';
 
 const AirbnbTest: React.FC = () => {
+  const [session, setSession] = useState<Session | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [email, setEmail] = useState('admin@hotel-pms.com');
+  const [password, setPassword] = useState('admin123');
+  const [signingIn, setSigningIn] = useState(false);
+  const { toast } = useToast();
+
+  useEffect(() => {
+    // Check current session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      setLoading(false);
+    });
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const signIn = async () => {
+    if (!email || !password) {
+      toast({
+        title: "Error",
+        description: "Please enter both email and password.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setSigningIn(true);
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Successfully signed in!"
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive"
+      });
+    } finally {
+      setSigningIn(false);
+    }
+  };
+
+  const signOut = async () => {
+    await supabase.auth.signOut();
+    toast({
+      title: "Signed Out",
+      description: "You have been signed out."
+    });
+  };
+
+  if (loading) {
+    return (
+      <div className="container mx-auto p-6">
+        <div className="flex items-center justify-center min-h-[400px]">
+          <div className="text-center space-y-2">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+            <p className="text-muted-foreground">Loading...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Show authentication form if not logged in
+  if (!session) {
+    return (
+      <div className="container mx-auto p-6 space-y-6">
+        {/* Header */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-2xl flex items-center space-x-3">
+              <div className="w-8 h-8 bg-red-500 rounded flex items-center justify-center">
+                <span className="text-white font-bold text-sm">Ab</span>
+              </div>
+              <span>Airbnb Integration Test</span>
+              <Badge variant="outline" className="bg-green-50 text-green-700">
+                Live Integration
+              </Badge>
+            </CardTitle>
+            <p className="text-muted-foreground">
+              Test the Airbnb integration with your live API credentials. Please sign in to continue.
+            </p>
+          </CardHeader>
+        </Card>
+
+        {/* Authentication Required */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <User className="h-5 w-5" />
+              Authentication Required
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-muted-foreground">
+              You need to be signed in to test the Airbnb integration. The system requires authentication to access hotel data and maintain security.
+            </p>
+            
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <h4 className="font-medium text-blue-800 mb-2">Test Credentials</h4>
+              <p className="text-blue-700 text-sm">
+                Use the pre-filled credentials below to sign in with the admin account that has access to test hotels.
+              </p>
+            </div>
+
+            <div className="space-y-4 max-w-md">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Email</label>
+                <Input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="Enter your email"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Password</label>
+                <Input
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Enter your password"
+                />
+              </div>
+              <Button 
+                onClick={signIn}
+                disabled={signingIn}
+                className="w-full"
+              >
+                {signingIn ? (
+                  <div className="flex items-center gap-2">
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    Signing In...
+                  </div>
+                ) : (
+                  <>
+                    <LogIn className="mr-2 h-4 w-4" />
+                    Sign In
+                  </>
+                )}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // Show main content when authenticated
   return (
     <div className="container mx-auto p-6 space-y-6">
-      {/* Header */}
+      {/* Header with user info */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-2xl flex items-center space-x-3">
-            <div className="w-8 h-8 bg-red-500 rounded flex items-center justify-center">
-              <span className="text-white font-bold text-sm">Ab</span>
+          <CardTitle className="text-2xl flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <div className="w-8 h-8 bg-red-500 rounded flex items-center justify-center">
+                <span className="text-white font-bold text-sm">Ab</span>
+              </div>
+              <span>Airbnb Integration Test</span>
+              <Badge variant="outline" className="bg-green-50 text-green-700">
+                Live Integration
+              </Badge>
             </div>
-            <span>Airbnb Integration Test</span>
-            <Badge variant="outline" className="bg-green-50 text-green-700">
-              Live Integration
-            </Badge>
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-muted-foreground">
+                Signed in as: {session.user?.email}
+              </span>
+              <Button variant="outline" size="sm" onClick={signOut}>
+                Sign Out
+              </Button>
+            </div>
           </CardTitle>
           <p className="text-muted-foreground">
             Test the Airbnb integration with your live API credentials. This integration uses your real Airbnb API key: 32b224761b3a9b3ba365c3bd81855e11
