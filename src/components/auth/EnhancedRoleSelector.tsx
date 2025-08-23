@@ -112,13 +112,16 @@ export const EnhancedRoleSelector = ({ onRoleSelect, onBackToHome }: EnhancedRol
               initial={{ scale: 0.8, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               transition={{ duration: 1, delay: 0.2 }}
-              className="flex items-center justify-center mb-8"
+              className="flex items-center justify-center mb-10"
             >
-              <img 
-                src={otelciroLogo} 
-                alt="OtelCiro.com" 
-                className="h-16 w-auto drop-shadow-2xl"
-              />
+              <div className="relative">
+                <div className="absolute inset-0 bg-gradient-to-r from-accent/30 to-accent-light/30 blur-xl rounded-full animate-pulse-glow" />
+                <img 
+                  src={otelciroLogo} 
+                  alt="OtelCiro.com" 
+                  className="relative h-28 md:h-36 w-auto drop-shadow-2xl filter brightness-110 hover:scale-105 transition-transform duration-500"
+                />
+              </div>
             </motion.div>
 
             {/* Headlines */}
