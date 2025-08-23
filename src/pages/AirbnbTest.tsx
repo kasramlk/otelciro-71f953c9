@@ -10,6 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 import type { Session } from '@supabase/supabase-js';
 
 const AirbnbTest: React.FC = () => {
+  console.log('AirbnbTest component is rendering'); // Debug log
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [email, setEmail] = useState('kmaleki922@gmail.com');
@@ -18,6 +19,7 @@ const AirbnbTest: React.FC = () => {
   const { toast } = useToast();
 
   useEffect(() => {
+    console.log('AirbnbTest useEffect running'); // Debug log
     // Check current session
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
