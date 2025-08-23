@@ -10,7 +10,6 @@ import { useToast } from '@/hooks/use-toast';
 import type { Session } from '@supabase/supabase-js';
 
 const AirbnbTest: React.FC = () => {
-  console.log('AirbnbTest component is rendering'); // Debug log
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [email, setEmail] = useState('kmaleki922@gmail.com');
@@ -19,7 +18,6 @@ const AirbnbTest: React.FC = () => {
   const { toast } = useToast();
 
   useEffect(() => {
-    console.log('AirbnbTest useEffect running'); // Debug log
     // Check current session
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
@@ -185,9 +183,9 @@ const AirbnbTest: React.FC = () => {
               <div className="w-8 h-8 bg-red-500 rounded flex items-center justify-center">
                 <span className="text-white font-bold text-sm">Ab</span>
               </div>
-              <span>Airbnb Integration Test</span>
-              <Badge variant="outline" className="bg-green-50 text-green-700">
-                Live Integration
+              <span>Airbnb Integration Analysis</span>
+              <Badge variant="outline" className="bg-yellow-50 text-yellow-700">
+                API Discontinued
               </Badge>
             </div>
             <div className="flex items-center gap-2">
@@ -200,7 +198,7 @@ const AirbnbTest: React.FC = () => {
             </div>
           </CardTitle>
           <p className="text-muted-foreground">
-            Test the Airbnb integration with your live API credentials. This integration uses your real Airbnb API key: 32b224761b3a9b3ba365c3bd81855e11
+            Analysis of Airbnb integration options and alternative solutions for property management systems.
           </p>
         </CardHeader>
         <CardContent>
@@ -227,35 +225,47 @@ const AirbnbTest: React.FC = () => {
           <CardTitle>How to Test</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <h4 className="font-medium">1. Connect to Airbnb</h4>
-            <p className="text-sm text-muted-foreground">
-              Click "Connect to Airbnb" below to start the OAuth flow. You'll be redirected to Airbnb's authorization page.
-            </p>
-          </div>
-          
-          <div className="space-y-2">
-            <h4 className="font-medium">2. Authorization Flow</h4>
-            <p className="text-sm text-muted-foreground">
-              The system will exchange your authorization code for access tokens using your API credentials and store them securely in the database.
-            </p>
-          </div>
-          
-          <div className="space-y-2">
-            <h4 className="font-medium">3. Test Sync Operations</h4>
-            <p className="text-sm text-muted-foreground">
-              Once connected, test syncing listings, pushing rates/availability, and importing reservations from Airbnb.
-            </p>
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+            <div className="flex items-start space-x-3">
+              <ExternalLink className="h-5 w-5 text-yellow-500 mt-0.5" />
+              <div className="text-sm">
+                <p className="font-medium text-yellow-800">Important Update</p>
+                <p className="text-yellow-700 mt-1">
+                  Airbnb's direct API is no longer publicly available. API access is restricted to approved partners only.
+                  The OAuth endpoints we were using don't exist for public developers.
+                </p>
+              </div>
+            </div>
           </div>
 
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-            <div className="flex items-start space-x-3">
-              <ExternalLink className="h-5 w-5 text-blue-500 mt-0.5" />
-              <div className="text-sm">
-                <p className="font-medium text-blue-800">Live Integration</p>
-                <p className="text-blue-600 mt-1">
-                  This integration uses your real Airbnb API credentials and will make actual API calls to Airbnb's servers.
-                </p>
+          <div className="space-y-2">
+            <h4 className="font-medium">Alternative Solutions:</h4>
+            <div className="space-y-3 text-sm">
+              <div>
+                <strong>1. Third-Party APIs:</strong>
+                <ul className="ml-4 mt-1 space-y-1 text-muted-foreground">
+                  <li>• AirROI API - Real-time Airbnb data</li>
+                  <li>• RapidAPI Airbnb Collection - Multiple providers</li>
+                  <li>• AirDNA API - Market data and analytics</li>
+                </ul>
+              </div>
+              
+              <div>
+                <strong>2. Airbnb Partner Program:</strong>
+                <ul className="ml-4 mt-1 space-y-1 text-muted-foreground">
+                  <li>• Apply to become a "Preferred Software Partner"</li>
+                  <li>• Requires business verification and approval process</li>
+                  <li>• Access to official Airbnb API after approval</li>
+                </ul>
+              </div>
+
+              <div>
+                <strong>3. Property Management Integration:</strong>
+                <ul className="ml-4 mt-1 space-y-1 text-muted-foreground">
+                  <li>• Use existing PMS that has Airbnb partnership</li>
+                  <li>• Channel manager with Airbnb connectivity</li>
+                  <li>• iCal feed synchronization (basic data only)</li>
+                </ul>
               </div>
             </div>
           </div>
