@@ -1,388 +1,426 @@
-import React, { useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import React, { useState, useEffect } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Separator } from '@/components/ui/separator';
 import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
-import { 
-  Home, 
-  CheckCircle, 
-  AlertCircle, 
-  RefreshCw,
-  Settings,
-  Calendar,
-  DollarSign,
-  Users,
-  Bell
-} from 'lucide-react';
-import { motion } from 'framer-motion';
 import { useToast } from '@/hooks/use-toast';
+import { motion } from 'framer-motion';
+import {
+  Wifi,
+  WifiOff,
+  RefreshCw,
+  Calendar,
+  TrendingUp,
+  AlertTriangle,
+  CheckCircle,
+  XCircle,
+  Settings,
+  ExternalLink
+} from 'lucide-react';
+import { airbnbService } from '@/lib/services/airbnb-service';
 
 interface AirbnbConnection {
-  status: 'connected' | 'disconnected' | 'pending' | 'error';
-  accountInfo?: {
-    userId: string;
-    username: string;
-    listingsCount: number;
-    totalBookings: number;
-  };
-  lastSync?: string;
-  settings: {
-    autoSync: boolean;
-    syncRates: boolean;
-    syncAvailability: boolean;
-    syncRestrictions: boolean;
-    syncInterval: number; // in minutes
-  };
+  id: string;
+  account_name: string;
+  account_id: string;
+  last_sync: string | null;
+  sync_status: string;
+  is_active: boolean;
 }
 
-const initialConnection: AirbnbConnection = {
-  status: 'disconnected',
-  settings: {
-    autoSync: true,
-    syncRates: true,
-    syncAvailability: true,
-    syncRestrictions: true,
-    syncInterval: 30
-  }
-};
+interface AirbnbListing {
+  id: string;
+  airbnb_listing_id: string;
+  airbnb_listing_name: string;
+  room_type_id: string;
+  sync_rates: boolean;
+  sync_availability: boolean;
+  sync_restrictions: boolean;
+  is_active: boolean;
+}
 
 export const AirbnbIntegration: React.FC = () => {
-  const { toast } = useToast();
-  const [connection, setConnection] = useState<AirbnbConnection>(initialConnection);
+  const [connection, setConnection] = useState<AirbnbConnection | null>(null);
+  const [listings, setListings] = useState<AirbnbListing[]>([]);
   const [isConnecting, setIsConnecting] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(false);
+  const { toast } = useToast();
 
-  const handleConnect = async () => {
-    setIsConnecting(true);
-    setConnection(prev => ({ ...prev, status: 'pending' }));
+  // Mock hotel ID - in real app this would come from context
+  const hotelId = 'mock-hotel-id';
 
-    // Simulate OAuth flow - in production this would redirect to Airbnb OAuth
+  useEffect(() => {
+    loadConnectionStatus();
+  }, []);
+
+  const loadConnectionStatus = async () => {
     try {
-      // Mock OAuth redirect URL construction
-      const clientId = 'your-airbnb-client-id'; // This would come from secrets
-      const redirectUri = encodeURIComponent(`${window.location.origin}/auth/airbnb/callback`);
-      const scope = encodeURIComponent('read:listings read:reservations write:availability write:pricing');
-      const state = Math.random().toString(36).substring(2);
-      
-      // Store state for verification
-      sessionStorage.setItem('airbnb_oauth_state', state);
-      
-      const oauthUrl = `https://www.airbnb.com/oauth/authorize?client_id=${clientId}&response_type=code&redirect_uri=${redirectUri}&scope=${scope}&state=${state}`;
-      
-      // In production, this would redirect to Airbnb
-      // window.location.href = oauthUrl;
-      
-      // For demo purposes, simulate successful connection
-      setTimeout(() => {
-        setConnection(prev => ({
-          ...prev,
-          status: 'connected',
-          accountInfo: {
-            userId: 'airbnb_123456789',
-            username: 'Your Hotel Airbnb',
-            listingsCount: 5,
-            totalBookings: 147
-          },
-          lastSync: new Date().toISOString()
-        }));
-        setIsConnecting(false);
-        
-        toast({
-          title: "Airbnb Connected",
-          description: "Successfully connected to your Airbnb account",
-        });
-      }, 3000);
-      
+      const connectionData = await airbnbService.getConnectionStatus(hotelId);
+      if (connectionData) {
+        setConnection(connectionData);
+        await loadListings();
+      }
     } catch (error) {
-      setConnection(prev => ({ ...prev, status: 'error' }));
-      setIsConnecting(false);
-      
+      console.error('Error loading connection status:', error);
+    }
+  };
+
+  const loadListings = async () => {
+    try {
+      const listingsData = await airbnbService.getListings(hotelId);
+      setListings(listingsData);
+    } catch (error) {
+      console.error('Error loading listings:', error);
+    }
+  };
+
+  const handleConnect = () => {
+    try {
+      setIsConnecting(true);
+      const authUrl = airbnbService.startOAuthFlow(hotelId);
+      window.location.href = authUrl;
+    } catch (error) {
+      console.error('Error starting OAuth flow:', error);
       toast({
-        title: "Connection Failed",
-        description: "Failed to connect to Airbnb. Please try again.",
+        title: "Connection Error",
+        description: "Failed to start Airbnb connection process.",
+        variant: "destructive"
+      });
+      setIsConnecting(false);
+    }
+  };
+
+  const handleDisconnect = async () => {
+    if (!connection) return;
+
+    try {
+      const success = await airbnbService.disconnect(connection.id);
+      if (success) {
+        setConnection(null);
+        setListings([]);
+        toast({
+          title: "Disconnected",
+          description: "Successfully disconnected from Airbnb.",
+          variant: "default"
+        });
+      }
+    } catch (error) {
+      console.error('Error disconnecting:', error);
+      toast({
+        title: "Error",
+        description: "Failed to disconnect from Airbnb.",
         variant: "destructive"
       });
     }
   };
 
-  const handleDisconnect = () => {
-    setConnection(initialConnection);
-    toast({
-      title: "Airbnb Disconnected",
-      description: "Successfully disconnected from Airbnb",
-      variant: "destructive"
-    });
-  };
+  const handleSync = async (syncType: 'listings' | 'rates' | 'availability' | 'reservations') => {
+    if (!connection) return;
 
-  const handleSync = async () => {
-    if (connection.status !== 'connected') return;
-    
-    setConnection(prev => ({ ...prev, lastSync: new Date().toISOString() }));
-    
-    toast({
-      title: "Sync Complete",
-      description: "Airbnb data has been synchronized with your channel manager",
-    });
-  };
+    try {
+      setIsSyncing(true);
+      let result;
 
-  const updateSettings = (key: keyof AirbnbConnection['settings'], value: any) => {
-    setConnection(prev => ({
-      ...prev,
-      settings: {
-        ...prev.settings,
-        [key]: value
+      switch (syncType) {
+        case 'listings':
+          result = await airbnbService.syncListings(connection.id);
+          break;
+        case 'rates':
+          const startDate = new Date().toISOString().split('T')[0];
+          const endDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+          result = await airbnbService.syncRates(connection.id, startDate, endDate);
+          break;
+        case 'availability':
+          const availStartDate = new Date().toISOString().split('T')[0];
+          const availEndDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+          result = await airbnbService.syncAvailability(connection.id, availStartDate, availEndDate);
+          break;
+        case 'reservations':
+          result = await airbnbService.importReservations(connection.id);
+          break;
       }
-    }));
-  };
 
-  const getStatusIcon = () => {
-    switch (connection.status) {
-      case 'connected':
-        return <CheckCircle className="h-4 w-4 text-green-500" />;
-      case 'error':
-        return <AlertCircle className="h-4 w-4 text-red-500" />;
-      case 'pending':
-        return <RefreshCw className="h-4 w-4 text-blue-500 animate-spin" />;
-      default:
-        return <AlertCircle className="h-4 w-4 text-gray-400" />;
+      toast({
+        title: "Sync Completed",
+        description: `${syncType} sync completed successfully. Processed: ${result.processed || result.imported || 0}`,
+        variant: "default"
+      });
+
+      if (syncType === 'listings') {
+        await loadListings();
+      }
+    } catch (error) {
+      console.error(`Error syncing ${syncType}:`, error);
+      toast({
+        title: "Sync Error",
+        description: `Failed to sync ${syncType}.`,
+        variant: "destructive"
+      });
+    } finally {
+      setIsSyncing(false);
     }
   };
 
-  const getStatusColor = () => {
-    switch (connection.status) {
-      case 'connected':
-        return 'bg-green-100 text-green-800';
-      case 'error':
-        return 'bg-red-100 text-red-800';
-      case 'pending':
-        return 'bg-blue-100 text-blue-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
+  const handleListingSettingsChange = async (listingId: string, field: string, value: any) => {
+    try {
+      const settings = { [field]: value };
+      await airbnbService.updateSyncSettings(listingId, settings);
+      
+      // Update local state
+      setListings(prev => 
+        prev.map(listing => 
+          listing.id === listingId 
+            ? { ...listing, [field]: value }
+            : listing
+        )
+      );
+
+      toast({
+        title: "Settings Updated",
+        description: "Listing sync settings updated successfully.",
+        variant: "default"
+      });
+    } catch (error) {
+      console.error('Error updating settings:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update listing settings.",
+        variant: "destructive"
+      });
     }
+  };
+
+  const getConnectionStatusIcon = () => {
+    if (!connection) return <WifiOff className="h-5 w-5 text-muted-foreground" />;
+    if (connection.sync_status === 'synced') return <Wifi className="h-5 w-5 text-green-500" />;
+    if (connection.sync_status === 'error') return <AlertTriangle className="h-5 w-5 text-red-500" />;
+    return <RefreshCw className="h-5 w-5 text-yellow-500" />;
+  };
+
+  const getConnectionStatusBadge = () => {
+    if (!connection) return <Badge variant="secondary">Not Connected</Badge>;
+    if (connection.sync_status === 'synced') return <Badge className="bg-green-500">Connected</Badge>;
+    if (connection.sync_status === 'error') return <Badge variant="destructive">Error</Badge>;
+    return <Badge variant="outline">Connecting</Badge>;
   };
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <Home className="h-8 w-8 text-red-500" />
-          <div>
-            <h2 className="text-2xl font-bold">Airbnb Integration</h2>
-            <p className="text-muted-foreground">
-              Connect your Airbnb listings to manage rates, availability, and restrictions
-            </p>
+      {/* Connection Status Header */}
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+          <div className="flex items-center space-x-3">
+            {getConnectionStatusIcon()}
+            <div>
+              <CardTitle className="text-xl">Airbnb Integration</CardTitle>
+              <p className="text-sm text-muted-foreground">
+                Connect your hotel to Airbnb for seamless rate and availability sync
+              </p>
+            </div>
           </div>
-        </div>
-        <Badge className={getStatusColor()}>
-          {getStatusIcon()}
-          <span className="ml-1 capitalize">{connection.status}</span>
-        </Badge>
-      </div>
+          {getConnectionStatusBadge()}
+        </CardHeader>
+      </Card>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         {/* Connection Status Card */}
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Home className="h-5 w-5" />
-              Connection Status
+            <CardTitle className="flex items-center space-x-2">
+              <Settings className="h-5 w-5" />
+              <span>Connection</span>
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            {connection.status === 'connected' && connection.accountInfo ? (
-              <motion.div 
-                className="space-y-3"
+            {connection ? (
+              <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
+                className="space-y-3"
               >
-                <div className="bg-muted/50 rounded p-3 space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span>Account:</span>
-                    <span className="font-medium">{connection.accountInfo.username}</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span>Listings:</span>
-                    <span className="font-medium">{connection.accountInfo.listingsCount}</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span>Total Bookings:</span>
-                    <span className="font-medium">{connection.accountInfo.totalBookings}</span>
-                  </div>
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium">Account</Label>
+                  <p className="text-sm text-muted-foreground">{connection.account_name}</p>
                 </div>
-                
-                {connection.lastSync && (
-                  <div className="text-xs text-muted-foreground">
-                    Last synced: {new Date(connection.lastSync).toLocaleString()}
-                  </div>
-                )}
-                
-                <div className="flex gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleSync}
-                    className="flex-1"
-                  >
-                    <RefreshCw className="h-3 w-3 mr-1" />
-                    Sync Now
-                  </Button>
-                  <Button
-                    variant="destructive"
-                    size="sm"
-                    onClick={handleDisconnect}
-                  >
-                    Disconnect
-                  </Button>
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium">Last Sync</Label>
+                  <p className="text-sm text-muted-foreground">
+                    {connection.last_sync 
+                      ? new Date(connection.last_sync).toLocaleString()
+                      : 'Never'
+                    }
+                  </p>
                 </div>
+                <Button 
+                  onClick={handleDisconnect} 
+                  variant="destructive" 
+                  size="sm"
+                  className="w-full"
+                >
+                  <XCircle className="mr-2 h-4 w-4" />
+                  Disconnect
+                </Button>
               </motion.div>
             ) : (
-              <div className="text-center space-y-4">
-                <div className="text-muted-foreground">
-                  Connect your Airbnb account to start syncing your listings
-                </div>
-                <Button
+              <div className="space-y-4">
+                <p className="text-sm text-muted-foreground">
+                  Connect to your Airbnb account to start syncing rates and availability.
+                </p>
+                <Button 
                   onClick={handleConnect}
                   disabled={isConnecting}
                   className="w-full"
                 >
                   {isConnecting ? (
-                    <>
-                      <RefreshCw className="h-3 w-3 mr-2 animate-spin" />
-                      Connecting...
-                    </>
+                    <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
                   ) : (
-                    <>
-                      <Home className="h-3 w-3 mr-2" />
-                      Connect to Airbnb
-                    </>
+                    <ExternalLink className="mr-2 h-4 w-4" />
                   )}
+                  Connect to Airbnb
                 </Button>
               </div>
             )}
           </CardContent>
         </Card>
 
-        {/* Sync Settings Card */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Settings className="h-5 w-5" />
-              Sync Settings
-            </CardTitle>
-            <CardDescription>
-              Configure what data to sync with Airbnb
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center justify-between">
-              <Label htmlFor="auto-sync">Auto Sync</Label>
-              <Switch
-                id="auto-sync"
-                checked={connection.settings.autoSync}
-                onCheckedChange={(checked) => updateSettings('autoSync', checked)}
-                disabled={connection.status !== 'connected'}
-              />
-            </div>
-            
-            <div className="flex items-center justify-between">
-              <Label htmlFor="sync-rates">Rates</Label>
-              <Switch
-                id="sync-rates"
-                checked={connection.settings.syncRates}
-                onCheckedChange={(checked) => updateSettings('syncRates', checked)}
-                disabled={connection.status !== 'connected'}
-              />
-            </div>
-            
-            <div className="flex items-center justify-between">
-              <Label htmlFor="sync-availability">Availability</Label>
-              <Switch
-                id="sync-availability"
-                checked={connection.settings.syncAvailability}
-                onCheckedChange={(checked) => updateSettings('syncAvailability', checked)}
-                disabled={connection.status !== 'connected'}
-              />
-            </div>
-            
-            <div className="flex items-center justify-between">
-              <Label htmlFor="sync-restrictions">Restrictions</Label>
-              <Switch
-                id="sync-restrictions"
-                checked={connection.settings.syncRestrictions}
-                onCheckedChange={(checked) => updateSettings('syncRestrictions', checked)}
-                disabled={connection.status !== 'connected'}
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="sync-interval">Sync Interval (minutes)</Label>
-              <Input
-                id="sync-interval"
-                type="number"
-                value={connection.settings.syncInterval}
-                onChange={(e) => updateSettings('syncInterval', parseInt(e.target.value))}
-                disabled={connection.status !== 'connected'}
-                min="5"
-                max="1440"
-              />
-            </div>
-          </CardContent>
-        </Card>
+        {/* Sync Controls Card */}
+        {connection && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-2">
+                <RefreshCw className="h-5 w-5" />
+                <span>Sync Controls</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <Button 
+                onClick={() => handleSync('listings')}
+                disabled={isSyncing}
+                variant="outline"
+                size="sm"
+                className="w-full justify-start"
+              >
+                <Calendar className="mr-2 h-4 w-4" />
+                Sync Listings
+              </Button>
+              <Button 
+                onClick={() => handleSync('rates')}
+                disabled={isSyncing}
+                variant="outline"
+                size="sm"
+                className="w-full justify-start"
+              >
+                <TrendingUp className="mr-2 h-4 w-4" />
+                Push Rates
+              </Button>
+              <Button 
+                onClick={() => handleSync('availability')}
+                disabled={isSyncing}
+                variant="outline"
+                size="sm"
+                className="w-full justify-start"
+              >
+                <CheckCircle className="mr-2 h-4 w-4" />
+                Push Availability
+              </Button>
+              <Button 
+                onClick={() => handleSync('reservations')}
+                disabled={isSyncing}
+                variant="outline"
+                size="sm"
+                className="w-full justify-start"
+              >
+                <RefreshCw className="mr-2 h-4 w-4" />
+                Import Reservations
+              </Button>
+            </CardContent>
+          </Card>
+        )}
 
-        {/* Statistics Card */}
+        {/* Sync Statistics Card */}
+        {connection && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-2">
+                <TrendingUp className="h-5 w-5" />
+                <span>Statistics</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="space-y-1">
+                <Label className="text-sm">Active Listings</Label>
+                <p className="text-2xl font-bold">{listings.filter(l => l.is_active).length}</p>
+              </div>
+              <div className="space-y-1">
+                <Label className="text-sm">Total Listings</Label>
+                <p className="text-2xl font-bold">{listings.length}</p>
+              </div>
+              <div className="space-y-1">
+                <Label className="text-sm">Sync Status</Label>
+                <Badge variant={connection.sync_status === 'synced' ? 'default' : 'secondary'}>
+                  {connection.sync_status}
+                </Badge>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+      </div>
+
+      {/* Listings Management */}
+      {connection && listings.length > 0 && (
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Bell className="h-5 w-5" />
-              Sync Statistics
-            </CardTitle>
-            <CardDescription>
-              Recent sync activity and statistics
-            </CardDescription>
+            <CardTitle>Listings Management</CardTitle>
+            <p className="text-sm text-muted-foreground">
+              Configure sync settings for each Airbnb listing
+            </p>
           </CardHeader>
-          <CardContent className="space-y-4">
-            {connection.status === 'connected' ? (
-              <>
-                <div className="grid grid-cols-2 gap-4 text-center">
-                  <div className="space-y-1">
-                    <Calendar className="h-6 w-6 mx-auto text-blue-500" />
-                    <div className="text-2xl font-bold">147</div>
-                    <div className="text-xs text-muted-foreground">Bookings Synced</div>
+          <CardContent>
+            <div className="space-y-4">
+              {listings.map((listing) => (
+                <div key={listing.id} className="border rounded-lg p-4 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h4 className="font-medium">{listing.airbnb_listing_name}</h4>
+                      <p className="text-sm text-muted-foreground">ID: {listing.airbnb_listing_id}</p>
+                    </div>
+                    <Badge variant={listing.is_active ? 'default' : 'secondary'}>
+                      {listing.is_active ? 'Active' : 'Inactive'}
+                    </Badge>
                   </div>
                   
-                  <div className="space-y-1">
-                    <DollarSign className="h-6 w-6 mx-auto text-green-500" />
-                    <div className="text-2xl font-bold">95%</div>
-                    <div className="text-xs text-muted-foreground">Rate Accuracy</div>
+                  <div className="grid grid-cols-3 gap-4">
+                    <div className="flex items-center space-x-2">
+                      <Switch 
+                        checked={listing.sync_rates}
+                        onCheckedChange={(value) => handleListingSettingsChange(listing.id, 'sync_rates', value)}
+                      />
+                      <Label className="text-sm">Sync Rates</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Switch 
+                        checked={listing.sync_availability}
+                        onCheckedChange={(value) => handleListingSettingsChange(listing.id, 'sync_availability', value)}
+                      />
+                      <Label className="text-sm">Sync Availability</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Switch 
+                        checked={listing.sync_restrictions}
+                        onCheckedChange={(value) => handleListingSettingsChange(listing.id, 'sync_restrictions', value)}
+                      />
+                      <Label className="text-sm">Sync Restrictions</Label>
+                    </div>
                   </div>
                 </div>
-                
-                <div className="border-t pt-4">
-                  <div className="text-sm space-y-2">
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Last Rate Sync:</span>
-                      <span>2 min ago</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Last Availability Sync:</span>
-                      <span>5 min ago</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Sync Errors:</span>
-                      <span className="text-green-600">0</span>
-                    </div>
-                  </div>
-                </div>
-              </>
-            ) : (
-              <div className="text-center text-muted-foreground">
-                Connect to Airbnb to view statistics
-              </div>
-            )}
+              ))}
+            </div>
           </CardContent>
         </Card>
-      </div>
+      )}
     </div>
   );
 };

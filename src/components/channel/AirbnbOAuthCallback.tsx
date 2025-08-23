@@ -1,10 +1,17 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { CheckCircle, AlertCircle, RefreshCw, Home } from 'lucide-react';
+import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
 import { motion } from 'framer-motion';
+import {
+  CheckCircle,
+  AlertCircle,
+  RefreshCw,
+  ArrowLeft
+} from 'lucide-react';
+import { airbnbService } from '@/lib/services/airbnb-service';
 
 interface OAuthCallbackState {
   status: 'processing' | 'success' | 'error';
@@ -13,155 +20,106 @@ interface OAuthCallbackState {
 }
 
 export const AirbnbOAuthCallback: React.FC = () => {
+  const [callbackState, setCallbackState] = useState<OAuthCallbackState>({
+    status: 'processing',
+    message: 'Processing your Airbnb connection...'
+  });
+  
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [callbackState, setCallbackState] = useState<OAuthCallbackState>({
-    status: 'processing',
-    message: 'Processing Airbnb authentication...'
-  });
 
   useEffect(() => {
-    const processCallback = async () => {
-      try {
-        // Extract OAuth parameters from URL
-        const code = searchParams.get('code');
-        const state = searchParams.get('state');
-        const error = searchParams.get('error');
-        const errorDescription = searchParams.get('error_description');
+    handleCallback();
+  }, []);
 
-        // Check for OAuth errors
-        if (error) {
-          setCallbackState({
-            status: 'error',
-            message: 'Authentication failed',
-            details: errorDescription || `Error: ${error}`
-          });
-          return;
-        }
+  const handleCallback = async () => {
+    try {
+      const code = searchParams.get('code');
+      const state = searchParams.get('state');
+      const error = searchParams.get('error');
+      const errorDescription = searchParams.get('error_description');
 
-        // Verify state parameter to prevent CSRF attacks
-        const storedState = sessionStorage.getItem('airbnb_oauth_state');
-        if (!state || state !== storedState) {
-          setCallbackState({
-            status: 'error',
-            message: 'Security validation failed',
-            details: 'Invalid state parameter. This could indicate a security issue.'
-          });
-          return;
-        }
-
-        // Clean up stored state
-        sessionStorage.removeItem('airbnb_oauth_state');
-
-        if (!code) {
-          setCallbackState({
-            status: 'error',
-            message: 'No authorization code received',
-            details: 'The authorization code is required to complete the connection.'
-          });
-          return;
-        }
-
-        // Exchange authorization code for access token
-        // In production, this would call your backend API which would:
-        // 1. Exchange the code for an access token
-        // 2. Store the tokens securely
-        // 3. Return connection status
-        
-        setCallbackState({
-          status: 'processing',
-          message: 'Exchanging authorization code for access token...'
-        });
-
-        // Simulate API call to exchange code for tokens
-        const tokenResponse = await fetch('/api/airbnb/oauth/token', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            code,
-            redirectUri: `${window.location.origin}/auth/airbnb/callback`
-          }),
-        });
-
-        if (!tokenResponse.ok) {
-          throw new Error('Failed to exchange authorization code');
-        }
-
-        const tokenData = await tokenResponse.json();
-
-        // Fetch user profile to verify connection
-        setCallbackState({
-          status: 'processing',
-          message: 'Verifying connection and fetching account details...'
-        });
-
-        // Simulate fetching user profile
-        const profileResponse = await fetch('/api/airbnb/profile', {
-          headers: {
-            'Authorization': `Bearer ${tokenData.access_token}`
-          }
-        });
-
-        if (!profileResponse.ok) {
-          throw new Error('Failed to fetch user profile');
-        }
-
-        const profileData = await profileResponse.json();
-
-        // Success - connection established
-        setCallbackState({
-          status: 'success',
-          message: 'Successfully connected to Airbnb!',
-          details: `Connected account: ${profileData.username || profileData.email}`
-        });
-
-        // Store connection info in localStorage or context
-        localStorage.setItem('airbnb_connection', JSON.stringify({
-          connected: true,
-          userId: profileData.id,
-          username: profileData.username,
-          email: profileData.email,
-          connectedAt: new Date().toISOString()
-        }));
-
-        toast({
-          title: "Airbnb Connected",
-          description: "Your Airbnb account has been successfully connected to the channel manager.",
-        });
-
-        // Redirect after a delay
-        setTimeout(() => {
-          navigate('/channel-manager/integrations');
-        }, 2000);
-
-      } catch (error) {
-        console.error('OAuth callback error:', error);
+      // Check for OAuth errors
+      if (error) {
         setCallbackState({
           status: 'error',
-          message: 'Connection failed',
-          details: error instanceof Error ? error.message : 'An unexpected error occurred'
+          message: 'Connection Failed',
+          details: errorDescription || `OAuth error: ${error}`
         });
-
-        toast({
-          title: "Connection Failed",
-          description: "Failed to connect to Airbnb. Please try again.",
-          variant: "destructive"
-        });
+        return;
       }
-    };
 
-    processCallback();
-  }, [searchParams, navigate, toast]);
+      // Validate required parameters
+      if (!code || !state) {
+        setCallbackState({
+          status: 'error',
+          message: 'Invalid callback parameters',
+          details: 'Missing authorization code or state parameter'
+        });
+        return;
+      }
+
+      // Extract hotel ID from state
+      const hotelId = state.split('_').pop() || 'mock-hotel-id';
+
+      setCallbackState({
+        status: 'processing',
+        message: 'Exchanging authorization code for access token...'
+      });
+
+      // Exchange code for tokens using the service
+      const connection = await airbnbService.handleOAuthCallback(code, state, hotelId);
+
+      setCallbackState({
+        status: 'processing',
+        message: 'Fetching Airbnb listings...'
+      });
+
+      // Sync listings from Airbnb
+      if (connection.accountId) {
+        await airbnbService.syncListings(connection.accountId);
+      }
+
+      setCallbackState({
+        status: 'success',
+        message: 'Successfully connected to Airbnb!',
+        details: `Connected to ${connection.accountName}`
+      });
+
+      toast({
+        title: "Connection Successful",
+        description: `Successfully connected to Airbnb account: ${connection.accountName}`,
+        variant: "default"
+      });
+
+      // Redirect after success
+      setTimeout(() => {
+        navigate('/channel-manager');
+      }, 2000);
+
+    } catch (error) {
+      console.error('OAuth callback error:', error);
+      setCallbackState({
+        status: 'error',
+        message: 'Connection Failed',
+        details: error instanceof Error ? error.message : 'Unknown error occurred'
+      });
+
+      toast({
+        title: "Connection Failed",
+        description: error instanceof Error ? error.message : 'Failed to connect to Airbnb',
+        variant: "destructive"
+      });
+    }
+  };
 
   const handleRetry = () => {
-    navigate('/channel-manager/integrations');
+    navigate('/channel-manager');
   };
 
   const handleContinue = () => {
-    navigate('/channel-manager/integrations');
+    navigate('/channel-manager');
   };
 
   const getIcon = () => {
@@ -187,95 +145,58 @@ export const AirbnbOAuthCallback: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4">
-      <motion.div
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.3 }}
-      >
-        <Card className="w-full max-w-md">
-          <CardHeader className="text-center">
-            <div className="flex justify-center mb-4">
-              <Home className="h-8 w-8 text-red-500" />
-            </div>
-            <CardTitle className="flex items-center justify-center gap-2">
-              Airbnb Integration
-            </CardTitle>
-            <CardDescription>
-              Connecting your Airbnb account to the channel manager
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="flex flex-col items-center space-y-4">
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
+      <Card className="w-full max-w-md">
+        <CardHeader className="text-center">
+          <CardTitle className="flex flex-col items-center space-y-4">
+            <motion.div
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              transition={{ duration: 0.5 }}
+            >
               {getIcon()}
-              <div className="text-center space-y-2">
-                <h3 className={`text-lg font-semibold ${getStatusColor()}`}>
-                  {callbackState.message}
-                </h3>
-                {callbackState.details && (
-                  <p className="text-sm text-muted-foreground">
-                    {callbackState.details}
-                  </p>
-                )}
-              </div>
-            </div>
-
-            {callbackState.status === 'processing' && (
-              <div className="space-y-2">
-                <div className="w-full bg-muted rounded-full h-2">
-                  <div className="bg-blue-500 h-2 rounded-full animate-pulse" style={{ width: '60%' }} />
-                </div>
-                <p className="text-xs text-muted-foreground text-center">
-                  This may take a few moments...
-                </p>
-              </div>
+            </motion.div>
+            <span className="text-xl">Airbnb Connection</span>
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div className="text-center space-y-3">
+            <h3 className={`text-lg font-semibold ${getStatusColor()}`}>
+              {callbackState.message}
+            </h3>
+            {callbackState.details && (
+              <p className="text-sm text-muted-foreground">
+                {callbackState.details}
+              </p>
             )}
+          </div>
 
+          {callbackState.status === 'processing' && (
+            <div className="space-y-2">
+              <Progress value={66} className="w-full" />
+              <p className="text-xs text-center text-muted-foreground">
+                Please wait while we connect your account...
+              </p>
+            </div>
+          )}
+
+          <div className="flex flex-col space-y-2">
             {callbackState.status === 'success' && (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.5 }}
-                className="space-y-4"
-              >
-                <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                  <div className="flex items-start space-x-3">
-                    <CheckCircle className="h-5 w-5 text-green-500 mt-0.5" />
-                    <div className="text-sm">
-                      <p className="font-medium text-green-800">Connection Successful</p>
-                      <p className="text-green-600 mt-1">
-                        You can now sync your listings, rates, and availability between your PMS and Airbnb.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-                <Button onClick={handleContinue} className="w-full">
-                  Continue to Channel Manager
-                </Button>
-              </motion.div>
+              <Button onClick={handleContinue} className="w-full">
+                <CheckCircle className="mr-2 h-4 w-4" />
+                Continue to Channel Manager
+              </Button>
             )}
 
             {callbackState.status === 'error' && (
-              <div className="space-y-4">
-                <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-                  <div className="flex items-start space-x-3">
-                    <AlertCircle className="h-5 w-5 text-red-500 mt-0.5" />
-                    <div className="text-sm">
-                      <p className="font-medium text-red-800">Connection Failed</p>
-                      <p className="text-red-600 mt-1">
-                        We couldn't complete the connection to your Airbnb account. Please try again.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-                <Button onClick={handleRetry} className="w-full">
-                  Return to Integrations
-                </Button>
-              </div>
+              <Button onClick={handleRetry} variant="outline" className="w-full">
+                <ArrowLeft className="mr-2 h-4 w-4" />
+                Return to Integrations
+              </Button>
             )}
-          </CardContent>
-        </Card>
-      </motion.div>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 };

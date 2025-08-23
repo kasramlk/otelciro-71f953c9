@@ -79,6 +79,7 @@ import SocialMediaAdvanced from "./pages/SocialMediaAdvanced";
 import SocialMediaIntegration from "./pages/SocialMediaIntegration";
 import SocialMediaEnterprise from "./pages/SocialMediaEnterprise";
 import AirbnbCallback from "./pages/auth/AirbnbCallback";
+import AirbnbTest from "./pages/AirbnbTest";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -203,6 +204,7 @@ const AppContent = () => {
     <Routes>
       <Route path="/auth" element={<Auth />} />
       <Route path="/auth/airbnb/callback" element={<AirbnbCallback />} />
+      <Route path="/airbnb-test" element={<AirbnbTest />} />
       <Route path="/" element={session ? (
         <HotelManagerLayout>
           <Index />
