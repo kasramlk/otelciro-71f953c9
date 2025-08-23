@@ -36,14 +36,14 @@ export const HeroSection = ({ onExploreClick }: HeroSectionProps) => {
             initial={{ scale: 0.8, opacity: 0 }}
             animate={isIntersecting ? { scale: 1, opacity: 1 } : {}}
             transition={{ duration: 1, delay: 0.2 }}
-            className="flex items-center justify-center mb-12"
+            className="flex items-center justify-center mb-10"
           >
             <div className="relative">
-              <div className="absolute inset-0 bg-gradient-to-r from-accent/30 to-accent-light/30 blur-2xl rounded-full animate-pulse-glow" />
+              <div className="absolute inset-0 bg-gradient-to-r from-accent/20 to-accent-light/20 blur-lg rounded-full animate-pulse-glow" />
               <img 
                 src={otelciroLogo} 
                 alt="OtelCiro.com" 
-                className="relative h-32 md:h-40 w-auto drop-shadow-2xl filter brightness-110 hover:scale-105 transition-transform duration-500"
+                className="relative h-24 md:h-28 w-auto drop-shadow-2xl filter brightness-105 hover:scale-105 transition-transform duration-500"
               />
             </div>
           </motion.div>
