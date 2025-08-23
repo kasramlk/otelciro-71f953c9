@@ -26,7 +26,8 @@ import {
   Key,
   Globe,
   Users,
-  Calendar
+  Calendar,
+  Home
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useToast } from '@/hooks/use-toast';
@@ -51,6 +52,16 @@ interface Integration {
 }
 
 const availableIntegrations: Integration[] = [
+  {
+    id: 'airbnb',
+    name: 'Airbnb',
+    type: 'pms',
+    icon: <Home className="h-5 w-5 text-red-500" />,
+    description: 'Connect your Airbnb listings to sync rates, availability, and restrictions',
+    status: 'disconnected',
+    features: ['Rate Sync', 'Availability Sync', 'Booking Import', 'Restriction Sync', 'Analytics'],
+    permissions: ['read:listings', 'read:reservations', 'write:availability', 'write:pricing']
+  },
   {
     id: 'instagram',
     name: 'Instagram',
@@ -309,12 +320,130 @@ export const IntegrationHub: React.FC = () => {
 
       {/* Integration Categories */}
       <Tabs defaultValue="social" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-5">
+          <TabsTrigger value="channels">Channel Manager</TabsTrigger>
           <TabsTrigger value="social">Social Media</TabsTrigger>
           <TabsTrigger value="pms">PMS & Data</TabsTrigger>
           <TabsTrigger value="api">APIs & Services</TabsTrigger>
           <TabsTrigger value="webhook">Webhooks</TabsTrigger>
         </TabsList>
+        
+        <TabsContent value="channels" className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <AnimatePresence>
+              {integrations.filter(i => i.type === 'pms' && ['airbnb', 'booking.com', 'expedia'].includes(i.id)).map((integration, index) => (
+                <motion.div
+                  key={integration.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.95 }}
+                  transition={{ delay: index * 0.1 }}
+                >
+                  <Card className="hover:shadow-md transition-all">
+                    <CardHeader>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          {integration.icon}
+                          <div>
+                            <CardTitle className="text-lg">{integration.name}</CardTitle>
+                            <Badge className={getStatusColor(integration.status)}>
+                              {getStatusIcon(integration.status)}
+                              <span className="ml-1 capitalize">{integration.status}</span>
+                            </Badge>
+                          </div>
+                        </div>
+                      </div>
+                      <CardDescription>{integration.description}</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      {integration.status === 'connected' && integration.accountInfo && (
+                        <div className="bg-muted/50 rounded p-3 space-y-2">
+                          <div className="flex justify-between text-sm">
+                            <span>Account:</span>
+                            <span className="font-medium">{integration.accountInfo.username}</span>
+                          </div>
+                          <div className="flex justify-between text-sm">
+                            <span>Listings:</span>
+                            <span className="font-medium">{integration.accountInfo.followers?.toLocaleString()}</span>
+                          </div>
+                          <div className="flex justify-between text-sm">
+                            <span>Bookings:</span>
+                            <span className="font-medium">{integration.accountInfo.posts}</span>
+                          </div>
+                        </div>
+                      )}
+                      
+                      <div>
+                        <Label className="text-xs font-medium text-muted-foreground mb-2 block">FEATURES</Label>
+                        <div className="flex flex-wrap gap-1">
+                          {integration.features.map(feature => (
+                            <Badge key={feature} variant="outline" className="text-xs">
+                              {feature}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                      
+                      {integration.lastSync && (
+                        <div className="text-xs text-muted-foreground">
+                          Last synced: {new Date(integration.lastSync).toLocaleString()}
+                        </div>
+                      )}
+                      
+                      <div className="flex gap-2 pt-2">
+                        {integration.status === 'connected' ? (
+                          <>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleSync(integration.id)}
+                              className="flex-1"
+                            >
+                              <RefreshCw className="h-3 w-3 mr-1" />
+                              Sync
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setSelectedIntegration(integration)}
+                            >
+                              <Settings className="h-3 w-3" />
+                            </Button>
+                            <Button
+                              variant="destructive"
+                              size="sm"
+                              onClick={() => handleDisconnect(integration.id)}
+                            >
+                              Disconnect
+                            </Button>
+                          </>
+                        ) : (
+                          <Button
+                            onClick={() => handleConnect(integration.id)}
+                            disabled={integration.isConnecting}
+                            className="w-full"
+                          >
+                            {integration.isConnecting ? (
+                              <>
+                                <RefreshCw className="h-3 w-3 mr-2 animate-spin" />
+                                Connecting...
+                              </>
+                            ) : (
+                              <>
+                                <LinkIcon className="h-3 w-3 mr-2" />
+                                Connect
+                              </>
+                            )}
+                          </Button>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                </motion.div>
+              ))}
+            </AnimatePresence>
+          </div>
+        </TabsContent>
         
         <TabsContent value="social" className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
