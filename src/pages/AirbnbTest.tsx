@@ -183,9 +183,9 @@ const AirbnbTest: React.FC = () => {
               <div className="w-8 h-8 bg-red-500 rounded flex items-center justify-center">
                 <span className="text-white font-bold text-sm">Ab</span>
               </div>
-              <span>Airbnb Integration Analysis</span>
-              <Badge variant="outline" className="bg-yellow-50 text-yellow-700">
-                API Discontinued
+              <span>Airbnb Integration Test</span>
+              <Badge variant="outline" className="bg-green-50 text-green-700">
+                Live Integration
               </Badge>
             </div>
             <div className="flex items-center gap-2">
@@ -198,7 +198,7 @@ const AirbnbTest: React.FC = () => {
             </div>
           </CardTitle>
           <p className="text-muted-foreground">
-            Analysis of Airbnb integration options and alternative solutions for property management systems.
+            Test the Airbnb integration with your live API credentials as an approved Airbnb partner.
           </p>
         </CardHeader>
         <CardContent>
@@ -225,49 +225,56 @@ const AirbnbTest: React.FC = () => {
           <CardTitle>How to Test</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+          <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
             <div className="flex items-start space-x-3">
-              <ExternalLink className="h-5 w-5 text-yellow-500 mt-0.5" />
+              <ExternalLink className="h-5 w-5 text-amber-500 mt-0.5" />
               <div className="text-sm">
-                <p className="font-medium text-yellow-800">Important Update</p>
-                <p className="text-yellow-700 mt-1">
-                  Airbnb's direct API is no longer publicly available. API access is restricted to approved partners only.
-                  The OAuth endpoints we were using don't exist for public developers.
+                <p className="font-medium text-amber-800">API Clarification Required</p>
+                <p className="text-amber-700 mt-1">
+                  Your screenshots show Finologee's PSD2 banking API (developer.airbnb.finologee.com), not the Airbnb vacation rental API.
+                  Please clarify which integration you need.
                 </p>
               </div>
             </div>
           </div>
 
-          <div className="space-y-2">
-            <h4 className="font-medium">Alternative Solutions:</h4>
-            <div className="space-y-3 text-sm">
-              <div>
-                <strong>1. Third-Party APIs:</strong>
-                <ul className="ml-4 mt-1 space-y-1 text-muted-foreground">
-                  <li>• AirROI API - Real-time Airbnb data</li>
-                  <li>• RapidAPI Airbnb Collection - Multiple providers</li>
-                  <li>• AirDNA API - Market data and analytics</li>
-                </ul>
-              </div>
-              
-              <div>
-                <strong>2. Airbnb Partner Program:</strong>
-                <ul className="ml-4 mt-1 space-y-1 text-muted-foreground">
-                  <li>• Apply to become a "Preferred Software Partner"</li>
-                  <li>• Requires business verification and approval process</li>
-                  <li>• Access to official Airbnb API after approval</li>
-                </ul>
-              </div>
-
-              <div>
-                <strong>3. Property Management Integration:</strong>
-                <ul className="ml-4 mt-1 space-y-1 text-muted-foreground">
-                  <li>• Use existing PMS that has Airbnb partnership</li>
-                  <li>• Channel manager with Airbnb connectivity</li>
-                  <li>• iCal feed synchronization (basic data only)</li>
-                </ul>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="border rounded-lg p-4">
+              <h4 className="font-medium mb-2 text-blue-800">Banking API (What you showed)</h4>
+              <ul className="text-sm text-muted-foreground space-y-1">
+                <li>• PSD2 European banking compliance</li>
+                <li>• Financial transaction processing</li>
+                <li>• Account information services</li>
+                <li>• Payment initiation services</li>
+              </ul>
+              <div className="mt-2 text-xs text-blue-600">
+                Domain: developer.airbnb.finologee.com
               </div>
             </div>
+
+            <div className="border rounded-lg p-4">
+              <h4 className="font-medium mb-2 text-green-800">Vacation Rental API (Assumed need)</h4>
+              <ul className="text-sm text-muted-foreground space-y-1">
+                <li>• Property listing management</li>
+                <li>• Rate and availability sync</li>
+                <li>• Reservation management</li>
+                <li>• Calendar synchronization</li>
+              </ul>
+              <div className="mt-2 text-xs text-green-600">
+                Domain: api.airbnb.com
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <h4 className="font-medium text-blue-800 mb-2">Next Steps:</h4>
+            <p className="text-blue-700 text-sm mb-2">
+              Please confirm which API integration you need so I can provide the correct implementation:
+            </p>
+            <ul className="text-blue-700 text-sm space-y-1">
+              <li>• <strong>Banking:</strong> I'll help you integrate with Finologee's PSD2 API</li>
+              <li>• <strong>Vacation Rental:</strong> I'll guide you through Airbnb's partner application process</li>
+            </ul>
           </div>
         </CardContent>
       </Card>

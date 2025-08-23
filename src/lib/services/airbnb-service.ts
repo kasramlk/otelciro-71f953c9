@@ -83,18 +83,21 @@ class AirbnbService {
     // Service now uses Supabase backend instead of localStorage
   }
 
-  // Start OAuth flow
+  // Start OAuth flow - Airbnb Partner API
   startOAuthFlow(hotelId: string): string {
     const state = `airbnb_auth_${Date.now()}_${hotelId}`;
-    const clientId = '32b224761b3a9b3ba365c3bd81855e11'; // Your Airbnb API key
+    const clientId = '32b224761b3a9b3ba365c3bd81855e11'; // Your Airbnb Partner API Client ID
     const redirectUri = encodeURIComponent(`${window.location.origin}/auth/airbnb/callback`);
     
-    const authUrl = `https://www.airbnb.com/oauth/authorize` +
+    // Correct Airbnb Partner API OAuth endpoint
+    const authUrl = `https://api.airbnb.com/v2/oauth/authorize` +
       `?client_id=${clientId}` +
       `&response_type=code` +
       `&redirect_uri=${redirectUri}` +
       `&state=${state}` +
       `&scope=read_write`;
+    
+    console.log('Starting Airbnb OAuth with URL:', authUrl);
     
     // Store state for validation
     localStorage.setItem('airbnb_oauth_state', state);
