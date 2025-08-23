@@ -21,6 +21,7 @@ import {
   ExternalLink
 } from 'lucide-react';
 import { airbnbService } from '@/lib/services/airbnb-service';
+import { useHotels } from '@/hooks/use-production-data';
 
 interface AirbnbConnection {
   id: string;
@@ -49,14 +50,19 @@ export const AirbnbIntegration: React.FC = () => {
   const [isSyncing, setIsSyncing] = useState(false);
   const { toast } = useToast();
 
-  // Mock hotel ID - in real app this would come from context
-  const hotelId = 'mock-hotel-id';
+  // Get hotels from user's organization
+  const { data: hotels, isLoading: hotelsLoading, error: hotelsError } = useHotels();
+  const hotelId = hotels?.[0]?.id;
 
   useEffect(() => {
-    loadConnectionStatus();
-  }, []);
+    if (hotelId) {
+      loadConnectionStatus();
+    }
+  }, [hotelId]);
 
   const loadConnectionStatus = async () => {
+    if (!hotelId) return;
+    
     try {
       const connectionData = await airbnbService.getConnectionStatus(hotelId);
       if (connectionData) {
@@ -69,6 +75,8 @@ export const AirbnbIntegration: React.FC = () => {
   };
 
   const loadListings = async () => {
+    if (!hotelId) return;
+    
     try {
       const listingsData = await airbnbService.getListings(hotelId);
       setListings(listingsData);
@@ -78,6 +86,15 @@ export const AirbnbIntegration: React.FC = () => {
   };
 
   const handleConnect = () => {
+    if (!hotelId) {
+      toast({
+        title: "Error",
+        description: "No hotel found. Please make sure you have access to a hotel.",
+        variant: "destructive"
+      });
+      return;
+    }
+
     try {
       setIsConnecting(true);
       const authUrl = airbnbService.startOAuthFlow(hotelId);
@@ -206,6 +223,33 @@ export const AirbnbIntegration: React.FC = () => {
     if (connection.sync_status === 'error') return <Badge variant="destructive">Error</Badge>;
     return <Badge variant="outline">Connecting</Badge>;
   };
+
+  // Show loading state while hotels are loading
+  if (hotelsLoading) {
+    return (
+      <div className="flex items-center justify-center p-8">
+        <RefreshCw className="h-8 w-8 animate-spin" />
+        <span className="ml-2">Loading hotel information...</span>
+      </div>
+    );
+  }
+
+  // Show error if hotels failed to load
+  if (hotelsError || !hotels?.length) {
+    return (
+      <Card>
+        <CardContent className="p-6">
+          <div className="text-center space-y-2">
+            <AlertTriangle className="h-8 w-8 text-red-500 mx-auto" />
+            <h3 className="text-lg font-medium">Unable to load hotel information</h3>
+            <p className="text-muted-foreground">
+              {hotelsError ? 'Error loading hotels.' : 'No hotels found for your organization.'}
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <div className="space-y-6">
