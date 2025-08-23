@@ -83,41 +83,23 @@ class AirbnbService {
     // Service now uses Supabase backend instead of localStorage
   }
 
-  // Start OAuth flow - DEMO VERSION for testing
+  // Start OAuth flow
   startOAuthFlow(hotelId: string): string {
-    // For demo purposes, we'll simulate the OAuth flow without redirecting to real Airbnb
-    console.log('Demo: Starting Airbnb OAuth flow for hotel:', hotelId);
-    
-    // In a real implementation, this would redirect to Airbnb
-    // For demo, we'll just return a mock auth URL and simulate success
     const state = `airbnb_auth_${Date.now()}_${hotelId}`;
+    const clientId = '32b224761b3a9b3ba365c3bd81855e11'; // Your Airbnb API key
+    const redirectUri = encodeURIComponent(`${window.location.origin}/auth/airbnb/callback`);
+    
+    const authUrl = `https://www.airbnb.com/oauth/authorize` +
+      `?client_id=${clientId}` +
+      `&response_type=code` +
+      `&redirect_uri=${redirectUri}` +
+      `&state=${state}` +
+      `&scope=read_write`;
     
     // Store state for validation
     localStorage.setItem('airbnb_oauth_state', state);
     
-    // Simulate successful OAuth by directly calling the callback after a short delay
-    setTimeout(() => {
-      // Simulate OAuth callback with mock data
-      const mockConnectionData = {
-        id: 'mock-connection-id',
-        hotel_id: hotelId,
-        account_id: 'demo-account-123',
-        account_name: 'Demo Airbnb Account',
-        access_token: 'mock-access-token',
-        is_active: true,
-        sync_status: 'connected',
-        created_at: new Date().toISOString(),
-        last_sync: new Date().toISOString()
-      };
-      
-      // Store in localStorage for demo purposes
-      localStorage.setItem(`airbnb_connection_${hotelId}`, JSON.stringify(mockConnectionData));
-      
-      // Trigger a page reload to show the connection status
-      window.location.reload();
-    }, 1000);
-    
-    return 'demo-oauth-flow-initiated'; // Return placeholder instead of real URL
+    return authUrl;
   }
 
   // Handle OAuth callback
@@ -154,7 +136,6 @@ class AirbnbService {
   // Get connection status for a hotel
   async getConnectionStatus(hotelId: string): Promise<any> {
     try {
-      // First try to get from database
       const { data, error } = await supabase
         .from('airbnb_connections')
         .select('*')
@@ -162,26 +143,13 @@ class AirbnbService {
         .eq('is_active', true)
         .single();
 
-      if (data) {
-        return data;
+      if (error && error.code !== 'PGRST116') {
+        throw error;
       }
 
-      // If no database connection, check for demo data in localStorage
-      const demoData = localStorage.getItem(`airbnb_connection_${hotelId}`);
-      if (demoData) {
-        return JSON.parse(demoData);
-      }
-
-      return null;
+      return data;
     } catch (error) {
       console.error('Error fetching connection status:', error);
-      
-      // Fall back to demo data if database fails
-      const demoData = localStorage.getItem(`airbnb_connection_${hotelId}`);
-      if (demoData) {
-        return JSON.parse(demoData);
-      }
-      
       return null;
     }
   }
@@ -189,7 +157,6 @@ class AirbnbService {
   // Get Airbnb listings for a hotel
   async getListings(hotelId: string): Promise<any[]> {
     try {
-      // First try to get from database
       const { data, error } = await supabase
         .from('airbnb_listings')
         .select(`
@@ -202,59 +169,12 @@ class AirbnbService {
         .eq('airbnb_connections.hotel_id', hotelId)
         .eq('airbnb_connections.is_active', true);
 
-      if (data && data.length > 0) {
-        return data;
-      }
+      if (error) throw error;
 
-      // If no database listings, return demo data
-      return [
-        {
-          id: 'demo-listing-1',
-          airbnb_listing_id: '12345678',
-          airbnb_listing_name: 'Luxury Suite - Ocean View',
-          room_type_id: 'room-type-1',
-          sync_rates: true,
-          sync_availability: true,
-          sync_restrictions: true,
-          is_active: true
-        },
-        {
-          id: 'demo-listing-2',
-          airbnb_listing_id: '87654321',
-          airbnb_listing_name: 'Standard Room - City View',
-          room_type_id: 'room-type-2',
-          sync_rates: true,
-          sync_availability: false,
-          sync_restrictions: true,
-          is_active: true
-        },
-        {
-          id: 'demo-listing-3',
-          airbnb_listing_id: '13579246',
-          airbnb_listing_name: 'Deluxe Double Room',
-          room_type_id: 'room-type-3',
-          sync_rates: false,
-          sync_availability: true,
-          sync_restrictions: false,
-          is_active: true
-        }
-      ];
+      return data || [];
     } catch (error) {
       console.error('Error fetching listings:', error);
-      
-      // Fall back to demo data if database fails
-      return [
-        {
-          id: 'demo-listing-1',
-          airbnb_listing_id: '12345678',
-          airbnb_listing_name: 'Demo Luxury Suite',
-          room_type_id: 'room-type-1',
-          sync_rates: true,
-          sync_availability: true,
-          sync_restrictions: true,
-          is_active: true
-        }
-      ];
+      return [];
     }
   }
 

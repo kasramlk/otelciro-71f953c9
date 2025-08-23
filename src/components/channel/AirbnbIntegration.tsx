@@ -97,19 +97,8 @@ export const AirbnbIntegration: React.FC = () => {
 
     try {
       setIsConnecting(true);
-      const result = airbnbService.startOAuthFlow(hotelId);
-      
-      // For demo flow, result is a placeholder string, not a URL
-      if (result === 'demo-oauth-flow-initiated') {
-        toast({
-          title: "Demo Connection Started",
-          description: "Simulating Airbnb connection process...",
-        });
-        // The demo flow will handle the rest automatically
-      } else {
-        // For real OAuth flow (if implemented later)
-        window.location.href = result;
-      }
+      const authUrl = airbnbService.startOAuthFlow(hotelId);
+      window.location.href = authUrl;
     } catch (error) {
       console.error('Error starting OAuth flow:', error);
       toast({
