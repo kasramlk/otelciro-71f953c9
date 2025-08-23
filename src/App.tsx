@@ -140,7 +140,7 @@ const AppContent = () => {
     );
   }
 
-  const isPublicRoute = ['/', '/auth'].includes(location.pathname);
+  const isPublicRoute = ['/', '/auth', '/airbnb-test'].includes(location.pathname);
 
   if (!session && !isPublicRoute) {
     return <Navigate to="/auth" replace />;
