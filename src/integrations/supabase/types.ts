@@ -1809,6 +1809,7 @@ export type Database = {
         Row: {
           assigned_to: string | null
           created_at: string
+          deleted_at: string | null
           due_date: string | null
           hotel_id: string
           id: string
@@ -1821,6 +1822,7 @@ export type Database = {
         Insert: {
           assigned_to?: string | null
           created_at?: string
+          deleted_at?: string | null
           due_date?: string | null
           hotel_id: string
           id?: string
@@ -1833,6 +1835,7 @@ export type Database = {
         Update: {
           assigned_to?: string | null
           created_at?: string
+          deleted_at?: string | null
           due_date?: string | null
           hotel_id?: string
           id?: string
