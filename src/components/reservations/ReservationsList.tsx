@@ -190,13 +190,19 @@ export const ReservationsList = ({ filterStatus }: ReservationsListProps) => {
     loadReservations();
   }, [handleAsyncOperation, handleDataLoad]);
   const handleReservationAction = (action: string, reservationId: string) => {
+    console.log('Action clicked:', action, 'for reservation:', reservationId);
     const reservation = paginatedReservations.find(r => r.id === reservationId);
+    console.log('Found reservation:', reservation);
     
     switch (action) {
       case 'view':
       case 'edit':
+        console.log('Opening detail modal for:', action);
         if (reservation) {
           setDetailModal({ open: true, reservation });
+          console.log('Detail modal state set');
+        } else {
+          console.error('Reservation not found for:', reservationId);
         }
         break;
       case 'folio':
@@ -212,8 +218,12 @@ export const ReservationsList = ({ filterStatus }: ReservationsListProps) => {
         // In production, this would send SMS to guest
         break;
       case 'move':
+        console.log('Opening room move dialog');
         if (reservation) {
           setRoomMoveDialog({ open: true, reservationId });
+          console.log('Room move dialog state set');
+        } else {
+          console.error('Reservation not found for move:', reservationId);
         }
         break;
       case 'cancel':
@@ -496,21 +506,46 @@ export const ReservationsList = ({ filterStatus }: ReservationsListProps) => {
                     </TableCell>
                     <TableCell className="text-center">
                       <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="sm">
-                            <MoreHorizontal className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
+                         <DropdownMenuTrigger asChild>
+                           <Button 
+                             variant="ghost" 
+                             size="sm"
+                             onClick={(e) => {
+                               console.log('Dropdown trigger clicked', e);
+                               e.stopPropagation();
+                             }}
+                           >
+                             <MoreHorizontal className="h-4 w-4" />
+                           </Button>
+                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" className="bg-popover border border-border">
-                          <DropdownMenuItem onClick={() => handleReservationAction('view', reservation.id)}>
-                            <Eye className="mr-2 h-4 w-4" />
-                            View Details
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleReservationAction('edit', reservation.id)}>
-                            <Edit className="mr-2 h-4 w-4" />
-                            Edit Reservation
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleReservationAction('move', reservation.id)}>
+                           <DropdownMenuItem 
+                             onClick={(e) => {
+                               console.log('View Details clicked', e);
+                               e.stopPropagation();
+                               handleReservationAction('view', reservation.id);
+                             }}
+                           >
+                             <Eye className="mr-2 h-4 w-4" />
+                             View Details
+                           </DropdownMenuItem>
+                           <DropdownMenuItem 
+                             onClick={(e) => {
+                               console.log('Edit clicked', e);
+                               e.stopPropagation();
+                               handleReservationAction('edit', reservation.id);
+                             }}
+                           >
+                             <Edit className="mr-2 h-4 w-4" />
+                             Edit Reservation
+                           </DropdownMenuItem>
+                           <DropdownMenuItem 
+                             onClick={(e) => {
+                               console.log('Move Room clicked', e);
+                               e.stopPropagation();
+                               handleReservationAction('move', reservation.id);
+                             }}
+                           >
                             <MapPin className="mr-2 h-4 w-4" />
                             Move Room
                           </DropdownMenuItem>
@@ -599,7 +634,10 @@ export const ReservationsList = ({ filterStatus }: ReservationsListProps) => {
       {/* Reservation Detail Modal */}
       <ReservationDetailModal
         open={detailModal.open}
-        onClose={() => setDetailModal({ open: false, reservation: null })}
+        onClose={() => {
+          console.log('Closing detail modal');
+          setDetailModal({ open: false, reservation: null });
+        }}
         reservation={detailModal.reservation}
         onUpdate={handleReservationUpdate}
         onCancel={handleReservationCancel}

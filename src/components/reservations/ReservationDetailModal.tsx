@@ -49,6 +49,8 @@ export const ReservationDetailModal = ({
   onUpdate, 
   onCancel 
 }: ReservationDetailModalProps) => {
+  console.log('ReservationDetailModal render:', { open, reservation });
+  
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(false);
   const [editData, setEditData] = useState({
@@ -256,7 +258,10 @@ export const ReservationDetailModal = ({
     });
   };
 
-  if (!reservation) return null;
+  if (!reservation) {
+    console.log('No reservation provided to modal');
+    return null;
+  }
 
   return (
     <>
