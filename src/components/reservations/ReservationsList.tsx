@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/empty-state";
 import { useErrorHandler } from "@/lib/error-handler";
 import { ReservationDetailModal } from "@/components/reservations/ReservationDetailModal";
-import RoomMoveDialog from "@/components/reservations/RoomMoveDialog";
+import { RoomMoveDialog } from "@/components/reservations/RoomMoveDialog";
 import { useToast } from "@/hooks/use-toast";
 import {
   Table,

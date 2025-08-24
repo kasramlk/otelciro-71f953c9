@@ -65,7 +65,7 @@ interface RoomMoveDialogProps {
   };
 }
 
-export default function RoomMoveDialog({ 
+export function RoomMoveDialog({ 
   open, 
   onOpenChange, 
   reservation 
