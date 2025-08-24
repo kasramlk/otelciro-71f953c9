@@ -9,7 +9,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { toast } from '@/hooks/use-toast';
 import { useChannelStore } from '@/stores/channel-store';
-import { cn } from '@/lib/utils';
+import { cn } from "@/lib/utils";
+import { ChannelMappingBadge } from "@/components/channel/ChannelMappingBadge";
 
 // Mock GDS products for selection
 const mockGDSProducts = [
@@ -145,7 +146,10 @@ const ChannelMapping: React.FC = () => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">Channel Mapping</h1>
+          <h1 className="text-2xl font-bold flex items-center gap-3">
+            Channel Mapping
+            <ChannelMappingBadge mapped={stats.mapped} total={stats.total} />
+          </h1>
           <p className="text-muted-foreground">
             Map PMS room types and rate plans to mini-GDS product codes
           </p>

@@ -1,6 +1,15 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Plus, Calendar, User, AlertTriangle, CheckCircle, Clock, Settings } from 'lucide-react';
+import { 
+  Plus, 
+  Calendar, 
+  User, 
+  AlertTriangle, 
+  CheckCircle, 
+  Clock, 
+  Settings,
+  Trash2
+} from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -10,7 +19,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { useHMSStore } from '@/stores/hms-store';
-import { useToast } from '@/hooks/use-toast';
+import { useToast } from "@/hooks/use-toast";
+import { useConfirmation } from "@/components/ui/confirmation-dialog";
 import { format } from 'date-fns';
 
 export const HMSHousekeeping = () => {
@@ -19,6 +29,45 @@ export const HMSHousekeeping = () => {
   const [selectedRoom, setSelectedRoom] = useState<any>(null);
   const [isRoomStatusOpen, setIsRoomStatusOpen] = useState(false);
   const { toast } = useToast();
+  const { showConfirmation, ConfirmationComponent } = useConfirmation();
+
+  // Handle task deletion (mark as deleted)
+  const handleTaskDelete = async (taskId: string) => {
+    const task = housekeepingTasks.find(t => t.id === taskId);
+    if (!task) return;
+
+    showConfirmation({
+      title: "Delete Task",
+      description: `Are you sure you want to delete the task "${task.description}"?`,
+      confirmText: "Delete Task",
+      variant: "destructive",
+      onConfirm: () => {
+        // Mark as deleted in local store (simulate soft delete)
+        updateTask(taskId, { 
+          status: 'deleted' as any
+        });
+
+        addAuditEntry('Task Deleted', `Task "${task.description}" for room ${task.roomNumber} was deleted`);
+        toast({ 
+          title: 'Task deleted', 
+          description: 'Task has been removed successfully.',
+          action: (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                // Undo deletion by restoring to open status
+                updateTask(taskId, { status: 'open' });
+                toast({ title: 'Task restored' });
+              }}
+            >
+              Undo
+            </Button>
+          )
+        });
+      }
+    });
+  };
 
   // Group rooms by status
   const roomsByStatus = {
@@ -28,7 +77,7 @@ export const HMSHousekeeping = () => {
     ooo: rooms.filter(r => r.status === 'ooo')
   };
 
-  // Group tasks by status
+  // Group tasks by status (exclude deleted ones)
   const tasksByStatus = {
     open: housekeepingTasks.filter(t => t.status === 'open'),
     'in-progress': housekeepingTasks.filter(t => t.status === 'in-progress'),
@@ -223,14 +272,23 @@ export const HMSHousekeeping = () => {
                           </span>
                         </div>
                       </div>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => handleTaskStatusToggle(task.id, task.status)}
-                        className="ml-2"
-                      >
-                        {status === 'open' ? 'Start' : status === 'in-progress' ? 'Complete' : 'Reopen'}
-                      </Button>
+                      <div className="flex gap-1">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleTaskStatusToggle(task.id, task.status)}
+                        >
+                          {status === 'open' ? 'Start' : status === 'in-progress' ? 'Complete' : 'Reopen'}
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleTaskDelete(task.id)}
+                          className="text-destructive hover:text-destructive"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -265,6 +323,8 @@ export const HMSHousekeeping = () => {
           )}
         </DialogContent>
       </Dialog>
+
+      <ConfirmationComponent />
     </motion.div>
   );
 };

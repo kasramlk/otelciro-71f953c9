@@ -211,8 +211,10 @@ export const ReservationsList = ({ filterStatus }: ReservationsListProps) => {
         console.log('Sending SMS for:', reservationId);
         // In production, this would send SMS to guest
         break;
-      case 'move':
-        setRoomMoveDialog({ open: true, reservationId });
+      case 'cancel':
+        if (reservation) {
+          setDetailModal({ open: true, reservation });
+        }
         break;
     }
   };
@@ -569,23 +571,17 @@ export const ReservationsList = ({ filterStatus }: ReservationsListProps) => {
       {/* Room Move Dialog */}
       <RoomMoveDialog 
         open={roomMoveDialog.open}
-        onOpenChange={(open) => {
-          if (!open) {
-            setRoomMoveDialog({ open: false, reservationId: null });
-          }
-        }}
-        reservation={{
-          id: roomMoveDialog.reservationId || '',
-          code: `RES${roomMoveDialog.reservationId?.slice(-6) || '000001'}`,
-          guestName: 'Guest',
-          currentRoomNumber: '101',
-          currentRoomType: 'Standard Room',
-          roomTypeId: '550e8400-e29b-41d4-a716-446655440010',
-          checkIn: new Date().toISOString().split('T')[0],
-          checkOut: new Date().toISOString().split('T')[0],
-          adults: 1,
-          children: 0
-        }}
+        onClose={() => setRoomMoveDialog({ open: false, reservationId: null })}
+        reservationId={roomMoveDialog.reservationId}
+      />
+
+      {/* Reservation Detail Modal */}
+      <ReservationDetailModal
+        open={detailModal.open}
+        onClose={() => setDetailModal({ open: false, reservation: null })}
+        reservation={detailModal.reservation}
+        onUpdate={handleReservationUpdate}
+        onCancel={handleReservationCancel}
       />
     </Card>
   );

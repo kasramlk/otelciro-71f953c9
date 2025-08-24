@@ -34,7 +34,7 @@ interface BookingFlowModalProps {
   action: 'book' | 'quote' | 'view';
 }
 
-export const BookingFlowModal = ({ open, onClose, hotel, action }: BookingFlowModalProps) => {
+const BookingFlowModal = ({ open, onClose, hotel, action }: BookingFlowModalProps) => {
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [bookingData, setBookingData] = useState({
@@ -501,3 +501,5 @@ export const BookingFlowModal = ({ open, onClose, hotel, action }: BookingFlowMo
     </>
   );
 };
+
+export default BookingFlowModal;
