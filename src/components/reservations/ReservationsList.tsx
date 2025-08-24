@@ -13,6 +13,7 @@ import {
   useEmptyState 
 } from "@/components/ui/empty-state";
 import { useErrorHandler } from "@/lib/error-handler";
+import { ReservationDetailModal } from "@/components/reservations/ReservationDetailModal";
 import RoomMoveDialog from "@/components/reservations/RoomMoveDialog";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -139,6 +140,10 @@ export const ReservationsList = ({ filterStatus }: ReservationsListProps) => {
     open: false,
     reservationId: null
   });
+  const [detailModal, setDetailModal] = useState<{ open: boolean; reservation: any | null }>({
+    open: false,
+    reservation: null
+  });
   const { handleAsyncOperation } = useErrorHandler();
   const { isEmpty, isLoading, error: emptyStateError, handleDataLoad } = useEmptyState();
   const { toast } = useToast();
@@ -185,14 +190,14 @@ export const ReservationsList = ({ filterStatus }: ReservationsListProps) => {
     loadReservations();
   }, [handleAsyncOperation, handleDataLoad]);
   const handleReservationAction = (action: string, reservationId: string) => {
+    const reservation = paginatedReservations.find(r => r.id === reservationId);
+    
     switch (action) {
       case 'view':
-        console.log('Viewing reservation:', reservationId);
-        // In production, this would open a detailed reservation view modal
-        break;
       case 'edit':
-        console.log('Editing reservation:', reservationId);
-        // In production, this would open an edit reservation modal
+        if (reservation) {
+          setDetailModal({ open: true, reservation });
+        }
         break;
       case 'folio':
         console.log('Managing folio for:', reservationId);
@@ -210,6 +215,20 @@ export const ReservationsList = ({ filterStatus }: ReservationsListProps) => {
         setRoomMoveDialog({ open: true, reservationId });
         break;
     }
+  };
+
+  const handleReservationUpdate = (reservationId: string, updates: any) => {
+    // Update local state
+    setReservations(prev => prev.map(res => 
+      res.id === reservationId ? { ...res, ...updates } : res
+    ));
+  };
+
+  const handleReservationCancel = (reservationId: string) => {
+    // Update local state
+    setReservations(prev => prev.map(res => 
+      res.id === reservationId ? { ...res, status: 'Cancelled' } : res
+    ));
   };
 
   // Filter reservations based on filterStatus

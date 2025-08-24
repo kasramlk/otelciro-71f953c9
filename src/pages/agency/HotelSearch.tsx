@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { BookingFlowModal } from "@/components/agency/BookingFlowModal";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -84,19 +85,22 @@ const HotelSearch = () => {
     "Business Center": Coffee
   };
 
+  const [selectedHotel, setSelectedHotel] = useState<any>(null);
+  const [bookingAction, setBookingAction] = useState<'book' | 'quote' | 'view' | null>(null);
+
   const handleBookHotel = (hotel: any) => {
-    console.log('Booking hotel:', hotel);
-    // In production, this would open a booking modal or navigate to booking page
+    setSelectedHotel(hotel);
+    setBookingAction('book');
   };
 
   const handleViewDetails = (hotel: any) => {
-    console.log('Viewing hotel details:', hotel);
-    // In production, this would show detailed hotel information
+    setSelectedHotel(hotel);
+    setBookingAction('view');
   };
 
   const handleRequestQuote = (hotel: any) => {
-    console.log('Requesting quote for hotel:', hotel);
-    // In production, this would open a quote request form
+    setSelectedHotel(hotel);
+    setBookingAction('quote');
   };
 
   const handleSearch = async () => {
@@ -326,6 +330,19 @@ const HotelSearch = () => {
           </Button>
         </div>
       </div>
+
+      {/* Booking Flow Modal */}
+      {selectedHotel && bookingAction && (
+        <BookingFlowModal
+          open={true}
+          onClose={() => {
+            setSelectedHotel(null);
+            setBookingAction(null);
+          }}
+          hotel={selectedHotel}
+          action={bookingAction}
+        />
+      )}
     </div>
   );
 };
