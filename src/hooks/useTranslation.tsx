@@ -24,7 +24,8 @@ const translations = {
       'signIn': 'Sign In',
       'signUp': 'Sign Up',
       'createAccount': 'Create Account',
-      'changeRole': 'Change Role'
+      'changeRole': 'Change Role',
+      'step': 'Step'
     },
 
     // Navbar
@@ -281,7 +282,8 @@ const translations = {
       'signIn': 'Giriş Yap',
       'signUp': 'Kaydol',
       'createAccount': 'Hesap Oluştur',
-      'changeRole': 'Rol Değiştir'
+      'changeRole': 'Rol Değiştir',
+      'step': 'Adım'
     },
 
     // Navbar

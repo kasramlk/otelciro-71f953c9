@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { HeroSection } from "@/components/landing/HeroSection";
-import { ProductShowcase } from "@/components/landing/ProductShowcase";
+import { BusinessShowcase } from "@/components/landing/BusinessShowcase";
 import { CTASection } from "@/components/landing/CTASection";
 import { Footer } from "@/components/landing/Footer";
 import { Navbar } from "@/components/landing/Navbar";
@@ -282,7 +282,7 @@ const Index = () => {
         <div id="home">
           <HeroSection onExploreClick={handleExploreClick} />
         </div>
-        <ProductShowcase />
+        <BusinessShowcase />
         <AboutSection />
         <PricingSection />
         <CTASection />

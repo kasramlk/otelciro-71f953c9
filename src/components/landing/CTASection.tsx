@@ -1,117 +1,122 @@
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { ArrowRight, Handshake, TrendingUp, Shield } from "lucide-react";
 import { useIntersectionObserver } from "@/hooks/use-intersection-observer";
-import { ArrowRight, Sparkles, Users, TrendingUp, Shield } from "lucide-react";
-import { useNavigate } from "react-router-dom";
-
-const stats = [
-  { icon: Users, value: "10,000+", label: "Hotels Trust Us" },
-  { icon: TrendingUp, value: "35%", label: "Average Revenue Increase" },
-  { icon: Shield, value: "99.9%", label: "Uptime Guarantee" },
-  { icon: Sparkles, value: "24/7", label: "AI-Powered Support" }
-];
+import { useTranslation } from "@/hooks/useTranslation";
 
 export const CTASection = () => {
-  const navigate = useNavigate();
+  const { t } = useTranslation();
   const { ref, isIntersecting } = useIntersectionObserver({ 
     threshold: 0.3,
     freezeOnceVisible: true 
   });
 
-  const handleGetStarted = () => {
-    navigate("/auth");
+  const handleContactUs = () => {
+    document.getElementById('about')?.scrollIntoView({ behavior: 'smooth' });
   };
 
   return (
-    <section ref={ref} className="py-20 bg-gradient-to-br from-primary/5 via-secondary/5 to-accent/5">
-      <div className="container mx-auto px-6">
+    <section ref={ref} className="py-24 bg-gradient-to-br from-primary via-secondary to-primary relative overflow-hidden">
+      {/* Background Effects */}
+      <div className="absolute inset-0">
+        <div className="absolute top-10 left-10 w-40 h-40 bg-accent/20 rounded-full blur-3xl animate-float" />
+        <div className="absolute bottom-10 right-10 w-60 h-60 bg-primary-glow/20 rounded-full blur-3xl animate-float" style={{ animationDelay: '-2s' }} />
+      </div>
+
+      <div className="relative z-10 container mx-auto px-6">
         <motion.div
           initial={{ opacity: 0, y: 50 }}
           animate={isIntersecting ? { opacity: 1, y: 0 } : {}}
           transition={{ duration: 0.8 }}
-          className="text-center space-y-8"
+          className="text-center mb-16"
         >
-          {/* Headlines */}
-          <div className="space-y-4">
-            <h2 className="text-5xl md:text-6xl font-bold bg-gradient-to-r from-primary via-secondary to-primary bg-clip-text text-transparent">
-              Ready to Transform Your Hotel?
-            </h2>
-            <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-              Join thousands of hotels already using OtelCiro's AI-powered platform to increase efficiency, 
-              boost revenue, and deliver exceptional guest experiences.
-            </p>
-          </div>
+          <Badge className="bg-accent/20 text-white border-accent/30 px-6 py-2 text-sm font-semibold mb-6">
+            🤝 {t('landing.promise.title')}
+          </Badge>
+          
+          <h2 className="text-4xl md:text-6xl font-bold text-white mb-8 leading-tight max-w-4xl mx-auto">
+            {t('landing.promise.subtitle')}
+          </h2>
+          
+          <p className="text-lg md:text-xl text-white/90 max-w-3xl mx-auto mb-8 leading-relaxed">
+            {t('landing.promise.description')}
+          </p>
 
-          {/* Stats Cards */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={isIntersecting ? { opacity: 1 } : {}}
-            transition={{ duration: 0.8, delay: 0.3 }}
-            className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-4xl mx-auto"
-          >
-            {stats.map((stat, index) => (
+          <p className="text-xl text-accent font-semibold mb-12">
+            {t('landing.promise.goal')}
+          </p>
+        </motion.div>
+
+        {/* Partnership Benefits */}
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          animate={isIntersecting ? { opacity: 1, y: 0 } : {}}
+          transition={{ duration: 0.8, delay: 0.2 }}
+          className="grid md:grid-cols-3 gap-8 mb-16"
+        >
+          {[
+            { 
+              icon: Handshake, 
+              title: "Partnership Approach", 
+              description: "We don't just consult - we become your revenue partner",
+              color: "from-blue-400 to-blue-300" 
+            },
+            { 
+              icon: TrendingUp, 
+              title: "Proven Results", 
+              description: "20+ years of experience maximizing hotel revenues",
+              color: "from-green-400 to-green-300" 
+            },
+            { 
+              icon: Shield, 
+              title: "Risk-Free Growth", 
+              description: "Full ecosystem included at no extra cost",
+              color: "from-purple-400 to-purple-300" 
+            }
+          ].map((benefit, index) => {
+            const Icon = benefit.icon;
+            return (
               <motion.div
-                key={index}
-                initial={{ opacity: 0, y: 30 }}
+                key={benefit.title}
+                initial={{ opacity: 0, y: 20 }}
                 animate={isIntersecting ? { opacity: 1, y: 0 } : {}}
-                transition={{ duration: 0.6, delay: 0.4 + index * 0.1 }}
+                transition={{ duration: 0.6, delay: 0.3 + index * 0.1 }}
               >
-                <Card className="text-center group hover:shadow-lg transition-all duration-300 hover:scale-105">
-                  <CardContent className="p-6">
-                    <stat.icon className="h-8 w-8 text-primary mx-auto mb-3 group-hover:scale-110 transition-transform" />
-                    <div className="text-2xl font-bold text-primary mb-1">{stat.value}</div>
-                    <div className="text-sm text-muted-foreground">{stat.label}</div>
+                <Card className="border-0 bg-white/10 backdrop-blur-sm hover:bg-white/15 transition-all duration-300 hover:scale-105 h-full">
+                  <CardContent className="p-8 text-center">
+                    <div className={`w-16 h-16 mx-auto rounded-full bg-gradient-to-r ${benefit.color} flex items-center justify-center mb-6`}>
+                      <Icon className="h-8 w-8 text-white" />
+                    </div>
+                    <h3 className="text-xl font-bold text-white mb-4">{benefit.title}</h3>
+                    <p className="text-white/80 leading-relaxed">{benefit.description}</p>
                   </CardContent>
                 </Card>
               </motion.div>
-            ))}
-          </motion.div>
+            );
+          })}
+        </motion.div>
 
-          {/* CTA Buttons */}
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={isIntersecting ? { opacity: 1, y: 0 } : {}}
-            transition={{ duration: 0.8, delay: 0.8 }}
-            className="flex flex-col sm:flex-row gap-6 justify-center items-center pt-8"
+        {/* CTA Button */}
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          animate={isIntersecting ? { opacity: 1, y: 0 } : {}}
+          transition={{ duration: 0.8, delay: 0.6 }}
+          className="text-center"
+        >
+          <Button
+            size="lg"
+            onClick={handleContactUs}
+            className="bg-accent hover:bg-accent-light text-primary font-bold px-12 py-6 rounded-full text-xl shadow-2xl hover:shadow-accent/25 transition-all duration-300 hover:scale-110 group"
           >
-            <Button
-              size="lg"
-              onClick={handleGetStarted}
-              className="bg-gradient-to-r from-primary to-secondary hover:from-primary-light hover:to-secondary-light text-white font-bold px-8 py-4 rounded-full text-lg shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105 group"
-            >
-              <Sparkles className="mr-2 h-5 w-5 group-hover:rotate-12 transition-transform" />
-              Start Your AI Journey
-              <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
-            </Button>
-            
-            <Button
-              variant="outline"
-              size="lg"
-              className="border-2 border-primary/30 text-primary hover:bg-primary/5 px-8 py-4 rounded-full text-lg group"
-              onClick={() => window.open('https://docs.lovable.dev', '_blank')}
-            >
-              View Documentation
-              <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
-            </Button>
-          </motion.div>
-
-          {/* Trust Indicators */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={isIntersecting ? { opacity: 1 } : {}}
-            transition={{ duration: 0.8, delay: 1 }}
-            className="pt-12 space-y-4"
-          >
-            <p className="text-sm text-muted-foreground">Trusted by leading hotel chains worldwide</p>
-            <div className="flex flex-wrap justify-center items-center gap-8 opacity-60">
-              {/* Placeholder for hotel chain logos */}
-              <div className="h-8 w-24 bg-muted rounded"></div>
-              <div className="h-8 w-32 bg-muted rounded"></div>
-              <div className="h-8 w-28 bg-muted rounded"></div>
-              <div className="h-8 w-36 bg-muted rounded"></div>
-            </div>
-          </motion.div>
+            {t('landing.hero.cta')}
+            <ArrowRight className="ml-3 h-6 w-6 group-hover:translate-x-1 transition-transform" />
+          </Button>
+          
+          <p className="text-white/70 mt-6 text-lg">
+            Free consultation • Custom strategy • No upfront costs
+          </p>
         </motion.div>
       </div>
     </section>
