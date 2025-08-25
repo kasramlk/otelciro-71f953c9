@@ -3,12 +3,14 @@ import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { HeroSection } from "@/components/landing/HeroSection";
 import { BusinessShowcase } from "@/components/landing/BusinessShowcase";
+import { Tools3DShowcase } from "@/components/landing/Tools3DShowcase";
 import { CTASection } from "@/components/landing/CTASection";
 import { Footer } from "@/components/landing/Footer";
 import { Navbar } from "@/components/landing/Navbar";
 import { AboutSection } from "@/components/landing/AboutSection";
 import { PricingSection } from "@/components/landing/PricingSection";
 import { TranslationProvider, Language } from "@/hooks/useTranslation";
+import { SmoothScroll } from "@/components/ui/smooth-scroll";
 import { AirbnbIntegration } from '@/components/channel/AirbnbIntegration';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -277,17 +279,20 @@ const Index = () => {
 
   return (
     <TranslationProvider language={language} setLanguage={setLanguage}>
-      <div className="min-h-screen">
-        <Navbar onNavigate={handleNavigation} />
-        <div id="home">
-          <HeroSection onExploreClick={handleExploreClick} />
+      <SmoothScroll>
+        <div className="min-h-screen">
+          <Navbar onNavigate={handleNavigation} />
+          <div id="home">
+            <HeroSection onExploreClick={handleExploreClick} />
+          </div>
+          <BusinessShowcase />
+          <Tools3DShowcase />
+          <AboutSection />
+          <PricingSection />
+          <CTASection />
+          <Footer />
         </div>
-        <BusinessShowcase />
-        <AboutSection />
-        <PricingSection />
-        <CTASection />
-        <Footer />
-      </div>
+      </SmoothScroll>
     </TranslationProvider>
   );
 };
