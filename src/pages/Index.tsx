@@ -5,6 +5,10 @@ import { HeroSection } from "@/components/landing/HeroSection";
 import { ProductShowcase } from "@/components/landing/ProductShowcase";
 import { CTASection } from "@/components/landing/CTASection";
 import { Footer } from "@/components/landing/Footer";
+import { Navbar } from "@/components/landing/Navbar";
+import { AboutSection } from "@/components/landing/AboutSection";
+import { PricingSection } from "@/components/landing/PricingSection";
+import { TranslationProvider, Language } from "@/hooks/useTranslation";
 import { AirbnbIntegration } from '@/components/channel/AirbnbIntegration';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -14,6 +18,7 @@ import { Database, Cloud, Key, TestTube, CheckCircle, AlertTriangle, ExternalLin
 
 const Index = () => {
   const [user, setUser] = useState(null);
+  const [language, setLanguage] = useState<Language>('en');
   const [systemStatus, setSystemStatus] = useState({
     database: 'checking',
     edgeFunctions: 'checking',
@@ -88,6 +93,13 @@ const Index = () => {
 
   const handleExploreClick = () => {
     document.getElementById('products')?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  const handleNavigation = (section: 'home' | 'dashboard' | 'about' | 'pricing') => {
+    const element = document.getElementById(section);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth' });
+    }
   };
 
   const getStatusIcon = (status: string) => {
@@ -264,12 +276,19 @@ const Index = () => {
   }
 
   return (
-    <div className="min-h-screen">
-      <HeroSection onExploreClick={handleExploreClick} />
-      <ProductShowcase />
-      <CTASection />
-      <Footer />
-    </div>
+    <TranslationProvider language={language} setLanguage={setLanguage}>
+      <div className="min-h-screen">
+        <Navbar onNavigate={handleNavigation} />
+        <div id="home">
+          <HeroSection onExploreClick={handleExploreClick} />
+        </div>
+        <ProductShowcase />
+        <AboutSection />
+        <PricingSection />
+        <CTASection />
+        <Footer />
+      </div>
+    </TranslationProvider>
   );
 };
 

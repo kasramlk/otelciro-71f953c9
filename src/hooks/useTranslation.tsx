@@ -26,6 +26,158 @@ const translations = {
       'createAccount': 'Create Account',
       'changeRole': 'Change Role'
     },
+
+    // Navbar
+    'navbar': {
+      'home': 'Home',
+      'dashboard': 'Dashboard',
+      'aboutUs': 'About Us',
+      'pricing': 'Pricing'
+    },
+
+    // Landing Page - Hero
+    'landing': {
+      'hero': {
+        'title': "We Don't Just Give You Tools. We Grow Your Hotel's Revenue.",
+        'subtitle': "Your hotel deserves more than software. With our team of experts, we maximize your revenue, reduce your costs, and manage your entire sales strategy — so you don't need to hire sales managers, revenue managers, or social media teams.",
+        'cta': "👉 Let's Grow Together",
+        'ctaSecondary': 'See Our Process'
+      },
+      'whatWeDo': {
+        'title': 'What We Do',
+        'subtitle': "We are your hotel's full sales & revenue partner.",
+        'description': 'We work with hotels of every size — from boutique family hotels to large city properties. Our mission is simple:',
+        'benefit1': 'Maximize your revenue',
+        'benefit2': 'Minimize your costs', 
+        'benefit3': "Tailor every strategy to your hotel's unique strengths and your goals",
+        'positioning': 'Instead of giving you just a PMS or Channel Manager, we become your sales department.'
+      },
+      'howWeWork': {
+        'title': 'How We Work',
+        'step1Title': 'X-Ray Analysis',
+        'step1Description': 'We start by analyzing your past data, performance, and current sales channels. Think of it as an X-ray of your business.',
+        'step2Title': 'Tailor-Made Strategy',
+        'step2Description': 'Every hotel is unique. We create a customized sales and revenue plan based on your capacity, seasonality, and your goals as the owner.',
+        'step3Title': 'Clear Roadmap',
+        'step3Description': 'We present a 6-month and 1-year roadmap with predicted revenue outcomes and growth targets.',
+        'step4Title': 'Ongoing Execution',
+        'step4Description': 'Our team of professionals works daily on your behalf, making sure your rooms are always sold at the best price, through the right channels.'
+      },
+      'ecosystem': {
+        'title': 'Our Ecosystem – Free for Our Hotels',
+        'subtitle': 'Hotels in our portfolio get access to our full ecosystem at no extra cost:',
+        'pms': 'Hotel PMS – Manage your property with ease',
+        'channelManager': 'Channel Manager – Connect to OTAs and agencies worldwide',
+        'miniGDS': 'Mini-GDS – Access 100+ B2B agencies and distribute your inventory globally',
+        'socialKit': 'Social Branding Kit – Professional social media and content creation',
+        'note': 'All included free of charge when you partner with us.'
+      },
+      'whyChooseUs': {
+        'title': 'Why Choose Us?',
+        'experience': '20+ years of experience in hotel sales & revenue management',
+        'datadriven': 'Data-driven strategies — no guesswork',
+        'coverage': 'B2C & B2B sales coverage — reach guests directly and through agencies',
+        'noStaff': 'No need for sales managers, revenue managers, or marketing staff — we handle it all',
+        'results': 'Focus on results: more bookings, higher ADR, better occupancy'
+      },
+      'promise': {
+        'title': 'Our Promise',
+        'subtitle': "We don't just consult. We act as your partner.",
+        'description': 'With us, you get a professional sales and revenue department at a fraction of the cost, backed by real market data and decades of experience.',
+        'goal': 'Our goal is simple: make your hotel owner journey easier, and your business more profitable.'
+      }
+    },
+
+    // About Section
+    'about': {
+      'title': 'About Us',
+      'subtitle': 'Your trusted revenue growth partner with 20+ years of experience in hospitality',
+      'contact': {
+        'title': 'Get in Touch',
+        'subtitle': 'Ready to grow your hotel revenue? Contact us today.',
+        'email': 'Email',
+        'phone': 'Phone',
+        'location': 'Location',
+        'address': 'Turkey & International'
+      },
+      'business': {
+        'title': 'Why Trust Us',
+        'experience': 'Years Experience',
+        'hotels': 'Hotels Served',
+        'support': 'Support',
+        'satisfaction': 'Success Rate'
+      },
+      'form': {
+        'title': 'Request Consultation',
+        'subtitle': "Fill out the form below and we'll contact you within 24 hours to discuss your hotel's revenue growth strategy.",
+        'name': 'Full Name',
+        'namePlaceholder': 'Enter your full name',
+        'email': 'Email Address',
+        'emailPlaceholder': 'Enter your email address',
+        'phone': 'Phone Number',
+        'phonePlaceholder': 'Enter your phone number',
+        'hotelName': 'Hotel Name',
+        'hotelNamePlaceholder': 'Enter your hotel name',
+        'message': 'Tell us about your hotel',
+        'messagePlaceholder': 'Describe your hotel, current challenges, and revenue goals...',
+        'submit': 'Send Request',
+        'sending': 'Sending...',
+        'successMessage': "Thank you! We'll contact you within 24 hours."
+      }
+    },
+
+    // Pricing Section
+    'pricing': {
+      'title': 'Revenue Partnership Plans',
+      'subtitle': 'Choose the perfect partnership level for your hotel. All plans include our full ecosystem at no extra cost.',
+      'popular': 'Most Popular',
+      'contactUs': 'Contact Us',
+      'starter': {
+        'name': 'Revenue Starter',
+        'description': 'Perfect for boutique hotels and small properties',
+        'price': 'Custom',
+        'period': 'Revenue Share',
+        'feature1': 'Revenue analysis & optimization',
+        'feature2': 'Basic sales strategy',
+        'feature3': 'Free PMS & Channel Manager',
+        'feature4': 'Email support',
+        'feature5': 'Monthly performance reports'
+      },
+      'professional': {
+        'name': 'Revenue Professional',
+        'description': 'Ideal for mid-size hotels and growing properties',
+        'price': 'Custom',
+        'period': 'Revenue Share + Fixed',
+        'feature1': 'Complete revenue management',
+        'feature2': 'Advanced sales strategy',
+        'feature3': 'Full ecosystem access (PMS, CM, Mini-GDS)',
+        'feature4': 'Dedicated account manager',
+        'feature5': 'Social media management',
+        'feature6': '24/7 phone support',
+        'feature7': 'Weekly strategy calls'
+      },
+      'enterprise': {
+        'name': 'Revenue Enterprise',
+        'description': 'For large hotels and hotel chains',
+        'price': 'Custom',
+        'period': 'Tailored Agreement',
+        'feature1': 'Full revenue partnership',
+        'feature2': 'Complete sales department replacement',
+        'feature3': 'Custom integrations & tools',
+        'feature4': 'Dedicated team of experts',
+        'feature5': 'Advanced analytics & forecasting',
+        'feature6': 'Multi-property management',
+        'feature7': 'Priority support & consulting',
+        'feature8': 'Custom reporting dashboard'
+      },
+      'guarantee': {
+        'title': 'Our Revenue Growth Guarantee',
+        'description': "We stand behind our results. If we don't increase your revenue within the first 6 months, we'll work for free until we do.",
+        'days': 'Day Assessment',
+        'support': 'Support',
+        'updates': 'Strategy Updates'
+      }
+    },
     
     // Auth Page
     'auth': {
@@ -130,6 +282,158 @@ const translations = {
       'signUp': 'Kaydol',
       'createAccount': 'Hesap Oluştur',
       'changeRole': 'Rol Değiştir'
+    },
+
+    // Navbar
+    'navbar': {
+      'home': 'Ana Sayfa',
+      'dashboard': 'Panel',
+      'aboutUs': 'Hakkımızda',
+      'pricing': 'Fiyatlandırma'
+    },
+
+    // Landing Page - Hero
+    'landing': {
+      'hero': {
+        'title': 'Size Sadece Araç Vermiyoruz. Otelinizin Gelirini Artırıyoruz.',
+        'subtitle': 'Oteliniz yazılımdan daha fazlasını hak ediyor. Uzman ekibimizle gelirinizi maksimize ediyor, maliyetlerinizi düşürüyor ve tüm satış stratejinizi yönetiyoruz — satış müdürü, gelir müdürü veya sosyal medya ekibi işe almanıza gerek yok.',
+        'cta': '👉 Birlikte Büyüyelim',
+        'ctaSecondary': 'Sürecimizi Görün'
+      },
+      'whatWeDo': {
+        'title': 'Ne Yapıyoruz',
+        'subtitle': 'Otelinizin tam satış ve gelir ortağıyız.',
+        'description': 'Her büyüklükteki otelle çalışıyoruz — butik aile otellerinden büyük şehir otellerine kadar. Misyonumuz basit:',
+        'benefit1': 'Gelirinizi maksimize etmek',
+        'benefit2': 'Maliyetlerinizi minimize etmek',
+        'benefit3': 'Her stratejiyi otelinizin benzersiz güçlü yanlarına ve hedeflerinize göre uyarlamak',
+        'positioning': 'Size sadece PMS veya Kanal Yöneticisi vermek yerine, satış departmanınız oluyoruz.'
+      },
+      'howWeWork': {
+        'title': 'Nasıl Çalışıyoruz',
+        'step1Title': 'Röntgen Analizi',
+        'step1Description': 'Geçmiş verilerinizi, performansınızı ve mevcut satış kanallarınızı analiz ederek başlıyoruz. Bunu işletmenizin röntgeni olarak düşünün.',
+        'step2Title': 'Özel Strateji',
+        'step2Description': 'Her otel benzersizdir. Kapasitenize, mevsimselliğinize ve sahip olarak hedeflerinize göre özelleştirilmiş satış ve gelir planı oluşturuyoruz.',
+        'step3Title': 'Net Yol Haritası',
+        'step3Description': '6 aylık ve 1 yıllık tahmin edilen gelir sonuçları ve büyüme hedefleri ile yol haritası sunuyoruz.',
+        'step4Title': 'Sürekli Uygulama',
+        'step4Description': 'Profesyonel ekibimiz sizin adınıza günlük çalışır, odalarınızın her zaman en iyi fiyattan, doğru kanallar aracılığıyla satılmasını sağlar.'
+      },
+      'ecosystem': {
+        'title': 'Ekosimsitemiz – Otellerimiz İçin Ücretsiz',
+        'subtitle': 'Portföyümüzdeki oteller tam ekosimsitemize hiçbir ek ücret ödemeden erişir:',
+        'pms': 'Otel PMS – Mülkünüzü kolayca yönetin',
+        'channelManager': 'Kanal Yöneticisi – Dünya çapında OTA\'lar ve acentelerle bağlantı kurun',
+        'miniGDS': 'Mini-GDS – 100+ B2B acenteye erişin ve envanterinizi küresel olarak dağıtın',
+        'socialKit': 'Sosyal Marka Kiti – Profesyonel sosyal medya ve içerik oluşturma',
+        'note': 'Bizimle ortak olduğunuzda hepsi ücretsiz dahil.'
+      },
+      'whyChooseUs': {
+        'title': 'Neden Bizi Seçmelisiniz?',
+        'experience': 'Otel satış ve gelir yönetiminde 20+ yıl deneyim',
+        'datadriven': 'Veri odaklı stratejiler — tahmin yok',
+        'coverage': 'B2C ve B2B satış kapsamı — misafirlere doğrudan ve acenteler aracılığıyla ulaşın',
+        'noStaff': 'Satış müdürü, gelir müdürü veya pazarlama personeline gerek yok — hepsini biz hallederiz',
+        'results': 'Sonuçlara odaklanma: daha fazla rezervasyon, daha yüksek ADR, daha iyi doluluk'
+      },
+      'promise': {
+        'title': 'Sözümüz',
+        'subtitle': 'Sadece danışmanlık yapmıyoruz. Ortağınız olarak hareket ediyoruz.',
+        'description': 'Bizimle, gerçek pazar verileri ve onlarca yıllık deneyimle desteklenen profesyonel satış ve gelir departmanını maliyetinin bir kısmıyla elde edersiniz.',
+        'goal': 'Hedefimiz basit: otel sahipliği yolculuğunuzu kolaylaştırmak ve işinizi daha karlı hale getirmek.'
+      }
+    },
+
+    // About Section
+    'about': {
+      'title': 'Hakkımızda',
+      'subtitle': 'Konaklamada 20+ yıllık deneyime sahip güvenilir gelir artışı ortağınız',
+      'contact': {
+        'title': 'İletişime Geçin',
+        'subtitle': 'Otel gelirinizi artırmaya hazır mısınız? Bugün bizimle iletişime geçin.',
+        'email': 'E-posta',
+        'phone': 'Telefon',
+        'location': 'Konum',
+        'address': 'Türkiye & Uluslararası'
+      },
+      'business': {
+        'title': 'Neden Bize Güvenmelisiniz',
+        'experience': 'Yıl Deneyim',
+        'hotels': 'Hizmet Verilen Otel',
+        'support': 'Destek',
+        'satisfaction': 'Başarı Oranı'
+      },
+      'form': {
+        'title': 'Danışmanlık Talebi',
+        'subtitle': 'Aşağıdaki formu doldurun, otelinizin gelir artışı stratejisini görüşmek için 24 saat içinde sizinle iletişime geçelim.',
+        'name': 'Ad Soyad',
+        'namePlaceholder': 'Adınızı ve soyadınızı girin',
+        'email': 'E-posta Adresi',
+        'emailPlaceholder': 'E-posta adresinizi girin',
+        'phone': 'Telefon Numarası',
+        'phonePlaceholder': 'Telefon numaranızı girin',
+        'hotelName': 'Otel Adı',
+        'hotelNamePlaceholder': 'Otel adınızı girin',
+        'message': 'Oteliniz hakkında bilgi verin',
+        'messagePlaceholder': 'Otelinizi, mevcut zorlukları ve gelir hedeflerinizi açıklayın...',
+        'submit': 'Talep Gönder',
+        'sending': 'Gönderiliyor...',
+        'successMessage': 'Teşekkürler! 24 saat içinde sizinle iletişime geçeceğiz.'
+      }
+    },
+
+    // Pricing Section
+    'pricing': {
+      'title': 'Gelir Ortaklığı Planları',
+      'subtitle': 'Oteliniz için mükemmel ortaklık seviyesini seçin. Tüm planlar tam ekosimsitemizi hiçbir ek ücret olmadan içerir.',
+      'popular': 'En Popüler',
+      'contactUs': 'İletişime Geç',
+      'starter': {
+        'name': 'Gelir Başlangıç',
+        'description': 'Butik oteller ve küçük tesisler için mükemmel',
+        'price': 'Özel',
+        'period': 'Gelir Paylaşımı',
+        'feature1': 'Gelir analizi ve optimizasyonu',
+        'feature2': 'Temel satış stratejisi',
+        'feature3': 'Ücretsiz PMS ve Kanal Yöneticisi',
+        'feature4': 'E-posta desteği',
+        'feature5': 'Aylık performans raporları'
+      },
+      'professional': {
+        'name': 'Gelir Profesyonel',
+        'description': 'Orta ölçekli oteller ve büyüyen tesisler için ideal',
+        'price': 'Özel',
+        'period': 'Gelir Paylaşımı + Sabit',
+        'feature1': 'Komple gelir yönetimi',
+        'feature2': 'Gelişmiş satış stratejisi',
+        'feature3': 'Tam ekosistem erişimi (PMS, CM, Mini-GDS)',
+        'feature4': 'Özel hesap müdürü',
+        'feature5': 'Sosyal medya yönetimi',
+        'feature6': '7/24 telefon desteği',
+        'feature7': 'Haftalık strateji görüşmeleri'
+      },
+      'enterprise': {
+        'name': 'Gelir Kurumsal',
+        'description': 'Büyük oteller ve otel zincirleri için',
+        'price': 'Özel',
+        'period': 'Özelleştirilmiş Anlaşma',
+        'feature1': 'Tam gelir ortaklığı',
+        'feature2': 'Komple satış departmanı değişimi',
+        'feature3': 'Özel entegrasyonlar ve araçlar',
+        'feature4': 'Özel uzman ekibi',
+        'feature5': 'Gelişmiş analitik ve tahminleme',
+        'feature6': 'Çok tesisli yönetim',
+        'feature7': 'Öncelikli destek ve danışmanlık',
+        'feature8': 'Özel raporlama panosu'
+      },
+      'guarantee': {
+        'title': 'Gelir Artışı Garantimiz',
+        'description': 'Sonuçlarımızın arkasında duruyoruz. İlk 6 ay içinde gelirinizi artıramazsak, artırana kadar ücretsiz çalışırız.',
+        'days': 'Günlük Değerlendirme',
+        'support': 'Destek',
+        'updates': 'Strateji Güncellemeleri'
+      }
     },
     
     // Auth Page
