@@ -265,6 +265,52 @@ const translations = {
       'realTimeARI': 'Real-time ARI',
       'aiPowered': 'AI-powered',
       'trustedBy': 'Trusted by leading hotel chains worldwide'
+    },
+
+    // Tools section translations
+    'tools': {
+      'freeBadge': '100% FREE with Partnership',
+      'revolutionaryEcosystem': '🚀 Our Revolutionary Ecosystem',
+      'toolsThat': 'Tools That',
+      'transformHotels': 'Transform Hotels',
+      'subtitle': 'Experience the future of hospitality with our AI-powered suite. Each tool is designed to maximize your revenue, minimize operational costs, and deliver exceptional guest experiences.',
+      'partnershipMessage': 'Revenue Partnership = All Tools FREE',
+      'ctaButton': 'Experience Our Ecosystem',
+      'freeMessage': 'All tools included FREE with our revenue partnership',
+      'noExtraCost': 'No setup fees, no monthly costs, no hidden charges. We grow together when your revenue grows.',
+      
+      'hotelPms': {
+        'title': 'Hotel PMS',
+        'description': 'Advanced property management system with AI-powered automation, real-time analytics, and seamless guest experience management.'
+      },
+      'channelManager': {
+        'title': 'Channel Manager',
+        'description': 'Intelligent distribution management connecting to 500+ OTAs worldwide with dynamic pricing and inventory optimization.'
+      },
+      'miniGds': {
+        'title': 'Mini-GDS',
+        'description': 'Global distribution system accessing 100+ B2B agencies with real-time booking engine and commission management.'
+      },
+      'socialMediaKit': {
+        'title': 'Social Media Kit',
+        'description': 'AI-powered content creation, automated posting, brand management, and performance analytics across all platforms.'
+      },
+      'revenueAi': {
+        'title': 'Revenue AI',
+        'description': 'Machine learning algorithms for demand forecasting, dynamic pricing, and revenue optimization strategies.'
+      },
+      'analyticsHub': {
+        'title': 'Analytics Hub',
+        'description': 'Advanced business intelligence dashboard with predictive analytics, KPI tracking, and automated reporting.'
+      },
+      'guestCrm': {
+        'title': 'Guest CRM',
+        'description': 'Comprehensive customer relationship management with personalization engine and loyalty program integration.'
+      },
+      'automationEngine': {
+        'title': 'Automation Engine',
+        'description': 'Workflow automation for operations, marketing campaigns, guest communications, and business processes.'
+      }
     }
   },
   tr: {
@@ -523,6 +569,52 @@ const translations = {
       'realTimeARI': 'Gerçek Zamanlı ARI',
       'aiPowered': 'AI-destekli',
       'trustedBy': 'Önde gelen otel zincirlerinin güvendiği platform'
+    },
+
+    // Tools section translations - Turkish
+    'tools': {
+      'freeBadge': 'Ortaklıkla %100 ÜCRETSİZ',
+      'revolutionaryEcosystem': '🚀 Devrim Yaratan Ekosistemimiz',
+      'toolsThat': 'Otelleri',
+      'transformHotels': 'Dönüştüren Araçlar',
+      'subtitle': 'Yapay zeka destekli araçlarımızla turizm sektörünün geleceğini yaşayın. Her araç gelirinizi maksimuma çıkarmak, operasyonel maliyetleri azaltmak ve misafirlerinize unutulmaz deneyimler sunmak için tasarlandı.',
+      'partnershipMessage': 'Gelir Ortaklığı = Tüm Araçlar ÜCRETSİZ',
+      'ctaButton': 'Ekosistemi Keşfedin',
+      'freeMessage': 'Gelir ortaklığımızla tüm araçlar tamamen ücretsiz',
+      'noExtraCost': 'Kurulum ücreti yok, aylık maliyet yok, gizli ücret yok. Geliriniz arttığında birlikte büyüyoruz.',
+      
+      'hotelPms': {
+        'title': 'Otel Yönetim Sistemi',
+        'description': 'Yapay zeka destekli otomasyon, gerçek zamanlı analitik ve kusursuz misafir deneyimi yönetimi ile gelişmiş otel yönetim sistemi.'
+      },
+      'channelManager': {
+        'title': 'Kanal Yöneticisi',
+        'description': 'Dinamik fiyatlandırma ve stok optimizasyonu ile dünya çapında 500+ OTA\'ya bağlanan akıllı dağıtım yönetimi.'
+      },
+      'miniGds': {
+        'title': 'Mini-GDS Sistemi',
+        'description': 'Gerçek zamanlı rezervasyon motoru ve komisyon yönetimi ile 100+ B2B acenteye erişim sağlayan küresel dağıtım sistemi.'
+      },
+      'socialMediaKit': {
+        'title': 'Sosyal Medya Kiti',
+        'description': 'Tüm platformlarda yapay zeka destekli içerik üretimi, otomatik paylaşım, marka yönetimi ve performans analitiği.'
+      },
+      'revenueAi': {
+        'title': 'Gelir Yapay Zekası',
+        'description': 'Talep tahmini, dinamik fiyatlandırma ve gelir optimizasyon stratejileri için makine öğrenmesi algoritmaları.'
+      },
+      'analyticsHub': {
+        'title': 'Analitik Merkezi',
+        'description': 'Tahmine dayalı analitik, KPI takibi ve otomatik raporlama ile gelişmiş iş zekası panosu.'
+      },
+      'guestCrm': {
+        'title': 'Misafir CRM',
+        'description': 'Kişiselleştirme motoru ve sadakat programı entegrasyonu ile kapsamlı müşteri ilişkileri yönetimi.'
+      },
+      'automationEngine': {
+        'title': 'Otomasyon Motoru',
+        'description': 'Operasyonlar, pazarlama kampanyaları, misafir iletişimi ve iş süreçleri için iş akışı otomasyonu.'
+      }
     }
   }
 };

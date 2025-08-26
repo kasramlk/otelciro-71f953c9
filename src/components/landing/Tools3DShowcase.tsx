@@ -10,7 +10,9 @@ import {
   Brain,
   BarChart3,
   Users,
-  Zap
+  Zap,
+  Gift,
+  Star
 } from "lucide-react";
 
 export const Tools3DShowcase = () => {
@@ -20,63 +22,63 @@ export const Tools3DShowcase = () => {
   const tools = [
     {
       icon: Hotel,
-      title: "Hotel PMS",
-      description: "Advanced property management system with AI-powered automation, real-time analytics, and seamless guest experience management.",
+      titleKey: "tools.hotelPms.title",
+      descriptionKey: "tools.hotelPms.description",
       color: "#6366f1"
     },
     {
       icon: Link,
-      title: "Channel Manager",
-      description: "Intelligent distribution management connecting to 500+ OTAs worldwide with dynamic pricing and inventory optimization.",
+      titleKey: "tools.channelManager.title",
+      descriptionKey: "tools.channelManager.description",
       color: "#8b5cf6"
     },
     {
       icon: Globe,
-      title: "Mini-GDS",
-      description: "Global distribution system accessing 100+ B2B agencies with real-time booking engine and commission management.",
+      titleKey: "tools.miniGds.title",
+      descriptionKey: "tools.miniGds.description",
       color: "#06b6d4"
     },
     {
       icon: Smartphone,
-      title: "Social Media Kit",
-      description: "AI-powered content creation, automated posting, brand management, and performance analytics across all platforms.",
+      titleKey: "tools.socialMediaKit.title",
+      descriptionKey: "tools.socialMediaKit.description",
       color: "#f59e0b"
     },
     {
       icon: Brain,
-      title: "Revenue AI",
-      description: "Machine learning algorithms for demand forecasting, dynamic pricing, and revenue optimization strategies.",
+      titleKey: "tools.revenueAi.title",
+      descriptionKey: "tools.revenueAi.description",
       color: "#10b981"
     },
     {
       icon: BarChart3,
-      title: "Analytics Hub",
-      description: "Advanced business intelligence dashboard with predictive analytics, KPI tracking, and automated reporting.",
+      titleKey: "tools.analyticsHub.title",
+      descriptionKey: "tools.analyticsHub.description",
       color: "#ef4444"
     },
     {
       icon: Users,
-      title: "Guest CRM",
-      description: "Comprehensive customer relationship management with personalization engine and loyalty program integration.",
+      titleKey: "tools.guestCrm.title",
+      descriptionKey: "tools.guestCrm.description",
       color: "#f97316"
     },
     {
       icon: Zap,
-      title: "Automation Engine",
-      description: "Workflow automation for operations, marketing campaigns, guest communications, and business processes.",
+      titleKey: "tools.automationEngine.title",
+      descriptionKey: "tools.automationEngine.description",
       color: "#ec4899"
     }
   ];
 
   return (
-    <section ref={ref} className="py-32 relative overflow-hidden">
+    <section ref={ref} className="py-16 sm:py-24 md:py-32 relative overflow-hidden">
       {/* Animated Background */}
       <div className="absolute inset-0">
         <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900" />
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(120,119,198,0.3),transparent)] opacity-50" />
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_80%,rgba(147,51,234,0.3),transparent)] opacity-50" />
         
-        {/* Floating geometric shapes */}
+        {/* Floating geometric shapes - responsive sizes */}
         <motion.div
           animate={{ 
             rotate: 360,
@@ -86,7 +88,7 @@ export const Tools3DShowcase = () => {
             rotate: { duration: 20, repeat: Infinity, ease: "linear" },
             scale: { duration: 4, repeat: Infinity, ease: "easeInOut" }
           }}
-          className="absolute top-20 left-20 w-32 h-32 border border-purple-500/30 rounded-full"
+          className="absolute top-10 sm:top-20 left-4 sm:left-20 w-20 h-20 sm:w-32 sm:h-32 border border-purple-500/30 rounded-full"
         />
         <motion.div
           animate={{ 
@@ -97,17 +99,38 @@ export const Tools3DShowcase = () => {
             rotate: { duration: 25, repeat: Infinity, ease: "linear" },
             y: { duration: 3, repeat: Infinity, ease: "easeInOut" }
           }}
-          className="absolute bottom-20 right-20 w-24 h-24 bg-gradient-to-r from-cyan-500/20 to-blue-500/20 rounded-lg"
+          className="absolute bottom-10 sm:bottom-20 right-4 sm:right-20 w-16 h-16 sm:w-24 sm:h-24 bg-gradient-to-r from-cyan-500/20 to-blue-500/20 rounded-lg"
         />
       </div>
 
-      <div className="relative z-10 container mx-auto px-6">
+      <div className="relative z-10 container mx-auto px-4 sm:px-6">
         <motion.div
           initial={{ opacity: 0, y: 50 }}
           animate={isIntersecting ? { opacity: 1, y: 0 } : {}}
           transition={{ duration: 1 }}
           className="text-center mb-20"
         >
+          {/* FREE Badge */}
+          <motion.div
+            initial={{ scale: 0, rotate: -10 }}
+            animate={isIntersecting ? { scale: 1, rotate: 0 } : {}}
+            transition={{ duration: 0.8, delay: 0.1 }}
+            className="inline-block mb-6"
+          >
+            <div className="relative">
+              <div className="absolute inset-0 bg-gradient-to-r from-emerald-500 to-green-400 blur-lg opacity-50 animate-pulse" />
+              <div className="relative px-8 py-4 rounded-2xl bg-gradient-to-r from-emerald-500 to-green-400 border-2 border-white/20 backdrop-blur-xl">
+                <div className="flex items-center space-x-3">
+                  <Gift className="w-6 h-6 text-white animate-bounce" />
+                  <span className="text-white font-bold text-lg">
+                    {t('tools.freeBadge')}
+                  </span>
+                  <Star className="w-5 h-5 text-yellow-300 animate-pulse" />
+                </div>
+              </div>
+            </div>
+          </motion.div>
+
           <motion.div
             initial={{ scale: 0 }}
             animate={isIntersecting ? { scale: 1 } : {}}
@@ -116,45 +139,61 @@ export const Tools3DShowcase = () => {
           >
             <div className="px-6 py-3 rounded-full bg-gradient-to-r from-purple-500/20 to-cyan-500/20 backdrop-blur-xl border border-white/10">
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-cyan-400 font-semibold">
-                🚀 Our Revolutionary Ecosystem
+                {t('tools.revolutionaryEcosystem')}
               </span>
             </div>
           </motion.div>
 
           <motion.h2 
-            className="text-6xl md:text-7xl font-bold mb-8"
+            className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold mb-8 leading-tight"
             initial={{ opacity: 0 }}
             animate={isIntersecting ? { opacity: 1 } : {}}
             transition={{ duration: 1, delay: 0.4 }}
           >
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-white via-purple-200 to-cyan-200">
-              Tools That
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-white via-purple-200 to-cyan-200 block">
+              {t('tools.toolsThat')}
             </span>
-            <br />
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 via-pink-400 to-cyan-400">
-              Transform Hotels
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 via-pink-400 to-cyan-400 block">
+              {t('tools.transformHotels')}
             </span>
           </motion.h2>
 
           <motion.p 
-            className="text-xl md:text-2xl text-white/70 max-w-4xl mx-auto leading-relaxed"
+            className="text-lg sm:text-xl md:text-2xl text-white/70 max-w-4xl mx-auto leading-relaxed px-4"
             initial={{ opacity: 0, y: 20 }}
             animate={isIntersecting ? { opacity: 1, y: 0 } : {}}
             transition={{ duration: 1, delay: 0.6 }}
           >
-            Experience the future of hospitality with our AI-powered suite. Each tool is designed to maximize your revenue, 
-            minimize operational costs, and deliver exceptional guest experiences.
+            {t('tools.subtitle')}
           </motion.p>
+
+          {/* Partnership Emphasis */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={isIntersecting ? { opacity: 1, y: 0 } : {}}
+            transition={{ duration: 1, delay: 0.8 }}
+            className="mt-8 px-4"
+          >
+            <div className="inline-flex items-center space-x-4 px-6 py-4 rounded-2xl bg-gradient-to-r from-amber-500/20 to-orange-500/20 backdrop-blur-xl border border-amber-400/30">
+              <div className="flex -space-x-2">
+                <div className="w-8 h-8 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 border-2 border-white animate-pulse" />
+                <div className="w-8 h-8 rounded-full bg-gradient-to-r from-cyan-500 to-blue-500 border-2 border-white animate-pulse" />
+              </div>
+              <span className="text-white/90 font-semibold text-sm sm:text-base">
+                {t('tools.partnershipMessage')}
+              </span>
+            </div>
+          </motion.div>
         </motion.div>
 
         {/* 3D Cards Grid */}
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8 mb-20">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 sm:gap-8 mb-20 px-4">
           {tools.map((tool, index) => (
             <Interactive3DCard
-              key={tool.title}
+              key={tool.titleKey}
               icon={tool.icon}
-              title={tool.title}
-              description={tool.description}
+              title={t(tool.titleKey)}
+              description={t(tool.descriptionKey)}
               color={tool.color}
               index={index}
             />
@@ -166,7 +205,7 @@ export const Tools3DShowcase = () => {
           initial={{ opacity: 0, y: 50 }}
           animate={isIntersecting ? { opacity: 1, y: 0 } : {}}
           transition={{ duration: 1, delay: 1.2 }}
-          className="text-center"
+          className="text-center px-4"
         >
           <motion.div
             whileHover={{ scale: 1.05 }}
@@ -175,7 +214,7 @@ export const Tools3DShowcase = () => {
           >
             <button 
               onClick={() => document.getElementById('about')?.scrollIntoView({ behavior: 'smooth' })}
-              className="group relative px-12 py-6 rounded-full overflow-hidden font-bold text-xl text-white transition-all duration-500"
+              className="group relative px-8 sm:px-12 py-4 sm:py-6 rounded-full overflow-hidden font-bold text-lg sm:text-xl text-white transition-all duration-500"
             >
               {/* Animated background */}
               <div className="absolute inset-0 bg-gradient-to-r from-purple-600 via-pink-600 to-cyan-600 transition-all duration-500 group-hover:scale-110" />
@@ -183,7 +222,7 @@ export const Tools3DShowcase = () => {
               
               {/* Button text */}
               <span className="relative z-10 flex items-center space-x-3">
-                <span>Experience Our Ecosystem</span>
+                <span>{t('tools.ctaButton')}</span>
                 <motion.div
                   animate={{ x: [0, 5, 0] }}
                   transition={{ duration: 1.5, repeat: Infinity }}
@@ -194,14 +233,24 @@ export const Tools3DShowcase = () => {
             </button>
           </motion.div>
 
-          <motion.p 
-            className="text-white/60 mt-6 text-lg"
+          {/* Enhanced FREE messaging */}
+          <motion.div 
+            className="mt-8 space-y-4"
             initial={{ opacity: 0 }}
             animate={isIntersecting ? { opacity: 1 } : {}}
             transition={{ duration: 1, delay: 1.4 }}
           >
-            All tools included FREE with our revenue partnership
-          </motion.p>
+            <div className="inline-flex items-center space-x-3 px-6 py-3 rounded-full bg-gradient-to-r from-emerald-500/20 to-green-400/20 backdrop-blur-xl border border-emerald-400/30">
+              <Gift className="w-5 h-5 text-emerald-300 animate-bounce" />
+              <span className="text-white font-semibold text-base sm:text-lg">
+                {t('tools.freeMessage')}
+              </span>
+            </div>
+            
+            <p className="text-white/60 text-sm sm:text-base max-w-2xl mx-auto">
+              {t('tools.noExtraCost')}
+            </p>
+          </motion.div>
         </motion.div>
       </div>
     </section>
