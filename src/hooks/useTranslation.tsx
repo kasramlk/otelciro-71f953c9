@@ -343,14 +343,14 @@ const translations = {
     // Landing Page - Hero
     'landing': {
       'hero': {
-        'title': 'Size Sadece Araç Vermiyoruz. Otelinizin Gelirini Artırıyoruz.',
+        'title': 'Otel programlarının ötesinde, gelirlerinizi artırmaya odaklanıyoruz.',
         'subtitle': 'Oteliniz yazılımdan daha fazlasını hak ediyor. Uzman ekibimizle gelirinizi maksimize ediyor, maliyetlerinizi düşürüyor ve tüm satış stratejinizi yönetiyoruz — satış müdürü, gelir müdürü veya sosyal medya ekibi işe almanıza gerek yok.',
         'cta': '👉 Birlikte Büyüyelim',
         'ctaSecondary': 'Sürecimizi Görün'
       },
       'whatWeDo': {
         'title': 'Ne Yapıyoruz',
-        'subtitle': 'Otelinizin tam satış ve gelir ortağıyız.',
+        'subtitle': 'Otelinizin satış ve gelir operasyonlarında sizinle birlikte hareket ediyoruz.',
         'description': 'Her büyüklükteki otelle çalışıyoruz — butik aile otellerinden büyük şehir otellerine kadar. Misyonumuz basit:',
         'benefit1': 'Gelirinizi maksimize etmek',
         'benefit2': 'Maliyetlerinizi minimize etmek',
