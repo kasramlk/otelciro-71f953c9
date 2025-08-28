@@ -152,7 +152,11 @@ const AgencyDashboard = () => {
                   <Badge variant="outline">{search.results} results</Badge>
                 </div>
               ))}
-              <Button variant="outline" className="w-full">
+              <Button 
+                variant="outline" 
+                className="w-full"
+                onClick={() => navigate('/agency/searches')}
+              >
                 View All Searches
               </Button>
             </CardContent>
@@ -197,7 +201,11 @@ const AgencyDashboard = () => {
                   </div>
                 </div>
               ))}
-              <Button variant="outline" className="w-full">
+              <Button 
+                variant="outline" 
+                className="w-full"
+                onClick={() => navigate('/agency/partners')}
+              >
                 View All Hotels
               </Button>
             </CardContent>

@@ -30,6 +30,8 @@ import AgencyReports from "./pages/agency/AgencyReports";
 import AgencyPayments from "./pages/agency/AgencyPayments";
 import AgencyNegotiations from "./pages/agency/AgencyNegotiations";
 import AgencyProfile from "./pages/agency/AgencyProfile";
+import AgencySearches from "./pages/agency/AgencySearches";
+import AgencyPartners from "./pages/agency/AgencyPartners";
 import HotelDashboard from "./pages/hotel/HotelDashboard";
 import HotelReservations from "./pages/hotel/HotelReservations";
 import HousekeepingModule from "./pages/hotel/HousekeepingModule";
@@ -165,6 +167,8 @@ const AppContent = () => {
             <Route path="/agency/payments" element={<AgencyPayments />} />
             <Route path="/agency/analytics" element={<AgencyReports />} />
             <Route path="/agency/profile" element={<AgencyProfile />} />
+            <Route path="/agency/searches" element={<AgencySearches />} />
+            <Route path="/agency/partners" element={<AgencyPartners />} />
           </Routes>
         </TravelAgencyLayout>
       );
