@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { Plus, Search, Filter, Download, Eye, Edit, Trash2, MapPin } from 'lucide-react';
+import { Plus, Search, Filter, Download, Eye, Edit, Trash2, MapPin, MoreHorizontal } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,18 +8,25 @@ import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger, DropdownMenuItem } from '@/components/ui/dropdown-menu';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { useHMSStore } from '@/stores/hms-store';
+import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { HMSNewReservation } from './HMSNewReservation';
+import { ReservationDetailModal } from '@/components/reservations/ReservationDetailModal';
+import { RoomMoveModal } from '@/components/reservations/RoomMoveModal';
 
 export const HMSReservations = () => {
   const { reservations } = useHMSStore();
+  const { toast } = useToast();
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [sourceFilter, setSourceFilter] = useState('all');
   const [dateRange, setDateRange] = useState('all');
   const [isNewReservationOpen, setIsNewReservationOpen] = useState(false);
+  const [selectedReservation, setSelectedReservation] = useState<any>(null);
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+  const [isRoomMoveModalOpen, setIsRoomMoveModalOpen] = useState(false);
 
   // Filter reservations
   const filteredReservations = useMemo(() => {
@@ -75,6 +82,33 @@ export const HMSReservations = () => {
     );
   };
 
+  const handleViewDetails = (reservation: any) => {
+    setSelectedReservation(reservation);
+    setIsDetailModalOpen(true);
+  };
+
+  const handleRoomMove = (reservation: any) => {
+    setSelectedReservation(reservation);
+    setIsRoomMoveModalOpen(true);
+  };
+
+  const handleEditReservation = (reservation: any) => {
+    console.log("Edit reservation:", reservation);
+    toast({
+      title: "Edit Reservation",
+      description: "Edit functionality will be implemented soon.",
+    });
+  };
+
+  const handleCancelReservation = (reservation: any) => {
+    console.log("Cancel reservation:", reservation);
+    toast({
+      title: "Reservation cancelled",
+      description: `Reservation ${reservation.code} has been cancelled.`,
+      variant: "destructive",
+    });
+  };
+
   const handleExport = () => {
     // Mock export functionality
     const csvContent = [
@@ -97,6 +131,11 @@ export const HMSReservations = () => {
     a.download = 'reservations.csv';
     a.click();
     URL.revokeObjectURL(url);
+
+    toast({
+      title: "Export completed",
+      description: "Reservations have been exported successfully.",
+    });
   };
 
   return (
@@ -299,25 +338,32 @@ export const HMSReservations = () => {
                     <TableCell>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="sm">
-                            Actions
+                          <Button variant="ghost" className="h-8 w-8 p-0">
+                            <span className="sr-only">Open menu</span>
+                            <MoreHorizontal className="h-4 w-4" />
                           </Button>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent>
-                          <DropdownMenuItem>
-                            <Eye className="h-4 w-4 mr-2" />
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                          <DropdownMenuItem onClick={() => handleViewDetails(reservation)}>
+                            <Eye className="mr-2 h-4 w-4" />
                             View Details
                           </DropdownMenuItem>
-                          <DropdownMenuItem>
-                            <Edit className="h-4 w-4 mr-2" />
+                          <DropdownMenuItem onClick={() => handleEditReservation(reservation)}>
+                            <Edit className="mr-2 h-4 w-4" />
                             Edit
                           </DropdownMenuItem>
-                          <DropdownMenuItem>
-                            <MapPin className="h-4 w-4 mr-2" />
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem onClick={() => handleRoomMove(reservation)}>
+                            <MapPin className="mr-2 h-4 w-4" />
                             Move Room
                           </DropdownMenuItem>
-                          <DropdownMenuItem className="text-red-600">
-                            <Trash2 className="h-4 w-4 mr-2" />
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem 
+                            onClick={() => handleCancelReservation(reservation)}
+                            className="text-red-600"
+                          >
+                            <Trash2 className="mr-2 h-4 w-4" />
                             Cancel
                           </DropdownMenuItem>
                         </DropdownMenuContent>
@@ -330,6 +376,23 @@ export const HMSReservations = () => {
           </div>
         </CardContent>
       </Card>
+
+      {/* Modals */}
+      {selectedReservation && (
+        <>
+          <ReservationDetailModal
+            open={isDetailModalOpen}
+            onClose={() => setIsDetailModalOpen(false)}
+            reservation={selectedReservation}
+          />
+          
+          <RoomMoveModal
+            open={isRoomMoveModalOpen}
+            onClose={() => setIsRoomMoveModalOpen(false)}
+            reservation={selectedReservation}
+          />
+        </>
+      )}
     </motion.div>
   );
 };

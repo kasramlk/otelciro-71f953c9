@@ -41,6 +41,7 @@ import {
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
+import { ShiftManagementModal } from "@/components/payment/ShiftManagementModal";
 
 // Mock data
 const mockCashierSession = {
@@ -138,6 +139,7 @@ const getPaymentTypeBadge = (type: string) => {
 export default function Cashier() {
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [isCloseShiftOpen, setIsCloseShiftOpen] = useState(false);
+  const [isOpenShiftOpen, setIsOpenShiftOpen] = useState(false);
   const [session, setSession] = useState(mockCashierSession);
   const { toast } = useToast();
 
@@ -194,54 +196,12 @@ export default function Cashier() {
         </h2>
         <div className="flex items-center space-x-2">
           {!session.isClosed ? (
-            <Dialog open={isCloseShiftOpen} onOpenChange={setIsCloseShiftOpen}>
-              <DialogTrigger asChild>
-                <Button variant="destructive">
-                  <Clock className="mr-2 h-4 w-4" />
-                  Close Shift
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Close Cashier Shift</DialogTitle>
-                  <DialogDescription>
-                    Review the daily totals and close your cashier shift.
-                  </DialogDescription>
-                </DialogHeader>
-                <div className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4 p-4 bg-muted rounded-lg">
-                    <div>
-                      <p className="text-sm font-medium">Opening Balance</p>
-                      <p className="text-lg">${session.openingBalance.toFixed(2)}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium">Total Collected</p>
-                      <p className="text-lg">${grandTotal.toFixed(2)}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium">Expected Balance</p>
-                      <p className="text-lg font-semibold">${expectedBalance.toFixed(2)}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium">Variance</p>
-                      <p className={`text-lg ${variance === 0 ? 'text-green-600' : 'text-red-600'}`}>
-                        ${Math.abs(variance).toFixed(2)} {variance < 0 ? '(Short)' : variance > 0 ? '(Over)' : ''}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-                <DialogFooter>
-                  <Button variant="outline" onClick={() => setIsCloseShiftOpen(false)}>
-                    Cancel
-                  </Button>
-                  <Button onClick={handleCloseShift}>
-                    Close Shift
-                  </Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
+            <Button variant="destructive" onClick={() => setIsCloseShiftOpen(true)}>
+              <Clock className="mr-2 h-4 w-4" />
+              Close Shift
+            </Button>
           ) : (
-            <Button onClick={handleOpenShift}>
+            <Button onClick={() => setIsOpenShiftOpen(true)}>
               <CheckCircle className="mr-2 h-4 w-4" />
               Open New Shift
             </Button>
@@ -408,8 +368,26 @@ export default function Cashier() {
               </div>
             </div>
           </CardContent>
-        </Card>
-      )}
+          </Card>
+        )}
+
+      {/* Shift Management Modals */}
+      <ShiftManagementModal
+        open={isOpenShiftOpen}
+        onOpenChange={setIsOpenShiftOpen}
+        mode="open"
+      />
+      
+      <ShiftManagementModal
+        open={isCloseShiftOpen}
+        onOpenChange={setIsCloseShiftOpen}
+        mode="close"
+        sessionData={{
+          openingBalance: session.openingBalance,
+          expectedBalance: expectedBalance,
+          totalCollected: grandTotal,
+        }}
+      />
     </div>
   );
 }
