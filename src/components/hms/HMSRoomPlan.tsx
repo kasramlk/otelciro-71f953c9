@@ -9,6 +9,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { useHMSStore } from '@/stores/hms-store';
 import { ROOM_TYPES } from '@/lib/mock-data';
 import { format, addDays, startOfToday } from 'date-fns';
+import { ReservationDetailModal } from '@/components/reservations/ReservationDetailModal';
+import { RoomMoveModal } from '@/components/reservations/RoomMoveModal';
 
 export const HMSRoomPlan = () => {
   const { rooms, reservations } = useHMSStore();
@@ -17,6 +19,7 @@ export const HMSRoomPlan = () => {
   const [statusFilter, setStatusFilter] = useState('all');
   const [selectedReservation, setSelectedReservation] = useState<string | null>(null);
   const [detailsModalOpen, setDetailsModalOpen] = useState(false);
+  const [showMoveModal, setShowMoveModal] = useState(false);
 
   const today = startOfToday();
   const dates = Array.from({ length: viewDays }, (_, i) => addDays(today, i));
@@ -263,58 +266,34 @@ export const HMSRoomPlan = () => {
       </Card>
 
       {/* Reservation Details Modal */}
-      <Dialog open={detailsModalOpen} onOpenChange={setDetailsModalOpen}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Eye className="h-5 w-5" />
-              Reservation Details
-            </DialogTitle>
-          </DialogHeader>
-          
-          {selectedReservationDetails && (
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                <div>
-                  <label className="font-medium">Reservation Code:</label>
-                  <p>{selectedReservationDetails.code}</p>
-                </div>
-                <div>
-                  <label className="font-medium">Guest:</label>
-                  <p>{selectedReservationDetails.guestName}</p>
-                </div>
-                <div>
-                  <label className="font-medium">Check-in:</label>
-                  <p>{format(selectedReservationDetails.checkIn, 'MMM dd, yyyy')}</p>
-                </div>
-                <div>
-                  <label className="font-medium">Check-out:</label>
-                  <p>{format(selectedReservationDetails.checkOut, 'MMM dd, yyyy')}</p>
-                </div>
-                <div>
-                  <label className="font-medium">Room:</label>
-                  <p>{selectedReservationDetails.roomType} - {selectedReservationDetails.roomNumber}</p>
-                </div>
-                <div>
-                  <label className="font-medium">Status:</label>
-                  <Badge variant="default">{selectedReservationDetails.status}</Badge>
-                </div>
-              </div>
+      {selectedReservation && (
+        <ReservationDetailModal
+          reservation={reservations.find(r => r.id === selectedReservation)}
+          open={detailsModalOpen}
+          onClose={() => setDetailsModalOpen(false)}
+        />
+      )}
 
-              <div className="flex gap-2 pt-4">
-                <Button size="sm" variant="outline" className="flex-1">
-                  <Eye className="h-4 w-4 mr-2" />
-                  View Folio
-                </Button>
-                <Button size="sm" variant="outline" className="flex-1">
-                  <MapPin className="h-4 w-4 mr-2" />
-                  Move Room
-                </Button>
-              </div>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
+      {/* Room Move Modal */}
+      {selectedReservation && (
+        <RoomMoveModal
+          reservation={(() => {
+            const res = reservations.find(r => r.id === selectedReservation);
+            if (!res) return null;
+            return {
+              id: res.id,
+              guestName: res.guestName,
+              roomNumber: res.roomNumber || '',
+              roomType: res.roomType,
+              checkIn: format(res.checkIn, 'yyyy-MM-dd'),
+              checkOut: format(res.checkOut, 'yyyy-MM-dd'),
+              guests: res.adults || 1
+            };
+          })()}
+          open={showMoveModal}
+          onClose={() => setShowMoveModal(false)}
+        />
+      )}
     </motion.div>
   );
 };

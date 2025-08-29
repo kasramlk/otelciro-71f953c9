@@ -12,12 +12,14 @@ import { format } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
 import { NotificationsModal } from './NotificationsModal';
+import { ReservationDetailModal } from '@/components/reservations/ReservationDetailModal';
 
 export const HMSDashboard = () => {
-  const { occupancyData, selectedMonth, setSelectedMonth, refreshOccupancyData, applyAISuggestion } = useHMSStore();
+  const { occupancyData, selectedMonth, setSelectedMonth, refreshOccupancyData, applyAISuggestion, reservations } = useHMSStore();
   const [selectedRoomType, setSelectedRoomType] = useState<string>('all');
   const [selectedChannel, setSelectedChannel] = useState<string>('all');
   const [showNotifications, setShowNotifications] = useState(false);
+  const [selectedReservationId, setSelectedReservationId] = useState<string | null>(null);
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -338,7 +340,24 @@ export const HMSDashboard = () => {
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
-                          <Button variant="ghost" size="sm">
+                          <Button 
+                            variant="ghost" 
+                            size="sm"
+                            onClick={() => {
+                              // Find a reservation for this date to show details
+                              const reservation = reservations.find(res => 
+                                day.date >= res.checkIn && day.date < res.checkOut
+                              );
+                              if (reservation) {
+                                setSelectedReservationId(reservation.id);
+                              } else {
+                                toast({ 
+                                  title: "No reservations found",
+                                  description: `No active reservations for ${format(day.date, 'MMM dd')}`
+                                });
+                              }
+                            }}
+                          >
                             View Details
                           </Button>
                           <Button 
@@ -364,6 +383,15 @@ export const HMSDashboard = () => {
         open={showNotifications} 
         onOpenChange={setShowNotifications} 
       />
+
+      {/* Reservation Details Modal */}
+      {selectedReservationId && (
+        <ReservationDetailModal
+          reservation={reservations.find(r => r.id === selectedReservationId)}
+          open={!!selectedReservationId}
+          onClose={() => setSelectedReservationId(null)}
+        />
+      )}
     </motion.div>
   );
 };
