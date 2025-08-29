@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
+import { MaintenanceRequestModal } from "@/components/maintenance/MaintenanceRequestModal";
+import { useToast } from "@/hooks/use-toast";
 import { 
   Users, 
   Clock, 
@@ -22,6 +24,15 @@ import {
 } from "lucide-react";
 
 const Operations = () => {
+  const [showMaintenanceModal, setShowMaintenanceModal] = useState(false);
+  const { toast } = useToast();
+
+  const handleCreateMaintenanceRequest = (requestData: any) => {
+    toast({
+      title: "Maintenance Request Created",
+      description: `Request ${requestData.id} has been submitted successfully.`,
+    });
+  };
   // Mock operations data - in real app from Supabase
   const housekeepingStats = {
     totalRooms: 120,
@@ -360,7 +371,7 @@ const Operations = () => {
                 <Filter className="mr-2 h-4 w-4" />
                 Filter
               </Button>
-              <Button>
+              <Button onClick={() => setShowMaintenanceModal(true)}>
                 <PlusCircle className="mr-2 h-4 w-4" />
                 New Request
               </Button>
@@ -509,6 +520,13 @@ const Operations = () => {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Maintenance Request Modal */}
+      <MaintenanceRequestModal
+        open={showMaintenanceModal}
+        onClose={() => setShowMaintenanceModal(false)}
+        onSubmit={handleCreateMaintenanceRequest}
+      />
     </div>
   );
 };
