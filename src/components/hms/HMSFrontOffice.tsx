@@ -14,13 +14,16 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useHMSStore } from '@/stores/hms-store';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
+import { ReservationDetailModal } from '@/components/reservations/ReservationDetailModal';
+import { RoomMoveModal as ExternalRoomMoveModal } from '@/components/reservations/RoomMoveModal';
+import { PaymentProcessingModal } from '@/components/payment/PaymentProcessingModal';
 
 export const HMSFrontOffice = () => {
   const { reservations, rooms, updateReservation, addAuditEntry } = useHMSStore();
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState('all');
   const [selectedReservation, setSelectedReservation] = useState<any>(null);
-  const [modalType, setModalType] = useState<'folio' | 'roomMove' | 'payment' | null>(null);
+  const [modalType, setModalType] = useState<'detail' | 'roomMove' | 'payment' | null>(null);
   const { toast } = useToast();
 
   // Filter in-house reservations (checked-in guests)
@@ -264,7 +267,7 @@ Balance: €${reservation.balance}
                               variant="outline"
                               onClick={() => {
                                 setSelectedReservation(reservation);
-                                setModalType('folio');
+                                setModalType('detail');
                               }}
                             >
                               <Eye className="h-4 w-4 mr-1" />
@@ -313,57 +316,33 @@ Balance: €${reservation.balance}
       {/* Modals */}
       {selectedReservation && (
         <>
-          {/* Folio Modal */}
-          <Dialog open={modalType === 'folio'} onOpenChange={() => setModalType(null)}>
-            <DialogContent className="max-w-2xl">
-              <DialogHeader>
-                <DialogTitle className="flex items-center gap-2">
-                  <Receipt className="h-5 w-5" />
-                  Folio - {selectedReservation.guestName}
-                </DialogTitle>
-              </DialogHeader>
-              <FolioModal 
-                reservation={selectedReservation} 
-                onExport={() => handleFolioExport(selectedReservation)}
-                onSplit={(splitType, splitValue) => handleFolioSplit(selectedReservation.id, splitType, splitValue)}
-              />
-            </DialogContent>
-          </Dialog>
+          {/* Detail Modal */}
+          <ReservationDetailModal
+            open={modalType === 'detail'}
+            onClose={() => setModalType(null)}
+            reservation={selectedReservation}
+            onUpdate={() => {}}
+            onCancel={() => {}}
+          />
 
           {/* Room Move Modal */}
-          <Dialog open={modalType === 'roomMove'} onOpenChange={() => setModalType(null)}>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle className="flex items-center gap-2">
-                  <MapPin className="h-5 w-5" />
-                  Move Room - {selectedReservation.guestName}
-                </DialogTitle>
-              </DialogHeader>
-              <RoomMoveModal 
-                reservation={selectedReservation}
-                rooms={rooms}
-                onMove={handleRoomMove}
-                onCancel={() => setModalType(null)}
-              />
-            </DialogContent>
-          </Dialog>
+          <ExternalRoomMoveModal
+            open={modalType === 'roomMove'}
+            onClose={() => setModalType(null)}
+            reservation={selectedReservation}
+            onMove={handleRoomMove}
+          />
 
           {/* Payment Modal */}
-          <Dialog open={modalType === 'payment'} onOpenChange={() => setModalType(null)}>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle className="flex items-center gap-2">
-                  <CreditCard className="h-5 w-5" />
-                  Process Payment - {selectedReservation.guestName}
-                </DialogTitle>
-              </DialogHeader>
-              <PaymentModal 
-                reservation={selectedReservation}
-                onPayment={handlePayment}
-                onCancel={() => setModalType(null)}
-              />
-            </DialogContent>
-          </Dialog>
+          <PaymentProcessingModal
+            open={modalType === 'payment'}
+            onClose={() => setModalType(null)}
+            guestName={selectedReservation?.guestName}
+            outstandingAmount={selectedReservation?.balance}
+            onPaymentComplete={(paymentData) => {
+              handlePayment(selectedReservation.id, paymentData.amount, paymentData.method, '');
+            }}
+          />
         </>
       )}
     </motion.div>

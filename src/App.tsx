@@ -420,6 +420,11 @@ const AppContent = () => {
           <HousekeepingModule />
         </HotelManagerLayout>
       } />
+      <Route path="/settings" element={
+        <HotelManagerLayout>
+          <Settings />
+        </HotelManagerLayout>
+      } />
       <Route path="/room-status" element={
         <HotelManagerLayout>
           <RoomStatus />
