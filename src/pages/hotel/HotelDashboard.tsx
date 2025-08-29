@@ -180,11 +180,11 @@ export default function HotelDashboard() {
         </div>
         
         <div className="flex gap-3">
-          <Button variant="outline" className="gap-2">
+          <Button variant="outline" className="gap-2" onClick={() => navigate('/hotel/ari-calendar')}>
             <Calendar className="h-4 w-4" />
             ARI Calendar
           </Button>
-          <Button variant="outline" className="gap-2">
+          <Button variant="outline" className="gap-2" onClick={() => navigate('/hotel/notifications')}>
             <Bell className="h-4 w-4" />
             Notifications
           </Button>
@@ -335,7 +335,7 @@ export default function HotelDashboard() {
                 <Calendar className="h-5 w-5 text-primary" />
                 Recent Reservations
               </div>
-              <Button variant="outline" size="sm">View All</Button>
+              <Button variant="outline" size="sm" onClick={() => navigate('/hotel/reservations')}>View All</Button>
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -374,19 +374,19 @@ export default function HotelDashboard() {
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-2 gap-3">
-              <Button variant="outline" className="h-16 flex-col gap-2">
+              <Button variant="outline" className="h-16 flex-col gap-2" onClick={() => navigate('/reservations/new')}>
                 <Plus className="h-5 w-5" />
                 New Booking
               </Button>
-              <Button variant="outline" className="h-16 flex-col gap-2">
+              <Button variant="outline" className="h-16 flex-col gap-2" onClick={() => navigate('/hotel/ari-calendar')}>
                 <Calendar className="h-5 w-5" />
                 Rate Calendar
               </Button>
-              <Button variant="outline" className="h-16 flex-col gap-2">
+              <Button variant="outline" className="h-16 flex-col gap-2" onClick={() => navigate('/hotel/folio')}>
                 <Users className="h-5 w-5" />
                 Guest Folio
               </Button>
-              <Button variant="outline" className="h-16 flex-col gap-2">
+              <Button variant="outline" className="h-16 flex-col gap-2" onClick={() => navigate('/housekeeping')}>
                 <Bed className="h-5 w-5" />
                 Housekeeping
               </Button>

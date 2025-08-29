@@ -35,6 +35,8 @@ import AgencyPartners from "./pages/agency/AgencyPartners";
 import HotelDashboard from "./pages/hotel/HotelDashboard";
 import HotelReservations from "./pages/hotel/HotelReservations";
 import HousekeepingModule from "./pages/hotel/HousekeepingModule";
+import HotelNotifications from "./pages/hotel/HotelNotifications";
+import GuestFolio from "./pages/hotel/GuestFolio";
 import { HotelManagerLayout } from "./layouts/HotelManagerLayout";
 import { HMSLayout } from "./layouts/HMSLayout";
 import { HMSDashboard } from "./components/hms/HMSDashboard";
@@ -384,6 +386,38 @@ const AppContent = () => {
       <Route path="/ari-calendar" element={
         <HotelManagerLayout>
           <ChannelARICalendar />
+        </HotelManagerLayout>
+      } />
+      
+      {/* Hotel Management Routes */}
+      <Route path="/hotel/dashboard" element={
+        <HotelManagerLayout>
+          <HotelDashboard />
+        </HotelManagerLayout>
+      } />
+      <Route path="/hotel/reservations" element={
+        <HotelManagerLayout>
+          <HotelReservations />
+        </HotelManagerLayout>
+      } />
+      <Route path="/hotel/ari-calendar" element={
+        <HotelManagerLayout>
+          <ChannelARICalendar />
+        </HotelManagerLayout>
+      } />
+      <Route path="/hotel/notifications" element={
+        <HotelManagerLayout>
+          <HotelNotifications />
+        </HotelManagerLayout>
+      } />
+      <Route path="/hotel/folio" element={
+        <HotelManagerLayout>
+          <GuestFolio />
+        </HotelManagerLayout>
+      } />
+      <Route path="/hotel/housekeeping" element={
+        <HotelManagerLayout>
+          <HousekeepingModule />
         </HotelManagerLayout>
       } />
       <Route path="/room-status" element={
