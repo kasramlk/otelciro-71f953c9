@@ -1,8 +1,8 @@
 import React from 'react';
-import { SocialMediaDashboard } from '@/components/social-media/SocialMediaDashboard';
+import { EnhancedSocialMediaDashboard } from '@/components/social-media/EnhancedSocialMediaDashboard';
 
 const SocialMedia: React.FC = () => {
-  return <SocialMediaDashboard />;
+  return <EnhancedSocialMediaDashboard />;
 };
 
 export default SocialMedia;

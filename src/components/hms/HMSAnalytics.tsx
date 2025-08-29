@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { Calendar, TrendingUp, TrendingDown, BarChart3, Download, RefreshCw, Users, DollarSign } from 'lucide-react';
+import { Calendar, TrendingUp, TrendingDown, BarChart3, Download, RefreshCw, Users, DollarSign, Bell } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -12,6 +12,9 @@ import { useHMSStore } from '@/stores/hms-store';
 import { useToast } from '@/hooks/use-toast';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, subMonths, addMonths } from 'date-fns';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, BarChart, Bar, PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
+import { RealtimeNotificationSystem } from '@/components/realtime/RealtimeNotificationSystem';
+import { EnhancedExportSystem } from '@/components/export/EnhancedExportSystem';
+import { OnlineUsers } from '@/components/realtime/OnlineUsers';
 
 export const HMSAnalytics = () => {
   const { occupancyData, reservations, addAuditEntry } = useHMSStore();
@@ -172,22 +175,34 @@ export const HMSAnalytics = () => {
       className="space-y-6 p-6"
     >
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-3xl font-bold text-foreground">Analytics & Forecasting</h1>
-          <p className="text-muted-foreground">Performance insights and trend analysis</p>
+          <h1 className="text-3xl font-bold bg-gradient-hero bg-clip-text text-transparent">
+            Analytics & Forecasting
+          </h1>
+          <p className="text-muted-foreground">Performance insights and trend analysis with real-time updates</p>
         </div>
         
         <div className="flex items-center gap-4">
+          <OnlineUsers compact maxVisible={3} />
           <Button onClick={handleRefresh} variant="outline">
             <RefreshCw className="h-4 w-4 mr-2" />
             Refresh
           </Button>
-          <Button onClick={() => setShowExportModal(true)} variant="outline">
-            <Download className="h-4 w-4 mr-2" />
-            Export
-          </Button>
+          <RealtimeNotificationSystem />
         </div>
+      </div>
+
+      {/* Enhanced Export System */}
+      <div className="mb-6">
+        <EnhancedExportSystem
+          dataType="analytics"
+          title="Analytics Data"
+          onExport={async (format) => {
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            handleExport(format as 'pdf' | 'csv' | 'excel');
+          }}
+        />
       </div>
 
       {/* Date Range Controls */}

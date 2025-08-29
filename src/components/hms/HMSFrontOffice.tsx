@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { Search, Eye, MapPin, CreditCard, Receipt, Split, Download, User, Calendar, Clock } from 'lucide-react';
+import { Search, Eye, MapPin, CreditCard, Receipt, Split, Download, User, Calendar, Clock, Bell } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -17,6 +17,9 @@ import { format } from 'date-fns';
 import { ReservationDetailModal } from '@/components/reservations/ReservationDetailModal';
 import { RoomMoveModal as ExternalRoomMoveModal } from '@/components/reservations/RoomMoveModal';
 import { PaymentProcessingModal } from '@/components/payment/PaymentProcessingModal';
+import { RealtimeNotificationSystem } from '@/components/realtime/RealtimeNotificationSystem';
+import { EnhancedExportSystem } from '@/components/export/EnhancedExportSystem';
+import { OnlineUsers } from '@/components/realtime/OnlineUsers';
 
 export const HMSFrontOffice = () => {
   const { reservations, rooms, updateReservation, addAuditEntry } = useHMSStore();
@@ -167,11 +170,30 @@ Balance: €${reservation.balance}
       className="space-y-6 p-6"
     >
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-3xl font-bold text-foreground">Front Office</h1>
+          <h1 className="text-3xl font-bold bg-gradient-hero bg-clip-text text-transparent">
+            Front Office Operations
+          </h1>
           <p className="text-muted-foreground">In-house guest operations and folio management</p>
         </div>
+        
+        <div className="flex items-center gap-4">
+          <OnlineUsers compact maxVisible={3} />
+          <RealtimeNotificationSystem />
+        </div>
+      </div>
+
+      {/* Export System */}
+      <div className="mb-6">
+        <EnhancedExportSystem
+          dataType="front-office"
+          title="Front Office Data"
+          onExport={async (format) => {
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            toast({ title: `Front office data exported as ${format.toUpperCase()}` });
+          }}
+        />
       </div>
 
       {/* Search and Filters */}

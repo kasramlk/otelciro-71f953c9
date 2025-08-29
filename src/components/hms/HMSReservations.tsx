@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { Plus, Search, Filter, Download, Eye, Edit, Trash2, MapPin, MoreHorizontal } from 'lucide-react';
+import { Plus, Search, Filter, Download, Eye, Edit, Trash2, MapPin, MoreHorizontal, Bell } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -15,6 +15,11 @@ import { format } from 'date-fns';
 import { HMSNewReservation } from './HMSNewReservation';
 import { ReservationDetailModal } from '@/components/reservations/ReservationDetailModal';
 import { RoomMoveModal } from '@/components/reservations/RoomMoveModal';
+import { RealtimeNotificationSystem } from '@/components/realtime/RealtimeNotificationSystem';
+import { AdvancedFilters } from '@/components/advanced/AdvancedFilters';
+import { GlobalSearch } from '@/components/search/GlobalSearch';
+import { EnhancedExportSystem } from '@/components/export/EnhancedExportSystem';
+import { OnlineUsers } from '@/components/realtime/OnlineUsers';
 
 export const HMSReservations = () => {
   const { reservations } = useHMSStore();
@@ -145,37 +150,63 @@ export const HMSReservations = () => {
       className="space-y-6 p-6"
     >
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground">Reservations</h1>
-          <p className="text-muted-foreground">Manage your hotel reservations</p>
+      <div className="flex flex-col lg:flex-row gap-4 mb-6">
+        <div className="flex-1">
+          <div className="mb-4">
+            <h1 className="text-3xl font-bold bg-gradient-hero bg-clip-text text-transparent mb-2">
+              Reservations Management
+            </h1>
+            <p className="text-muted-foreground">Manage your hotel reservations with real-time updates</p>
+          </div>
+          
+          {/* Global Search */}
+          <GlobalSearch
+            onNavigate={(type, id) => {
+              if (type === 'reservation') {
+                const reservation = reservations.find(r => r.id === id);
+                if (reservation) handleViewDetails(reservation);
+              }
+            }}
+            className="max-w-2xl"
+          />
         </div>
         
         <div className="flex items-center gap-4">
-          <Button onClick={handleExport} variant="outline">
-            <Download className="h-4 w-4 mr-2" />
-            Export
-          </Button>
-          <Dialog open={isNewReservationOpen} onOpenChange={setIsNewReservationOpen}>
-            <DialogTrigger asChild>
-              <Button className="bg-gradient-primary">
-                <Plus className="h-4 w-4 mr-2" />
-                New Reservation
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-              <DialogHeader>
-                <DialogTitle>Create New Reservation</DialogTitle>
-              </DialogHeader>
-              <HMSNewReservation 
-                onClose={() => setIsNewReservationOpen(false)}
-                onSave={() => {
-                  // Refresh reservations list - already handled by store
-                }}
-              />
-            </DialogContent>
-          </Dialog>
+          <OnlineUsers compact maxVisible={3} />
+          <RealtimeNotificationSystem />
         </div>
+      </div>
+
+      {/* Action Bar */}
+      <div className="flex items-center justify-between mb-6">
+        <EnhancedExportSystem
+          dataType="reservations"
+          title="Reservation Data"
+          onExport={async (format) => {
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            handleExport();
+          }}
+        />
+        
+        <Dialog open={isNewReservationOpen} onOpenChange={setIsNewReservationOpen}>
+          <DialogTrigger asChild>
+            <Button className="bg-gradient-primary">
+              <Plus className="h-4 w-4 mr-2" />
+              New Reservation
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Create New Reservation</DialogTitle>
+            </DialogHeader>
+            <HMSNewReservation 
+              onClose={() => setIsNewReservationOpen(false)}
+              onSave={() => {
+                // Refresh reservations list - already handled by store
+              }}
+            />
+          </DialogContent>
+        </Dialog>
       </div>
 
       {/* Stats Cards */}
@@ -222,62 +253,80 @@ export const HMSReservations = () => {
         </Card>
       </div>
 
-      {/* Filters */}
+      {/* Advanced Filters */}
+      <AdvancedFilters
+        filters={[
+          {
+            key: 'dateRange',
+            label: 'Date Range',
+            type: 'dateRange' as const,
+            placeholder: 'Select date range'
+          },
+          {
+            key: 'status',
+            label: 'Status',
+            type: 'multiSelect' as const,
+            options: [
+              { value: 'confirmed', label: 'Confirmed' },
+              { value: 'checked-in', label: 'Checked In' },
+              { value: 'checked-out', label: 'Checked Out' },
+              { value: 'cancelled', label: 'Cancelled' },
+              { value: 'no-show', label: 'No Show' }
+            ]
+          },
+          {
+            key: 'source',
+            label: 'Booking Source',
+            type: 'multiSelect' as const,
+            options: [
+              { value: 'direct', label: 'Direct' },
+              { value: 'booking.com', label: 'Booking.com' },
+              { value: 'expedia', label: 'Expedia' },
+              { value: 'phone', label: 'Phone' },
+              { value: 'walk-in', label: 'Walk-in' }
+            ]
+          },
+          {
+            key: 'minAmount',
+            label: 'Minimum Amount',
+            type: 'number' as const,
+            placeholder: 'Enter minimum amount'
+          },
+          {
+            key: 'hasBalance',
+            label: 'Has Outstanding Balance',
+            type: 'checkbox' as const
+          }
+        ]}
+        onFiltersChange={(filters) => {
+          // Apply filters to reservation list
+          console.log('Applied filters:', filters);
+        }}
+        onReset={() => {
+          setSearchQuery('');
+          setStatusFilter('all');
+          setSourceFilter('all');
+          setDateRange('all');
+        }}
+        title="Reservation Filters"
+      />
+
+      {/* Quick Search */}
       <Card>
         <CardContent className="p-4">
-          <div className="flex items-center gap-4 flex-wrap">
-            <div className="flex-1 min-w-64">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search reservations..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
+          <div className="flex items-center gap-4">
+            <div className="flex-1 relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Quick search reservations..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10"
+              />
             </div>
-            
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-48">
-                <SelectValue placeholder="Filter by status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Statuses</SelectItem>
-                <SelectItem value="confirmed">Confirmed</SelectItem>
-                <SelectItem value="checked-in">Checked In</SelectItem>
-                <SelectItem value="checked-out">Checked Out</SelectItem>
-                <SelectItem value="cancelled">Cancelled</SelectItem>
-                <SelectItem value="no-show">No Show</SelectItem>
-              </SelectContent>
-            </Select>
-
-            <Select value={sourceFilter} onValueChange={setSourceFilter}>
-              <SelectTrigger className="w-48">
-                <SelectValue placeholder="Filter by source" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Sources</SelectItem>
-                <SelectItem value="direct">Direct</SelectItem>
-                <SelectItem value="booking.com">Booking.com</SelectItem>
-                <SelectItem value="expedia">Expedia</SelectItem>
-                <SelectItem value="phone">Phone</SelectItem>
-                <SelectItem value="walk-in">Walk-in</SelectItem>
-              </SelectContent>
-            </Select>
-
-            <Select value={dateRange} onValueChange={setDateRange}>
-              <SelectTrigger className="w-48">
-                <SelectValue placeholder="Date range" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Dates</SelectItem>
-                <SelectItem value="today">Today</SelectItem>
-                <SelectItem value="tomorrow">Tomorrow</SelectItem>
-                <SelectItem value="week">This Week</SelectItem>
-                <SelectItem value="month">This Month</SelectItem>
-              </SelectContent>
-            </Select>
+            <Badge variant="outline" className="ml-auto">
+              {filteredReservations.length} results
+            </Badge>
           </div>
         </CardContent>
       </Card>
