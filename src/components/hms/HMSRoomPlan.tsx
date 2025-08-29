@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { Calendar, Filter, Eye, MapPin, AlertCircle } from 'lucide-react';
+import { Calendar, Filter, Eye, MapPin, AlertCircle, Plus } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -11,6 +11,10 @@ import { ROOM_TYPES } from '@/lib/mock-data';
 import { format, addDays, startOfToday } from 'date-fns';
 import { ReservationDetailModal } from '@/components/reservations/ReservationDetailModal';
 import { RoomMoveModal } from '@/components/reservations/RoomMoveModal';
+import { RealtimeNotificationSystem } from '@/components/realtime/RealtimeNotificationSystem';
+import { BulkOperations } from '@/components/bulk/BulkOperations';
+import { EnhancedExportSystem } from '@/components/export/EnhancedExportSystem';
+import { useToast } from '@/hooks/use-toast';
 
 export const HMSRoomPlan = () => {
   const { rooms, reservations } = useHMSStore();
@@ -20,6 +24,8 @@ export const HMSRoomPlan = () => {
   const [selectedReservation, setSelectedReservation] = useState<string | null>(null);
   const [detailsModalOpen, setDetailsModalOpen] = useState(false);
   const [showMoveModal, setShowMoveModal] = useState(false);
+  const [selectedRooms, setSelectedRooms] = useState<string[]>([]);
+  const { toast } = useToast();
 
   const today = startOfToday();
   const dates = Array.from({ length: viewDays }, (_, i) => addDays(today, i));
@@ -82,6 +88,14 @@ export const HMSRoomPlan = () => {
     ? reservations.find(r => r.id === selectedReservation)
     : null;
 
+  const bulkRoomItems = filteredRooms.map(room => ({
+    id: room.id,
+    type: 'room' as const,
+    name: `Room ${room.number} (${room.roomType})`,
+    status: room.status.toLowerCase(),
+    details: `Floor ${room.floor} - ${room.roomType} room`
+  }));
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -96,6 +110,7 @@ export const HMSRoomPlan = () => {
         </div>
         
         <div className="flex items-center gap-4">
+          <RealtimeNotificationSystem />
           <Button 
             variant={viewDays === 1 ? "default" : "outline"} 
             onClick={() => setViewDays(1)}
@@ -123,6 +138,10 @@ export const HMSRoomPlan = () => {
             size="sm"
           >
             Month
+          </Button>
+          <Button>
+            <Plus className="h-4 w-4 mr-2" />
+            Schedule Maintenance
           </Button>
         </div>
       </div>
@@ -182,6 +201,22 @@ export const HMSRoomPlan = () => {
           </div>
         </CardContent>
       </Card>
+
+      {/* Export System */}
+      <EnhancedExportSystem
+        dataType="rooms"
+        title="Room Plan Data"
+        onExport={async (format) => {
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          toast({ title: `Room plan exported as ${format.toUpperCase()}` });
+        }}
+      />
+
+      {/* Bulk Operations */}
+      <BulkOperations
+        items={bulkRoomItems}
+        onSelectionChange={setSelectedRooms}
+      />
 
       {/* Room Plan Grid */}
       <Card>

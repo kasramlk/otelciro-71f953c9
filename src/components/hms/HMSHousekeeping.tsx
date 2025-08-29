@@ -22,12 +22,16 @@ import { useHMSStore } from '@/stores/hms-store';
 import { useToast } from "@/hooks/use-toast";
 import { useConfirmation } from "@/components/ui/confirmation-dialog";
 import { format } from 'date-fns';
+import { RealtimeNotificationSystem } from '@/components/realtime/RealtimeNotificationSystem';
+import { BulkOperations } from '@/components/bulk/BulkOperations';
+import { EnhancedExportSystem } from '@/components/export/EnhancedExportSystem';
 
 export const HMSHousekeeping = () => {
   const { rooms, housekeepingTasks, updateRoomStatus, addTask, updateTask, addAuditEntry } = useHMSStore();
   const [isNewTaskOpen, setIsNewTaskOpen] = useState(false);
   const [selectedRoom, setSelectedRoom] = useState<any>(null);
   const [isRoomStatusOpen, setIsRoomStatusOpen] = useState(false);
+  const [selectedTasks, setSelectedTasks] = useState<string[]>([]);
   const { toast } = useToast();
   const { showConfirmation, ConfirmationComponent } = useConfirmation();
 
@@ -174,6 +178,16 @@ export const HMSHousekeeping = () => {
     }
   };
 
+  const bulkTaskItems = housekeepingTasks
+    .filter(task => task.status === 'open' || task.status === 'in-progress' || task.status === 'completed')
+    .map(task => ({
+      id: task.id,
+      type: 'reservation' as const, // Using 'reservation' as closest match
+      name: `${task.taskType} - Room ${task.roomNumber}`,
+      status: task.status,
+      details: task.description
+    }));
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -187,20 +201,23 @@ export const HMSHousekeeping = () => {
           <p className="text-muted-foreground">Manage room status and maintenance tasks</p>
         </div>
         
-        <Dialog open={isNewTaskOpen} onOpenChange={setIsNewTaskOpen}>
-          <DialogTrigger asChild>
-            <Button className="bg-gradient-primary">
-              <Plus className="h-4 w-4 mr-2" />
-              New Task
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Create New Task</DialogTitle>
-            </DialogHeader>
-            <NewTaskForm onSave={handleNewTask} rooms={rooms} />
-          </DialogContent>
-        </Dialog>
+        <div className="flex items-center gap-2">
+          <RealtimeNotificationSystem />
+          <Dialog open={isNewTaskOpen} onOpenChange={setIsNewTaskOpen}>
+            <DialogTrigger asChild>
+              <Button className="bg-gradient-primary">
+                <Plus className="h-4 w-4 mr-2" />
+                New Task
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Create New Task</DialogTitle>
+              </DialogHeader>
+              <NewTaskForm onSave={handleNewTask} rooms={rooms} />
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
 
       {/* Room Status Overview */}
@@ -237,6 +254,22 @@ export const HMSHousekeeping = () => {
           </Card>
         ))}
       </div>
+
+      {/* Export System */}
+      <EnhancedExportSystem
+        dataType="housekeeping"
+        title="Housekeeping Data"
+        onExport={async (format) => {
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          toast({ title: `Housekeeping data exported as ${format.toUpperCase()}` });
+        }}
+      />
+
+      {/* Bulk Operations */}
+      <BulkOperations
+        items={bulkTaskItems}
+        onSelectionChange={setSelectedTasks}
+      />
 
       {/* Tasks Overview */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
