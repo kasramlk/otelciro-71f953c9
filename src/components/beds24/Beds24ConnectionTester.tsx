@@ -18,7 +18,7 @@ interface ConnectionTesterProps {
 }
 
 export function Beds24ConnectionTester({ hotelId = "550e8400-e29b-41d4-a716-446655440000" }: ConnectionTesterProps) {
-  const [apiKey, setApiKey] = useState("41a8bc09-582e-4bea-a932-ea1239246fe0");
+  const [invitationToken, setInvitationToken] = useState("");
   const [result, setResult] = useState<{ success: boolean; error?: string; data?: any } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [activeConnection, setActiveConnection] = useState<any>(null);
@@ -26,23 +26,24 @@ export function Beds24ConnectionTester({ hotelId = "550e8400-e29b-41d4-a716-4466
   const exchangeInviteCode = useExchangeInviteCode();
 
   const handleTestConnection = async () => {
-    if (!apiKey.trim()) return;
+    if (!invitationToken.trim()) return;
 
     setError(null);
     setResult(null);
 
     try {
-      const response = await exchangeInviteCode.mutateAsync(apiKey);
+      const response = await exchangeInviteCode.mutateAsync(invitationToken);
       setResult(response);
       
-      // If successful, this would be where we'd create a connection
-      if (response.success) {
-        // For demo purposes, create a mock active connection
+      // If successful, set up the active connection with response data
+      if (response.success && response.data) {
         setActiveConnection({
-          id: 'demo-connection-id',
+          id: response.data.connectionId,
           connection_status: 'active',
-          api_credits_remaining: 950,
+          api_credits_remaining: 1000,
           last_sync_at: new Date().toISOString(),
+          account_name: response.data.accountName,
+          account_id: response.data.accountId,
         });
       }
     } catch (err) {
@@ -61,22 +62,22 @@ export function Beds24ConnectionTester({ hotelId = "550e8400-e29b-41d4-a716-4466
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="testApiKey">Beds24 API Key</Label>
+            <Label htmlFor="invitationToken">Beds24 Invitation Token</Label>
             <Input
-              id="testApiKey"
-              placeholder="Enter your Beds24 API key (e.g., 41a8bc09-582e-4bea-a932-ea1239246fe0)"
-              value={apiKey}
-              onChange={(e) => setApiKey(e.target.value)}
+              id="invitationToken"
+              placeholder="Enter your Beds24 invitation token"
+              value={invitationToken}
+              onChange={(e) => setInvitationToken(e.target.value)}
               className="font-mono text-sm"
             />
             <p className="text-xs text-muted-foreground">
-              This will authenticate with Beds24 API using your API key and set up the connection for full channel management
+              Enter the invitation token you received from Beds24 to authorize and connect your property
             </p>
           </div>
 
           <Button 
             onClick={handleTestConnection}
-            disabled={!apiKey.trim() || exchangeInviteCode.isPending}
+            disabled={!invitationToken.trim() || exchangeInviteCode.isPending}
             className="w-full"
           >
             {exchangeInviteCode.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}

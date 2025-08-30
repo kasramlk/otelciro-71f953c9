@@ -145,15 +145,18 @@ export class Beds24Service {
   // Updated service methods to work with new OAuth2 schema
   async exchangeInviteCode(invitationToken: string, hotelId: string): Promise<Beds24ApiResponse<{ connectionId: string; accountId: number }>> {
     try {
-      const response = await supabase.functions.invoke('beds24-auth', {
+      console.log('Exchanging Beds24 invitation token:', invitationToken.substring(0, 8) + '...')
+      
+      const { data, error } = await supabase.functions.invoke('beds24-auth', {
         body: { action: 'exchange_invitation', invitationToken, hotelId }
       });
 
-      if (response.error) {
-        throw new Error(response.error.message);
+      if (error) {
+        console.error('Edge function error:', error)
+        return { success: false, error: error.message };
       }
 
-      return response.data;
+      return data || { success: false, error: 'No response data' };
     } catch (error) {
       console.error('Error exchanging invitation token:', error);
       return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
@@ -319,12 +322,6 @@ export class Beds24Service {
   async createConnection(hotelId: string, connectionData: any): Promise<Beds24Connection | null> {
     console.log('createConnection called for hotel:', hotelId);
     return null; // Return null for now
-  }
-
-  // API Key Authentication - Add missing method  
-  async authenticateWithApiKey(apiKey: string): Promise<Beds24ApiResponse<{ connectionId: string; accountId: number }>> {
-    // This will actually call the exchange invitation method with the API key
-    return this.exchangeInviteCode(apiKey, '550e8400-e29b-41d4-a716-446655440000');
   }
 
   // Inventory Management

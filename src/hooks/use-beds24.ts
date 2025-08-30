@@ -206,11 +206,11 @@ export function useExchangeInviteCode() {
   
   return useMutation({
     mutationFn: (invitationToken: string) => beds24Service.exchangeInviteCode(invitationToken, '550e8400-e29b-41d4-a716-446655440000'),
-    onSuccess: (result: any) => {
-      if (result?.success) {
+    onSuccess: (result: { success: boolean; error?: string; data?: any }) => {
+      if (result.success) {
         toast({ title: "Success", description: "Invitation token exchanged successfully" });
       } else {
-        toast({ title: "Error", description: `Failed to exchange token: ${result?.error || 'Unknown error'}`, variant: "destructive" });
+        toast({ title: "Error", description: `Failed to exchange token: ${result.error || 'Unknown error'}`, variant: "destructive" });
       }
     },
     onError: (error) => {
