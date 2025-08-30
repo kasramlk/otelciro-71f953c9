@@ -1,4 +1,4 @@
-project_id = "zldcotumxouasgzdsvmh"
+project_id = "zldcotumxouasgzdsvmh" 
 
 [api]
 enabled = true
@@ -24,3 +24,18 @@ verify_jwt = true
 
 [functions.airbnb-reservations]
 verify_jwt = true
+
+[functions.beds24-auth]
+verify_jwt = true
+
+[functions.beds24-sync]
+verify_jwt = true
+
+[functions.beds24-inventory-push]
+verify_jwt = true
+
+[functions.beds24-reservations-pull]
+verify_jwt = true
+
+[functions.beds24-webhook]
+verify_jwt = false
