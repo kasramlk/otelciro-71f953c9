@@ -71,7 +71,9 @@ const businessItems: SidebarItem[] = [
 const channelItems: SidebarItem[] = [
   { title: "ARI Calendar", href: "/channel/ari", icon: Calendar, color: "text-secondary" },
   { title: "Channel Mapping", href: "/channel/mapping", icon: Globe },
-  { title: "Reconciliation", href: "/channel/reconcile", icon: Target, badge: "3" }
+  { title: "Reconciliation", href: "/channel/reconcile", icon: Target, badge: "3" },
+  { title: "Beds24 Dashboard", href: "/beds24", icon: Building, color: "text-accent" },
+  { title: "Beds24 Advanced", href: "/beds24/advanced", icon: Zap, color: "text-accent" }
 ];
 
 const socialMediaItems: SidebarItem[] = [
