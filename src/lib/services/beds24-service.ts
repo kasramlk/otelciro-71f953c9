@@ -56,6 +56,23 @@ export interface Beds24Channel {
   updated_at: string;
 }
 
+export interface Beds24Inventory {
+  id: string
+  beds24_property_id: string
+  beds24_room_id: number
+  date: string
+  available?: number
+  price?: number
+  min_stay?: number
+  max_stay?: number
+  closed_to_arrival: boolean
+  closed_to_departure: boolean
+  restrictions: any
+  last_updated: string
+  synced_from_beds24: boolean
+  expires_at: string
+}
+
 export interface Beds24SyncLog {
   id: string;
   connection_id: string;
@@ -68,7 +85,6 @@ export interface Beds24SyncLog {
   records_processed: number;
   records_succeeded: number;
   records_failed: number;
-  api_credits_used: number;
   sync_data: any;
   error_details: any;
   performance_metrics: any;
@@ -86,11 +102,11 @@ interface Beds24ApiResponse<T> {
 export class Beds24Service {
   private baseUrl = 'https://api.beds24.com/v2';
   
-  // Authentication Methods
-  async exchangeInviteCode(inviteCode: string): Promise<Beds24ApiResponse<{ token: string; refreshToken: string }>> {
+// Updated service methods to work with new OAuth2 schema
+  async exchangeInviteCode(invitationToken: string, hotelId: string): Promise<Beds24ApiResponse<{ connectionId: string; accountId: number }>> {
     try {
       const response = await supabase.functions.invoke('beds24-auth', {
-        body: { action: 'exchange_invite_code', inviteCode }
+        body: { action: 'exchange_invitation', invitationToken, hotelId }
       });
 
       if (response.error) {
@@ -99,29 +115,12 @@ export class Beds24Service {
 
       return response.data;
     } catch (error) {
-      console.error('Error exchanging invite code:', error);
+      console.error('Error exchanging invitation token:', error);
       return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
     }
   }
 
-  async authenticateWithApiKey(apiKey: string): Promise<Beds24ApiResponse<{ token: string; refreshToken: string }>> {
-    try {
-      const response = await supabase.functions.invoke('beds24-auth', {
-        body: { action: 'authenticate_api_key', apiKey }
-      });
-
-      if (response.error) {
-        throw new Error(response.error.message);
-      }
-
-      return response.data;
-    } catch (error) {
-      console.error('Error authenticating with API key:', error);
-      return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
-    }
-  }
-
-  async refreshToken(refreshToken: string): Promise<Beds24ApiResponse<{ token: string; expiresIn: number }>> {
+  async refreshToken(refreshToken: string): Promise<Beds24ApiResponse<{ accessToken: string; expiresIn: number }>> {
     try {
       const response = await supabase.functions.invoke('beds24-auth', {
         body: { action: 'refresh_token', refreshToken }
@@ -139,33 +138,6 @@ export class Beds24Service {
   }
 
   // Connection Management
-  async createConnection(hotelId: string, connectionData: {
-    account_id: string;
-    account_email: string;
-    refresh_token: string;
-    scopes: string[];
-    allow_linked_properties?: boolean;
-    ip_whitelist?: string[];
-  }): Promise<Beds24Connection | null> {
-    try {
-      const { data, error } = await supabase
-        .from('beds24_connections')
-        .insert({
-          hotel_id: hotelId,
-          ...connectionData,
-          connection_status: 'pending'
-        })
-        .select()
-        .single();
-
-      if (error) throw error;
-      return data;
-    } catch (error) {
-      console.error('Error creating Beds24 connection:', error);
-      return null;
-    }
-  }
-
   async getConnections(hotelId: string): Promise<Beds24Connection[]> {
     try {
       const { data, error } = await supabase
@@ -246,30 +218,37 @@ export class Beds24Service {
     }
   }
 
-  // Channel Management
-  async getChannels(propertyId: string): Promise<Beds24Channel[]> {
+  // Channel Management - Updated to work with inventory table
+  async getInventory(propertyId: string, dateRange?: { from: string; to: string }): Promise<Beds24Inventory[]> {
     try {
-      const { data, error } = await supabase
-        .from('beds24_channels')
+      let query = supabase
+        .from('beds24_inventory')
         .select('*')
-        .eq('beds24_property_id', propertyId)
-        .order('channel_name');
+        .eq('beds24_property_id', propertyId);
+
+      if (dateRange) {
+        query = query
+          .gte('date', dateRange.from)
+          .lte('date', dateRange.to);
+      }
+
+      const { data, error } = await query.order('date');
 
       if (error) throw error;
       return data || [];
     } catch (error) {
-      console.error('Error fetching Beds24 channels:', error);
+      console.error('Error fetching Beds24 inventory:', error);
       return [];
     }
   }
 
-  async syncChannels(propertyId: string): Promise<Beds24ApiResponse<Beds24Channel[]>> {
+  async syncInventory(propertyId: string, dateRange: { from: string; to: string }): Promise<Beds24ApiResponse<Beds24Inventory[]>> {
     try {
-      const response = await supabase.functions.invoke('beds24-sync', {
+      const response = await supabase.functions.invoke('beds24-inventory-pull', {
         body: { 
-          action: 'sync_channels', 
           propertyId,
-          syncType: 'channels',
+          dateRange,
+          syncType: 'inventory',
           syncDirection: 'pull'
         }
       });
@@ -280,7 +259,7 @@ export class Beds24Service {
 
       return response.data;
     } catch (error) {
-      console.error('Error syncing channels:', error);
+      console.error('Error syncing inventory:', error);
       return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
     }
   }
@@ -402,6 +381,24 @@ export class Beds24Service {
       return data || [];
     } catch (error) {
       console.error('Error fetching sync logs:', error);
+      return [];
+    }
+  }
+
+  // API Logs - New table for API monitoring
+  async getApiLogs(connectionId: string, limit: number = 100): Promise<any[]> {
+    try {
+      const { data, error } = await supabase
+        .from('beds24_api_logs')
+        .select('*')
+        .eq('connection_id', connectionId)
+        .order('created_at', { ascending: false })
+        .limit(limit);
+
+      if (error) throw error;
+      return data || [];
+    } catch (error) {
+      console.error('Error fetching API logs:', error);
       return [];
     }
   }
