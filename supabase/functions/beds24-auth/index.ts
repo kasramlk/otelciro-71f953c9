@@ -27,7 +27,14 @@ serve(async (req) => {
   }
 
   try {
-    const { action, inviteCode, refreshToken, connectionId }: Beds24AuthRequest = await req.json();
+    console.log('Beds24-auth function called');
+    console.log('Request method:', req.method);
+    console.log('Request URL:', req.url);
+    
+    const body = await req.json();
+    console.log('Request body:', JSON.stringify(body));
+    
+    const { action, inviteCode, refreshToken, connectionId }: Beds24AuthRequest = body;
 
     console.log(`Beds24 Auth Action: ${action}`);
 
@@ -46,10 +53,17 @@ serve(async (req) => {
     }
   } catch (error) {
     console.error('Error in beds24-auth function:', error);
+    console.error('Error details:', {
+      name: error instanceof Error ? error.name : 'Unknown',
+      message: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined
+    });
+    
     return new Response(
       JSON.stringify({ 
         success: false, 
-        error: error instanceof Error ? error.message : 'Unknown error' 
+        error: error instanceof Error ? error.message : 'Unknown error',
+        details: error instanceof Error ? error.stack : String(error)
       }),
       {
         status: 500,
