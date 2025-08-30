@@ -7,7 +7,8 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-const BEDS24_API_URL = Deno.env.get('BEDS24_API_URL') || 'https://api.beds24.com/v2';
+const BEDS24_API_URL = 'https://api.beds24.com/v2';
+const BEDS24_ORGANIZATION = 'otelciro';
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 
@@ -80,20 +81,15 @@ async function handleExchangeInviteCode(inviteCode?: string) {
 
   console.log('Exchanging invite code for tokens');
   console.log('Invite code length:', inviteCode.length);
-  
-  // Debug environment variables
-  const beds24ApiUrl = Deno.env.get('BEDS24_API_URL') || 'https://api.beds24.com/v2';
-  console.log('BEDS24_API_URL from env:', Deno.env.get('BEDS24_API_URL'));
-  console.log('Final API URL:', beds24ApiUrl);
-  console.log('Full URL to call:', `${beds24ApiUrl}/authentication/setup`);
+  console.log('API URL:', BEDS24_API_URL);
 
   try {
     // Call Beds24 API to exchange invite code for tokens
-    // Send invite code in header, NOT in URL path to avoid URL encoding issues
-    const response = await fetch(`${beds24ApiUrl}/authentication/setup`, {
+    const response = await fetch(`${BEDS24_API_URL}/authentication/setup`, {
       method: 'GET',
       headers: {
         'Accept': 'application/json',
+        'organization': BEDS24_ORGANIZATION,
         'inviteCode': inviteCode,
       },
     });
@@ -134,13 +130,12 @@ async function handleRefreshToken(refreshToken?: string) {
 
   console.log('Refreshing access token');
 
-  const beds24ApiUrl = Deno.env.get('BEDS24_API_URL') || 'https://api.beds24.com/v2';
-
   // Call Beds24 API to refresh token
-  const response = await fetch(`${beds24ApiUrl}/authentication/token`, {
+  const response = await fetch(`${BEDS24_API_URL}/authentication/token`, {
     method: 'GET',
     headers: {
       'Accept': 'application/json',
+      'organization': BEDS24_ORGANIZATION,
       'refreshToken': refreshToken,
     },
   });
@@ -176,8 +171,6 @@ async function handleTestConnection(connectionId?: string) {
 
   console.log(`Testing connection: ${connectionId}`);
 
-  const beds24ApiUrl = Deno.env.get('BEDS24_API_URL') || 'https://api.beds24.com/v2';
-
   // Get connection from database
   const { data: connection, error } = await supabase
     .from('beds24_connections')
@@ -198,10 +191,11 @@ async function handleTestConnection(connectionId?: string) {
     console.log('Token expired, refreshing...');
     
     // Refresh token
-    const refreshResponse = await fetch(`${beds24ApiUrl}/authentication/token`, {
+    const refreshResponse = await fetch(`${BEDS24_API_URL}/authentication/token`, {
       method: 'GET',
       headers: {
         'Accept': 'application/json',
+        'organization': BEDS24_ORGANIZATION,
         'refreshToken': connection.refresh_token,
       },
     });
@@ -238,10 +232,11 @@ async function handleTestConnection(connectionId?: string) {
   }
 
   // Test the connection by making a simple API call
-  const testResponse = await fetch(`${beds24ApiUrl}/accounts`, {
+  const testResponse = await fetch(`${BEDS24_API_URL}/accounts`, {
     method: 'GET',
     headers: {
       'Accept': 'application/json',
+      'organization': BEDS24_ORGANIZATION,
       'token': accessToken,
     },
   });
