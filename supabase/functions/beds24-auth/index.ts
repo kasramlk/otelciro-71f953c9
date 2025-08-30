@@ -68,8 +68,20 @@ Deno.serve(async (req) => {
  */
 async function handleExchangeInvitation(invitationToken: string, hotelId: string) {
   console.log('Exchanging invitation token for refresh token')
+  console.log('Invitation token length:', invitationToken.length)
+  console.log('Invitation token preview:', invitationToken.substring(0, 20) + '...')
   
   try {
+    // Prepare the request body
+    const requestBody = {
+      grant_type: "invitation",
+      invitation: invitationToken
+    }
+    
+    const bodyString = JSON.stringify(requestBody)
+    console.log('Request body being sent:', bodyString)
+    console.log('Request body length:', bodyString.length)
+    
     // Step 1: Exchange invitation token for refresh token with Beds24
     const response = await fetch(`${BEDS24_API_URL}/token`, {
       method: 'POST',
@@ -77,19 +89,32 @@ async function handleExchangeInvitation(invitationToken: string, hotelId: string
         'Content-Type': 'application/json',
         'Accept': 'application/json',
       },
-      body: JSON.stringify({
-        grant_type: "invitation",
-        invitation: invitationToken
-      })
+      body: bodyString
     })
+    
+    console.log('Beds24 response status:', response.status)
+    console.log('Beds24 response headers:', Object.fromEntries(response.headers.entries()))
 
     if (!response.ok) {
       const errorData = await response.text()
-      console.error('Beds24 invitation exchange failed:', errorData)
+      console.error('Beds24 invitation exchange failed:', {
+        status: response.status,
+        statusText: response.statusText,
+        error: errorData,
+        requestUrl: `${BEDS24_API_URL}/token`,
+        requestBody: requestBody
+      })
+      
       return new Response(
         JSON.stringify({ 
           success: false, 
-          error: `Beds24 API Error: ${response.status} - ${errorData}` 
+          error: `Beds24 API Error: ${response.status} - ${errorData}`,
+          details: {
+            endpoint: `${BEDS24_API_URL}/token`,
+            method: 'POST',
+            status: response.status,
+            body_sent: requestBody
+          }
         }),
         { 
           status: 400, 
@@ -114,7 +139,8 @@ async function handleExchangeInvitation(invitationToken: string, hotelId: string
       return new Response(
         JSON.stringify({ 
           success: false, 
-          error: 'Invalid response from Beds24: missing tokens' 
+          error: 'Invalid response from Beds24: missing tokens',
+          response_data: authData
         }),
         { 
           status: 400, 
@@ -122,6 +148,12 @@ async function handleExchangeInvitation(invitationToken: string, hotelId: string
         }
       )
     }
+
+    console.log('Successfully extracted tokens:', {
+      hasRefreshToken: !!refreshToken,
+      hasAccessToken: !!accessToken,
+      accountId: accountId
+    })
 
     // Step 2: Store the connection in our database
     const { data: connection, error: dbError } = await supabase
@@ -155,6 +187,8 @@ async function handleExchangeInvitation(invitationToken: string, hotelId: string
       )
     }
 
+    console.log('Connection stored successfully:', connection.id)
+
     // Step 3: Fetch and store properties for this connection
     await syncProperties(connection.id, accessToken)
 
@@ -165,6 +199,9 @@ async function handleExchangeInvitation(invitationToken: string, hotelId: string
           connectionId: connection.id,
           accountId: accountId,
           accountName: accountName,
+          refresh_token: refreshToken,
+          access_token: accessToken,
+          expires_in: expiresIn,
           message: 'Connection established successfully'
         }
       }),
@@ -175,10 +212,16 @@ async function handleExchangeInvitation(invitationToken: string, hotelId: string
 
   } catch (error) {
     console.error('Exchange invitation error:', error)
+    console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace')
+    
     return new Response(
       JSON.stringify({ 
         success: false, 
-        error: error instanceof Error ? error.message : 'Exchange failed' 
+        error: error instanceof Error ? error.message : 'Exchange failed',
+        details: {
+          error_type: typeof error,
+          error_name: error instanceof Error ? error.name : 'Unknown'
+        }
       }),
       { 
         status: 500, 
