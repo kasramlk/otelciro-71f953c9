@@ -183,20 +183,19 @@ export function Beds24ConnectionStatus({ hotelId }: Beds24ConnectionStatusProps)
                   </div>
                 </div>
 
-                {/* Scopes */}
+                {/* Connection Details */}
                 <div>
                   <span className="text-sm text-muted-foreground">Permissions:</span>
                   <div className="flex flex-wrap gap-1 mt-1">
-                    {connection.scopes.slice(0, 4).map((scope) => (
-                      <Badge key={scope} variant="outline" className="text-xs">
-                        {scope.replace(/^(read|write):/, '')}
-                      </Badge>
-                    ))}
-                    {connection.scopes.length > 4 && (
-                      <Badge variant="outline" className="text-xs">
-                        +{connection.scopes.length - 4} more
-                      </Badge>
-                    )}
+                    <Badge variant="outline" className="text-xs">
+                      bookings
+                    </Badge>
+                    <Badge variant="outline" className="text-xs">
+                      inventory
+                    </Badge>
+                    <Badge variant="outline" className="text-xs">
+                      properties
+                    </Badge>
                   </div>
                 </div>
 

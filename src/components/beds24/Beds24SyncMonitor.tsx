@@ -257,7 +257,6 @@ export function Beds24SyncMonitor({ hotelId }: Beds24SyncMonitorProps) {
                         {log.records_processed > 0 && (
                           <>
                             {log.records_succeeded} successful, {log.records_failed} failed
-                            {log.api_credits_used > 0 && ` • ${log.api_credits_used} credits`}
                           </>
                         )}
                       </span>
