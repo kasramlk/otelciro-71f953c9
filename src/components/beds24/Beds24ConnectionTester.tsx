@@ -18,21 +18,21 @@ interface ConnectionTesterProps {
 }
 
 export function Beds24ConnectionTester({ hotelId = "550e8400-e29b-41d4-a716-446655440000" }: ConnectionTesterProps) {
-  const [inviteCode, setInviteCode] = useState("");
-  const [result, setResult] = useState<any>(null);
+  const [apiKey, setApiKey] = useState("41a8bc09-582e-4bea-a932-ea1239246fe0");
+  const [result, setResult] = useState<{ success: boolean; error?: string; data?: any } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [activeConnection, setActiveConnection] = useState<any>(null);
 
   const exchangeInviteCode = useExchangeInviteCode();
 
   const handleTestConnection = async () => {
-    if (!inviteCode.trim()) return;
+    if (!apiKey.trim()) return;
 
     setError(null);
     setResult(null);
 
     try {
-      const response = await exchangeInviteCode.mutateAsync(inviteCode);
+      const response = await exchangeInviteCode.mutateAsync(apiKey);
       setResult(response);
       
       // If successful, this would be where we'd create a connection
@@ -61,22 +61,22 @@ export function Beds24ConnectionTester({ hotelId = "550e8400-e29b-41d4-a716-4466
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="testInviteCode">Beds24 Invite Code</Label>
+            <Label htmlFor="testApiKey">Beds24 API Key</Label>
             <Input
-              id="testInviteCode"
-              placeholder="Enter Beds24 invite code to test"
-              value={inviteCode}
-              onChange={(e) => setInviteCode(e.target.value)}
+              id="testApiKey"
+              placeholder="Enter your Beds24 API key (e.g., 41a8bc09-582e-4bea-a932-ea1239246fe0)"
+              value={apiKey}
+              onChange={(e) => setApiKey(e.target.value)}
               className="font-mono text-sm"
             />
             <p className="text-xs text-muted-foreground">
-              This will authenticate with Beds24 API and set up the connection for full channel management
+              This will authenticate with Beds24 API using your API key and set up the connection for full channel management
             </p>
           </div>
 
           <Button 
             onClick={handleTestConnection}
-            disabled={!inviteCode.trim() || exchangeInviteCode.isPending}
+            disabled={!apiKey.trim() || exchangeInviteCode.isPending}
             className="w-full"
           >
             {exchangeInviteCode.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}

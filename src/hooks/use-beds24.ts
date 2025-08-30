@@ -205,17 +205,17 @@ export function useExchangeInviteCode() {
   const { toast } = useToast();
   
   return useMutation({
-    mutationFn: (inviteCode: string) => beds24Service.exchangeInviteCode(inviteCode),
+    mutationFn: (apiKey: string) => beds24Service.authenticateWithApiKey(apiKey),
     onSuccess: (result) => {
       if (result.success) {
-        toast({ title: "Success", description: "Invite code exchanged successfully" });
+        toast({ title: "Success", description: "API key authenticated successfully" });
       } else {
-        toast({ title: "Error", description: `Failed to exchange invite code: ${result.error}`, variant: "destructive" });
+        toast({ title: "Error", description: `Failed to authenticate API key: ${result.error}`, variant: "destructive" });
       }
     },
     onError: (error) => {
-      console.error('Failed to exchange invite code:', error);
-      toast({ title: "Error", description: "Failed to exchange invite code", variant: "destructive" });
+      console.error('Failed to authenticate API key:', error);
+      toast({ title: "Error", description: "Failed to authenticate API key", variant: "destructive" });
     },
   });
 }

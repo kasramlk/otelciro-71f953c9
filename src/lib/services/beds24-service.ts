@@ -104,6 +104,23 @@ export class Beds24Service {
     }
   }
 
+  async authenticateWithApiKey(apiKey: string): Promise<Beds24ApiResponse<{ token: string; refreshToken: string }>> {
+    try {
+      const response = await supabase.functions.invoke('beds24-auth', {
+        body: { action: 'authenticate_api_key', apiKey }
+      });
+
+      if (response.error) {
+        throw new Error(response.error.message);
+      }
+
+      return response.data;
+    } catch (error) {
+      console.error('Error authenticating with API key:', error);
+      return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
+    }
+  }
+
   async refreshToken(refreshToken: string): Promise<Beds24ApiResponse<{ token: string; expiresIn: number }>> {
     try {
       const response = await supabase.functions.invoke('beds24-auth', {
