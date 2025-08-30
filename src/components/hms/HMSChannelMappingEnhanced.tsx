@@ -31,9 +31,10 @@ export function HMSChannelMappingEnhanced({ hotelId }: HMSChannelMappingEnhanced
     channelMappings, 
     publishQueue, 
     enqueuePublish, 
-    processPublishQueue,
-    isPublishing: false
+    processPublishQueue
   } = useChannelStore();
+  
+  const isPublishing = publishQueue.some(item => item.status === 'sending');
 
   // Beds24 data hooks
   const { data: connections = [] } = useBeds24Connections(hotelId);
@@ -243,9 +244,15 @@ export function HMSChannelMappingEnhanced({ hotelId }: HMSChannelMappingEnhanced
                             variant="outline" 
                             size="sm" 
                             className="flex-1"
-                        onClick={() => {
-                          // Add to queue logic here
-                        }}
+                            onClick={() => enqueuePublish([{
+                              kind: 'rate',
+                              dateFrom: new Date().toISOString().split('T')[0],
+                              dateTo: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+                              scope: { channelId: channel.id, roomTypeId: 'all' },
+                              status: 'queued',
+                              attempt: 0,
+                              idempotencyKey: `rate-${channel.id}-${Date.now()}`
+                            }])}
                           >
                             <Zap className="h-3 w-3 mr-1" />
                             Push Rates
@@ -254,12 +261,15 @@ export function HMSChannelMappingEnhanced({ hotelId }: HMSChannelMappingEnhanced
                             variant="outline" 
                             size="sm" 
                             className="flex-1"
-                            onClick={() => enqueuePublish({
-                              channelId: channel.id,
-                              type: 'availability',
-                              priority: 'normal',
-                              data: { roomTypeId: 'all', dateRange: '7days' }
-                            })}
+                            onClick={() => enqueuePublish([{
+                              kind: 'availability',
+                              dateFrom: new Date().toISOString().split('T')[0],
+                              dateTo: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+                              scope: { channelId: channel.id, roomTypeId: 'all' },
+                              status: 'queued',
+                              attempt: 0,
+                              idempotencyKey: `avail-${channel.id}-${Date.now()}`
+                            }])}
                           >
                             <Building2 className="h-3 w-3 mr-1" />
                             Push Avail
@@ -301,27 +311,24 @@ export function HMSChannelMappingEnhanced({ hotelId }: HMSChannelMappingEnhanced
                 <Card key={mapping.id} className="relative border-dashed opacity-70">
                   <CardHeader className="pb-3">
                     <div className="flex items-center justify-between">
-                      <CardTitle className="text-base">{mapping.channelName}</CardTitle>
+                      <CardTitle className="text-base">Mapping {mapping.id}</CardTitle>
                       <Badge variant="outline">Legacy</Badge>
                     </div>
                     <CardDescription className="text-sm">
-                      {mapping.channelType} • {mapping.roomsMapped} rooms mapped
+                      Room: {mapping.roomTypeId} • Rate: {mapping.ratePlanId}
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="pt-0">
                     <div className="space-y-3">
                       <div className="flex justify-between text-sm">
-                        <span className="text-muted-foreground">Sync Progress</span>
-                        <span className="font-medium">{mapping.lastSync}%</span>
+                        <span className="text-muted-foreground">Status</span>
+                        <span className="font-medium">{mapping.isActive ? 'Active' : 'Inactive'}</span>
                       </div>
-                      <Progress value={mapping.lastSync} className="h-2" />
                       
                       <div className="flex items-center justify-between text-xs text-muted-foreground">
-                        <span>Last sync: {new Date(mapping.lastSyncTime).toLocaleTimeString()}</span>
+                        <span>GDS Code: {mapping.gdsProductCode}</span>
                         <div className="flex items-center gap-1">
-                          {mapping.status === 'syncing' ? (
-                            <Clock className="h-3 w-3" />
-                          ) : mapping.status === 'connected' ? (
+                          {mapping.isActive ? (
                             <CheckCircle className="h-3 w-3 text-green-500" />
                           ) : (
                             <AlertCircle className="h-3 w-3 text-red-500" />
@@ -336,12 +343,15 @@ export function HMSChannelMappingEnhanced({ hotelId }: HMSChannelMappingEnhanced
                           variant="outline" 
                           size="sm" 
                           className="flex-1"
-                          onClick={() => enqueuePublish({
-                            channelId: mapping.id,
-                            type: 'rates',
-                            priority: 'normal',
-                            data: { roomTypeId: 'all', dateRange: '7days' }
-                          })}
+                          onClick={() => enqueuePublish([{
+                            kind: 'rate',
+                            dateFrom: new Date().toISOString().split('T')[0],
+                            dateTo: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+                            scope: { mappingId: mapping.id, roomTypeId: mapping.roomTypeId },
+                            status: 'queued',
+                            attempt: 0,
+                            idempotencyKey: `rate-${mapping.id}-${Date.now()}`
+                          }])}
                         >
                           Push Rates
                         </Button>
@@ -349,12 +359,15 @@ export function HMSChannelMappingEnhanced({ hotelId }: HMSChannelMappingEnhanced
                           variant="outline" 
                           size="sm" 
                           className="flex-1"
-                          onClick={() => enqueuePublish({
-                            channelId: mapping.id,
-                            type: 'availability',
-                            priority: 'normal',
-                            data: { roomTypeId: 'all', dateRange: '7days' }
-                          })}
+                          onClick={() => enqueuePublish([{
+                            kind: 'availability',
+                            dateFrom: new Date().toISOString().split('T')[0],
+                            dateTo: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+                            scope: { mappingId: mapping.id, roomTypeId: mapping.roomTypeId },
+                            status: 'queued',
+                            attempt: 0,
+                            idempotencyKey: `avail-${mapping.id}-${Date.now()}`
+                          }])}
                         >
                           Push Avail
                         </Button>
@@ -404,24 +417,24 @@ export function HMSChannelMappingEnhanced({ hotelId }: HMSChannelMappingEnhanced
                 <Card key={item.id}>
                   <CardContent className="flex items-center justify-between py-4">
                     <div className="flex items-center gap-3">
-                      <Badge variant="outline">{item.type}</Badge>
+                      <Badge variant="outline">{item.kind}</Badge>
                       <div>
-                        <p className="font-medium">Channel: {item.channelId}</p>
+                        <p className="font-medium">Scope: {JSON.stringify(item.scope)}</p>
                         <p className="text-sm text-muted-foreground">
-                          Priority: {item.priority} • Created: {new Date(item.createdAt).toLocaleTimeString()}
+                          Date: {item.dateFrom} to {item.dateTo} • Attempt: {item.attempt}
                         </p>
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
                       <Badge 
                         variant={
-                          item.status === 'completed' ? 'default' :
+                          item.status === 'success' ? 'default' :
                           item.status === 'failed' ? 'destructive' : 'secondary'
                         }
                       >
                         {item.status}
                       </Badge>
-                      {item.status === 'processing' && (
+                      {item.status === 'sending' && (
                         <RefreshCw className="h-4 w-4 animate-spin" />
                       )}
                     </div>
