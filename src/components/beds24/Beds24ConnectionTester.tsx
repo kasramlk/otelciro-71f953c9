@@ -18,7 +18,7 @@ interface ConnectionTesterProps {
 }
 
 export function Beds24ConnectionTester({ hotelId = "550e8400-e29b-41d4-a716-446655440000" }: ConnectionTesterProps) {
-  const [inviteCode, setInviteCode] = useState("KzoV9HA5KlYh2/ppGMo7t+KdFC8LTEgGh8t3EqO8Ezu/xmCEIUs0RBegeHncwR7lALfTbA9shFZ7YpAaI9ETbU7ZzwOPHjIQkhAeZpBaTtxPMOxDaugcuiKUeGM8bV5tQb7JdBTRkCg6aI7ZgGN3+smyTQKKzS42hKj0DSEaPsg=");
+  const [inviteCode, setInviteCode] = useState("");
   const [result, setResult] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
   const [activeConnection, setActiveConnection] = useState<any>(null);
