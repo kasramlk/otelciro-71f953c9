@@ -90,7 +90,7 @@ async function handleExchangeInviteCode(inviteCode?: string) {
       headers: {
         'Accept': 'application/json',
         'organization': BEDS24_ORGANIZATION,
-        'inviteCode': inviteCode,
+        'code': inviteCode,
       },
     });
 
@@ -136,7 +136,7 @@ async function handleRefreshToken(refreshToken?: string) {
     headers: {
       'Accept': 'application/json',
       'organization': BEDS24_ORGANIZATION,
-      'refreshToken': refreshToken,
+      'refresh': refreshToken,
     },
   });
 
@@ -196,7 +196,7 @@ async function handleTestConnection(connectionId?: string) {
       headers: {
         'Accept': 'application/json',
         'organization': BEDS24_ORGANIZATION,
-        'refreshToken': connection.refresh_token,
+        'refresh': connection.refresh_token,
       },
     });
 
