@@ -6,6 +6,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Plus, Settings, Activity, Zap, Building2, Link2 } from "lucide-react";
 import { Beds24SetupWizard } from "@/components/beds24/Beds24SetupWizard";
 import { Beds24ConnectionTester } from "@/components/beds24/Beds24ConnectionTester";
+import { Beds24ChannelManager } from "@/components/beds24/Beds24ChannelManager";
+import { Beds24SyncMonitor } from "@/components/beds24/Beds24SyncMonitor";
+import { Beds24ConnectionStatus } from "@/components/beds24/Beds24ConnectionStatus";
+import { HMSChannelMappingEnhanced } from "@/components/hms/HMSChannelMappingEnhanced";
 import { useBeds24Connections } from "@/hooks/use-beds24";
 import { useAuth } from "@/hooks/use-auth";
 
@@ -197,76 +201,8 @@ export default function Beds24Dashboard() {
           </TabsContent>
 
           <TabsContent value="connections" className="space-y-6">
-            {connections.length === 0 ? (
-              <Card>
-                <CardContent className="flex flex-col items-center justify-center py-12">
-                  <Building2 className="h-12 w-12 text-muted-foreground mb-4" />
-                  <h3 className="text-lg font-medium mb-2">No Connections Yet</h3>
-                  <p className="text-muted-foreground text-center mb-6">
-                    Get started by creating your first Beds24 connection to sync properties and channels.
-                  </p>
-                  <Button onClick={() => setShowSetupWizard(true)}>
-                    <Plus className="h-4 w-4 mr-2" />
-                    Create First Connection
-                  </Button>
-                </CardContent>
-              </Card>
-            ) : (
-              <div className="grid gap-4">
-                {connections.map((connection) => (
-                  <Card key={connection.id}>
-                    <CardHeader>
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <CardTitle className="text-base">{connection.account_email}</CardTitle>
-                          <CardDescription>
-                            Account ID: {connection.account_id}
-                          </CardDescription>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Badge 
-                            variant={connection.connection_status === 'active' ? 'secondary' : 'outline'}
-                          >
-                            {connection.connection_status}
-                          </Badge>
-                          <Badge variant="outline">
-                            {connection.api_credits_remaining} credits
-                          </Badge>
-                        </div>
-                      </div>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="grid grid-cols-2 gap-4 text-sm">
-                        <div>
-                          <span className="text-muted-foreground">Scopes:</span>
-                          <div className="flex flex-wrap gap-1 mt-1">
-                            {connection.scopes.slice(0, 3).map((scope) => (
-                              <Badge key={scope} variant="outline" className="text-xs">
-                                {scope}
-                              </Badge>
-                            ))}
-                            {connection.scopes.length > 3 && (
-                              <Badge variant="outline" className="text-xs">
-                                +{connection.scopes.length - 3} more
-                              </Badge>
-                            )}
-                          </div>
-                        </div>
-                        <div>
-                          <span className="text-muted-foreground">Last Sync:</span>
-                          <p className="mt-1">
-                            {connection.last_sync_at 
-                              ? new Date(connection.last_sync_at).toLocaleString()
-                              : 'Never'
-                            }
-                          </p>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            )}
+            <Beds24ConnectionStatus hotelId={hotelId} />
+            <HMSChannelMappingEnhanced hotelId={hotelId} />
           </TabsContent>
 
           <TabsContent value="testing">
