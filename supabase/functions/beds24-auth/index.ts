@@ -65,39 +65,47 @@ async function handleExchangeInviteCode(inviteCode?: string) {
   }
 
   console.log('Exchanging invite code for tokens');
+  console.log('Invite code length:', inviteCode.length);
+  console.log('API URL:', `${BEDS24_API_URL}/authentication/setup`);
 
-  // Call Beds24 API to exchange invite code for tokens
-  const response = await fetch(`${BEDS24_API_URL}/authentication/setup`, {
-    method: 'GET',
-    headers: {
-      'Accept': 'application/json',
-      'inviteCode': inviteCode,
-    },
-  });
-
-  if (!response.ok) {
-    const errorText = await response.text();
-    console.error('Beds24 API error:', response.status, errorText);
-    throw new Error(`Failed to exchange invite code: ${response.status} ${errorText}`);
-  }
-
-  const data = await response.json();
-  
-  console.log('Successfully exchanged invite code');
-
-  return new Response(
-    JSON.stringify({
-      success: true,
-      data: {
-        token: data.token,
-        refreshToken: data.refreshToken,
-        expiresIn: data.expiresIn,
+  try {
+    // Call Beds24 API to exchange invite code for tokens
+    // Send invite code in header, NOT in URL path to avoid URL encoding issues
+    const response = await fetch(`${BEDS24_API_URL}/authentication/setup`, {
+      method: 'GET',
+      headers: {
+        'Accept': 'application/json',
+        'inviteCode': inviteCode,
       },
-    }),
-    {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('Beds24 API error:', response.status, errorText);
+      throw new Error(`Failed to exchange invite code: ${response.status} ${errorText}`);
     }
-  );
+
+    const data = await response.json();
+    
+    console.log('Successfully exchanged invite code');
+
+    return new Response(
+      JSON.stringify({
+        success: true,
+        data: {
+          token: data.token,
+          refreshToken: data.refreshToken,
+          expiresIn: data.expiresIn,
+        },
+      }),
+      {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      }
+    );
+  } catch (error) {
+    console.error('Error in handleExchangeInviteCode:', error);
+    throw error;
+  }
 }
 
 async function handleRefreshToken(refreshToken?: string) {
