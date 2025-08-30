@@ -72,140 +72,156 @@ async function handleExchangeInvitation(invitationToken: string, hotelId: string
   console.log('Invitation token preview:', invitationToken.substring(0, 20) + '...')
   
   try {
-    // Prepare the request body
-    const requestBody = {
-      grant_type: "invitation",
-      invitation: invitationToken
-    }
-    
-    const bodyString = JSON.stringify(requestBody)
-    console.log('Request body being sent:', bodyString)
-    console.log('Request body length:', bodyString.length)
-    
-    // Step 1: Exchange invitation token for refresh token with Beds24
-    const response = await fetch(`${BEDS24_API_URL}/token`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
+    // Try multiple API approaches since Beds24 keeps saying "Token is missing"
+    const approaches = [
+      // Approach 1: Standard OAuth2 format
+      {
+        url: `${BEDS24_API_URL}/token`,
+        body: { grant_type: "invitation", invitation: invitationToken },
+        description: "Standard OAuth2 /token endpoint"
       },
-      body: bodyString
-    })
-    
-    console.log('Beds24 response status:', response.status)
-    console.log('Beds24 response headers:', Object.fromEntries(response.headers.entries()))
+      // Approach 2: Alternative field name
+      {
+        url: `${BEDS24_API_URL}/token`, 
+        body: { grant_type: "invitation", invitation_token: invitationToken },
+        description: "Alternative field name 'invitation_token'"
+      },
+      // Approach 3: Auth endpoint
+      {
+        url: `${BEDS24_API_URL}/auth/token`,
+        body: { grant_type: "invitation", invitation: invitationToken },
+        description: "Auth-specific endpoint"
+      },
+      // Approach 4: Just the token field
+      {
+        url: `${BEDS24_API_URL}/token`,
+        body: { token: invitationToken },
+        description: "Simple token field"
+      },
+      // Approach 5: Try API v1
+      {
+        url: `https://api.beds24.com/v1/token`,
+        body: { grant_type: "invitation", invitation: invitationToken },
+        description: "API v1 endpoint"
+      }
+    ]
 
-    if (!response.ok) {
-      const errorData = await response.text()
-      console.error('Beds24 invitation exchange failed:', {
-        status: response.status,
-        statusText: response.statusText,
-        error: errorData,
-        requestUrl: `${BEDS24_API_URL}/token`,
-        requestBody: requestBody
+    let lastError = null
+    
+    for (const approach of approaches) {
+      console.log(`Trying approach: ${approach.description}`)
+      console.log(`URL: ${approach.url}`)
+      console.log(`Body: ${JSON.stringify(approach.body)}`)
+      
+      const response = await fetch(approach.url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: JSON.stringify(approach.body)
       })
       
-      return new Response(
-        JSON.stringify({ 
-          success: false, 
-          error: `Beds24 API Error: ${response.status} - ${errorData}`,
-          details: {
-            endpoint: `${BEDS24_API_URL}/token`,
-            method: 'POST',
-            status: response.status,
-            body_sent: requestBody
+      console.log(`Response status: ${response.status}`)
+      
+      if (response.ok) {
+        console.log(`SUCCESS with approach: ${approach.description}`)
+        const authData = await response.json()
+        console.log('Beds24 authentication response:', authData)
+        
+        // Handle different possible response formats from Beds24
+        const refreshToken = authData.refresh_token || authData.refreshToken
+        const accessToken = authData.access_token || authData.accessToken  
+        const expiresIn = authData.expires_in || authData.expiresIn || 3600
+        const accountId = authData.account_id || authData.accountId
+        const accountName = authData.account_name || authData.accountName || ''
+        const accountEmail = authData.account_email || authData.accountEmail || ''
+
+        if (!refreshToken || !accessToken) {
+          console.error('Missing required tokens in response:', authData)
+          continue // Try next approach
+        }
+
+        // Store the connection in database
+        const { data: connection, error: dbError } = await supabase
+          .from('beds24_connections')
+          .insert({
+            hotel_id: hotelId,
+            invitation_token: invitationToken,
+            refresh_token: refreshToken,
+            access_token: accessToken,
+            token_expires_at: new Date(Date.now() + (expiresIn * 1000)).toISOString(),
+            account_id: accountId,
+            account_name: accountName,
+            account_email: accountEmail,
+            connection_status: 'active',
+            is_active: true
+          })
+          .select()
+          .single()
+
+        if (dbError) {
+          console.error('Database error storing connection:', dbError)
+          return new Response(
+            JSON.stringify({ 
+              success: false, 
+              error: `Database error: ${dbError.message}` 
+            }),
+            { 
+              status: 500, 
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+            }
+          )
+        }
+
+        console.log('Connection stored successfully:', connection.id)
+
+        // Sync properties for this connection
+        await syncProperties(connection.id, accessToken)
+
+        return new Response(
+          JSON.stringify({ 
+            success: true, 
+            data: {
+              connectionId: connection.id,
+              accountId: accountId,
+              accountName: accountName,
+              refresh_token: refreshToken,
+              access_token: accessToken,
+              expires_in: expiresIn,
+              message: `Connection established successfully using: ${approach.description}`
+            }
+          }),
+          { 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
           }
-        }),
-        { 
-          status: 400, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        )
+      } else {
+        const errorData = await response.text()
+        lastError = {
+          approach: approach.description,
+          status: response.status,
+          statusText: response.statusText,
+          error: errorData,
+          requestUrl: approach.url,
+          requestBody: approach.body
         }
-      )
+        console.error(`Failed approach: ${approach.description}`, lastError)
+      }
     }
-
-    const authData = await response.json()
-    console.log('Beds24 authentication response:', authData)
-
-    // Handle different possible response formats from Beds24
-    const refreshToken = authData.refresh_token || authData.refreshToken
-    const accessToken = authData.access_token || authData.accessToken  
-    const expiresIn = authData.expires_in || authData.expiresIn || 3600
-    const accountId = authData.account_id || authData.accountId
-    const accountName = authData.account_name || authData.accountName || ''
-    const accountEmail = authData.account_email || authData.accountEmail || ''
-
-    if (!refreshToken || !accessToken) {
-      console.error('Missing required tokens in response:', authData)
-      return new Response(
-        JSON.stringify({ 
-          success: false, 
-          error: 'Invalid response from Beds24: missing tokens',
-          response_data: authData
-        }),
-        { 
-          status: 400, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
-      )
-    }
-
-    console.log('Successfully extracted tokens:', {
-      hasRefreshToken: !!refreshToken,
-      hasAccessToken: !!accessToken,
-      accountId: accountId
-    })
-
-    // Step 2: Store the connection in our database
-    const { data: connection, error: dbError } = await supabase
-      .from('beds24_connections')
-      .insert({
-        hotel_id: hotelId,
-        invitation_token: invitationToken,
-        refresh_token: refreshToken,
-        access_token: accessToken,
-        token_expires_at: new Date(Date.now() + (expiresIn * 1000)).toISOString(),
-        account_id: accountId,
-        account_name: accountName,
-        account_email: accountEmail,
-        connection_status: 'active',
-        is_active: true
-      })
-      .select()
-      .single()
-
-    if (dbError) {
-      console.error('Database error storing connection:', dbError)
-      return new Response(
-        JSON.stringify({ 
-          success: false, 
-          error: `Database error: ${dbError.message}` 
-        }),
-        { 
-          status: 500, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
-      )
-    }
-
-    console.log('Connection stored successfully:', connection.id)
-
-    // Step 3: Fetch and store properties for this connection
-    await syncProperties(connection.id, accessToken)
 
     return new Response(
       JSON.stringify({ 
-        success: true, 
-        data: {
-          connectionId: connection.id,
-          accountId: accountId,
-          accountName: accountName,
-          refresh_token: refreshToken,
-          access_token: accessToken,
-          expires_in: expiresIn,
-          message: 'Connection established successfully'
-        }
+        success: false, 
+        error: `All approaches failed. Last error: ${lastError?.error || 'Unknown'}`,
+        allErrors: approaches.map((approach, index) => ({
+          approach: approach.description,
+          url: approach.url,
+          body: approach.body
+        }))
       }),
       { 
+        status: 400, 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
       }
     )
