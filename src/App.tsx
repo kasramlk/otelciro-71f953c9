@@ -145,329 +145,302 @@ const AppContent = () => {
     );
   }
 
-  const isPublicRoute = ['/', '/auth', '/airbnb-test'].includes(location.pathname);
-
-  if (!session && !isPublicRoute) {
-    return <Navigate to="/auth" replace />;
-  }
-
-  // Role-based routing
-  if (session) {
-    const role = userRole || 'hotel_manager';
-    
-    // Agency routes
-    if (location.pathname.startsWith('/agency')) {
-      if (role !== 'travel_agency') {
-        return <Navigate to="/" replace />;
-      }
-      return (
-        <TravelAgencyLayout>
-          <Routes>
-            <Route path="/agency" element={<AgencyDashboard />} />
-            <Route path="/agency/search" element={<HotelSearch />} />
-            <Route path="/agency/bookings" element={<AgencyBookings />} />
-            <Route path="/agency/contracts" element={<AgencyNegotiations />} />
-            <Route path="/agency/payments" element={<AgencyPayments />} />
-            <Route path="/agency/analytics" element={<AgencyReports />} />
-            <Route path="/agency/profile" element={<AgencyProfile />} />
-            <Route path="/agency/searches" element={<AgencySearches />} />
-            <Route path="/agency/partners" element={<AgencyPartners />} />
-          </Routes>
-        </TravelAgencyLayout>
-      );
-    }
-    
-    // Admin routes
-    if (location.pathname.startsWith('/admin')) {
-      if (role !== 'admin') {
-        return <Navigate to="/" replace />;
-      }
-      return (
-        <AdminLayout>
-          <Routes>
-            <Route path="/admin" element={<AdminDashboard />} />
-            <Route path="/admin/hotels" element={<HotelManagement />} />
-            <Route path="/admin/onboarding" element={<HotelOnboarding />} />
-            <Route path="/admin/users" element={<UserManagement />} />
-            <Route path="/admin/agencies" element={<AgencyManagement />} />
-            <Route path="/admin/audit" element={<AuditMonitoring />} />
-            <Route path="/admin/data" element={<div>Data Management</div>} />
-          </Routes>
-        </AdminLayout>
-      );
-    }
-    
-    // Hotel manager routes (default)
-    if (role === 'travel_agency' && location.pathname === '/') {
-      return <Navigate to="/agency" replace />;
-    }
-    
-    if (role === 'admin' && location.pathname === '/') {
-      return <Navigate to="/admin" replace />;
-    }
-  }
-
   return (
     <Routes>
+      {/* Public Routes */}
       <Route path="/auth" element={<Auth />} />
       <Route path="/auth/airbnb/callback" element={<AirbnbCallback />} />
       <Route path="/airbnb-test" element={<AirbnbTest />} />
-      <Route path="/" element={session ? (
-        <HotelManagerLayout>
-          <Index />
-        </HotelManagerLayout>
-      ) : <Index />} />
+      <Route path="/" element={session ? <Navigate to="/dashboard" replace /> : <Index />} />
       
-      {/* HMS Routes */}
-      <Route path="/dashboard" element={
-        <HMSLayout>
-          <HMSDashboard />
-        </HMSLayout>
-      } />
-      <Route path="/reservations" element={
-        <HMSLayout>
-          <HMSReservations />
-        </HMSLayout>
-      } />
-      <Route path="/reservations/new" element={
-        <HMSLayout>
-          <HMSNewReservation />
-        </HMSLayout>
-      } />
-      <Route path="/channel/ari" element={
-        <HMSLayout>
-          <ChannelARICalendar />
-        </HMSLayout>
-      } />
-      <Route path="/channel/mapping" element={
-        <HMSLayout>
-          <ChannelMapping />
-        </HMSLayout>
-      } />
-      <Route path="/channel/reconcile" element={
-        <HMSLayout>
-          <ChannelReconciliation />
-        </HMSLayout>
-      } />
-      <Route path="/beds24" element={
-        <HMSLayout>
-          <Beds24Dashboard />
-        </HMSLayout>
-      } />
-      <Route path="/channel/orders" element={
-        <HMSLayout>
-          <ChannelOrders />
-        </HMSLayout>
-      } />
-      <Route path="/room-plan" element={
-        <HMSLayout>
-          <HMSRoomPlan />
-        </HMSLayout>
-      } />
-      <Route path="/housekeeping" element={
-        <HMSLayout>
-          <HMSHousekeeping />
-        </HMSLayout>
-      } />
-      <Route path="/front-office" element={
-        <HMSLayout>
-          <HMSFrontOffice />
-        </HMSLayout>
-      } />
-      <Route path="/guests" element={
-        <HMSLayout>
-          <HMSGuests />
-        </HMSLayout>
-      } />
-      <Route path="/guest-crm" element={
-        <HMSLayout>
-          <HMSGuestCRM />
-        </HMSLayout>
-      } />
-      <Route path="/analytics" element={
-        <HMSLayout>
-          <HMSAnalytics />
-        </HMSLayout>
-      } />
-      <Route path="/revenue-ai" element={
-        <HMSLayout>
-          <HMSRevenueAI />
-        </HMSLayout>
-      } />
-      <Route path="/notifications" element={
-        <HMSLayout>
-          <div className="p-6">
-            <h1 className="text-3xl font-bold mb-6">Notifications</h1>
-            <NotificationCenter />
-          </div>
-        </HMSLayout>
-      } />
-      <Route path="/online-users" element={
-        <HMSLayout>
-          <div className="p-6">
-            <h1 className="text-3xl font-bold mb-6">Online Users</h1>
-            <OnlineUsers />
-          </div>
-        </HMSLayout>
-      } />
-      <Route path="/profile" element={
-        <HMSLayout>
-          <UserProfilePage />
-        </HMSLayout>
-      } />
-      
-      {/* Social Media Routes - Protected */}
-      <Route path="/social-media" element={
-        <HMSLayout>
-          <ProtectedSocialMediaRoute>
-            <SocialMedia />
-          </ProtectedSocialMediaRoute>
-        </HMSLayout>
-      } />
-      <Route path="/social-media/brand-kit" element={
-        <HMSLayout>
-          <ProtectedSocialMediaRoute>
-            <SocialMediaBrandKit />
-          </ProtectedSocialMediaRoute>
-        </HMSLayout>
-      } />
-      <Route path="/social-media/calendar" element={
-        <HMSLayout>
-          <ProtectedSocialMediaRoute>
-            <SocialMediaCalendar />
-          </ProtectedSocialMediaRoute>
-        </HMSLayout>
-      } />
-      <Route path="/social-media/generator" element={
-        <HMSLayout>
-          <ProtectedSocialMediaRoute>
-            <SocialMediaGenerator />
-          </ProtectedSocialMediaRoute>
-        </HMSLayout>
-      } />
-      <Route path="/social-media/analytics" element={
-        <HMSLayout>
-          <ProtectedSocialMediaRoute>
-            <SocialMediaAnalyticsPage />
-          </ProtectedSocialMediaRoute>
-        </HMSLayout>
-      } />
-      <Route path="/social-media/advanced" element={
-        <HMSLayout>
-          <ProtectedSocialMediaRoute>
-            <SocialMediaAdvanced />
-          </ProtectedSocialMediaRoute>
-        </HMSLayout>
-      } />
-      <Route path="/social-media/integrations" element={
-        <HMSLayout>
-          <ProtectedSocialMediaRoute>
-            <SocialMediaIntegration />
-          </ProtectedSocialMediaRoute>
-        </HMSLayout>
-      } />
-      <Route path="/social-media/enterprise" element={
-        <HMSLayout>
-          <ProtectedSocialMediaRoute>
-            <SocialMediaEnterprise />
-          </ProtectedSocialMediaRoute>
-        </HMSLayout>
-      } />
-      
-      <Route path="/reports" element={
-        <HMSLayout>
-          <Reports />
-        </HMSLayout>
-      } />
-      <Route path="/settings" element={
-        <HMSLayout>
-          <Settings />
-        </HMSLayout>
-      } />
-      <Route path="/audit-log" element={
-        <HMSLayout>
-          <AuditLog />
-        </HMSLayout>
-      } />
-      <Route path="/ari-calendar" element={
-        <HotelManagerLayout>
-          <ChannelARICalendar />
-        </HotelManagerLayout>
-      } />
-      
-      {/* Hotel Management Routes */}
-      <Route path="/hotel/dashboard" element={
-        <HotelManagerLayout>
-          <HotelDashboard />
-        </HotelManagerLayout>
-      } />
-      <Route path="/hotel/reservations" element={
-        <HotelManagerLayout>
-          <HotelReservations />
-        </HotelManagerLayout>
-      } />
-      <Route path="/hotel/ari-calendar" element={
-        <HotelManagerLayout>
-          <ChannelARICalendar />
-        </HotelManagerLayout>
-      } />
-      <Route path="/hotel/notifications" element={
-        <HotelManagerLayout>
-          <HotelNotifications />
-        </HotelManagerLayout>
-      } />
-      <Route path="/hotel/folio" element={
-        <HotelManagerLayout>
-          <GuestFolio />
-        </HotelManagerLayout>
-      } />
-      <Route path="/hotel/housekeeping" element={
-        <HotelManagerLayout>
-          <HousekeepingModule />
-        </HotelManagerLayout>
-      } />
-      <Route path="/settings" element={
-        <HotelManagerLayout>
-          <Settings />
-        </HotelManagerLayout>
-      } />
-      <Route path="/room-status" element={
-        <HotelManagerLayout>
-          <RoomStatus />
-        </HotelManagerLayout>
-      } />
-      <Route path="/occupancy" element={
-        <HotelManagerLayout>
-          <Occupancy />
-        </HotelManagerLayout>
-      } />
-      <Route path="/sales" element={
-        <HotelManagerLayout>
-          <Sales />
-        </HotelManagerLayout>
-      } />
-      <Route path="/cashier" element={
-        <HotelManagerLayout>
-          <Cashier />
-        </HotelManagerLayout>
-      } />
-      <Route path="/operations" element={
-        <HotelManagerLayout>
-          <Operations />
-        </HotelManagerLayout>
-      } />
-      <Route path="/guest-experience" element={
-        <HotelManagerLayout>
-          <GuestExperience />
-        </HotelManagerLayout>
-      } />
-      <Route path="/qa" element={
-        <HotelManagerLayout>
-          <QATestSuite />
-        </HotelManagerLayout>
-      } />
-      
-      <Route path="*" element={<NotFound />} />
+      {/* Protected Routes - Redirect to auth if no session */}
+      {!session ? (
+        <Route path="*" element={<Navigate to="/auth" replace />} />
+      ) : (
+        <>
+          {/* Role-based routing for authenticated users */}
+          {userRole === 'travel_agency' && location.pathname !== '/' && !location.pathname.startsWith('/agency') && (
+            <Route path="*" element={<Navigate to="/agency" replace />} />
+          )}
+          
+          {userRole === 'admin' && location.pathname !== '/' && !location.pathname.startsWith('/admin') && (
+            <Route path="*" element={<Navigate to="/admin" replace />} />
+          )}
+          
+          {/* Agency Routes */}
+          <Route path="/agency" element={
+            userRole === 'travel_agency' ? (
+              <TravelAgencyLayout>
+                <AgencyDashboard />
+              </TravelAgencyLayout>
+            ) : <Navigate to="/dashboard" replace />
+          } />
+          <Route path="/agency/search" element={
+            userRole === 'travel_agency' ? (
+              <TravelAgencyLayout>
+                <HotelSearch />
+              </TravelAgencyLayout>
+            ) : <Navigate to="/dashboard" replace />
+          } />
+          <Route path="/agency/bookings" element={
+            userRole === 'travel_agency' ? (
+              <TravelAgencyLayout>
+                <AgencyBookings />
+              </TravelAgencyLayout>
+            ) : <Navigate to="/dashboard" replace />
+          } />
+          
+          {/* Admin Routes */}
+          <Route path="/admin" element={
+            userRole === 'admin' ? (
+              <AdminLayout>
+                <AdminDashboard />
+              </AdminLayout>
+            ) : <Navigate to="/dashboard" replace />
+          } />
+          <Route path="/admin/hotels" element={
+            userRole === 'admin' ? (
+              <AdminLayout>
+                <HotelManagement />
+              </AdminLayout>
+            ) : <Navigate to="/dashboard" replace />
+          } />
+          
+          {/* HMS Routes - Default for hotel managers */}
+          <Route path="/dashboard" element={
+            <HMSLayout>
+              <HMSDashboard />
+            </HMSLayout>
+          } />
+          <Route path="/reservations" element={
+            <HMSLayout>
+              <HMSReservations />
+            </HMSLayout>
+          } />
+          <Route path="/reservations/new" element={
+            <HMSLayout>
+              <HMSNewReservation />
+            </HMSLayout>
+          } />
+          <Route path="/beds24" element={
+            <HMSLayout>
+              <Beds24Dashboard />
+            </HMSLayout>
+          } />
+          <Route path="/channel/ari" element={
+            <HMSLayout>
+              <ChannelARICalendar />
+            </HMSLayout>
+          } />
+          <Route path="/channel/mapping" element={
+            <HMSLayout>
+              <ChannelMapping />
+            </HMSLayout>
+          } />
+          <Route path="/channel/reconcile" element={
+            <HMSLayout>
+              <ChannelReconciliation />
+            </HMSLayout>
+          } />
+          <Route path="/channel/orders" element={
+            <HMSLayout>
+              <ChannelOrders />
+            </HMSLayout>
+          } />
+          <Route path="/room-plan" element={
+            <HMSLayout>
+              <HMSRoomPlan />
+            </HMSLayout>
+          } />
+          <Route path="/housekeeping" element={
+            <HMSLayout>
+              <HMSHousekeeping />
+            </HMSLayout>
+          } />
+          <Route path="/front-office" element={
+            <HMSLayout>
+              <HMSFrontOffice />
+            </HMSLayout>
+          } />
+          <Route path="/guests" element={
+            <HMSLayout>
+              <HMSGuests />
+            </HMSLayout>
+          } />
+          <Route path="/guest-crm" element={
+            <HMSLayout>
+              <HMSGuestCRM />
+            </HMSLayout>
+          } />
+          <Route path="/analytics" element={
+            <HMSLayout>
+              <HMSAnalytics />
+            </HMSLayout>
+          } />
+          <Route path="/revenue-ai" element={
+            <HMSLayout>
+              <HMSRevenueAI />
+            </HMSLayout>
+          } />
+          <Route path="/notifications" element={
+            <HMSLayout>
+              <div className="p-6">
+                <h1 className="text-3xl font-bold mb-6">Notifications</h1>
+                <NotificationCenter />
+              </div>
+            </HMSLayout>
+          } />
+          <Route path="/profile" element={
+            <HMSLayout>
+              <UserProfilePage />
+            </HMSLayout>
+          } />
+          
+          {/* Social Media Routes */}
+          <Route path="/social-media" element={
+            <HMSLayout>
+              <ProtectedSocialMediaRoute>
+                <SocialMedia />
+              </ProtectedSocialMediaRoute>
+            </HMSLayout>
+          } />
+          <Route path="/social-media/brand-kit" element={
+            <HMSLayout>
+              <ProtectedSocialMediaRoute>
+                <SocialMediaBrandKit />
+              </ProtectedSocialMediaRoute>
+            </HMSLayout>
+          } />
+          <Route path="/social-media/calendar" element={
+            <HMSLayout>
+              <ProtectedSocialMediaRoute>
+                <SocialMediaCalendar />
+              </ProtectedSocialMediaRoute>
+            </HMSLayout>
+          } />
+          <Route path="/social-media/generator" element={
+            <HMSLayout>
+              <ProtectedSocialMediaRoute>
+                <SocialMediaGenerator />
+              </ProtectedSocialMediaRoute>
+            </HMSLayout>
+          } />
+          <Route path="/social-media/analytics" element={
+            <HMSLayout>
+              <ProtectedSocialMediaRoute>
+                <SocialMediaAnalyticsPage />
+              </ProtectedSocialMediaRoute>
+            </HMSLayout>
+          } />
+          <Route path="/social-media/advanced" element={
+            <HMSLayout>
+              <ProtectedSocialMediaRoute>
+                <SocialMediaAdvanced />
+              </ProtectedSocialMediaRoute>
+            </HMSLayout>
+          } />
+          <Route path="/social-media/integrations" element={
+            <HMSLayout>
+              <ProtectedSocialMediaRoute>
+                <SocialMediaIntegration />
+              </ProtectedSocialMediaRoute>
+            </HMSLayout>
+          } />
+          <Route path="/social-media/enterprise" element={
+            <HMSLayout>
+              <ProtectedSocialMediaRoute>
+                <SocialMediaEnterprise />
+              </ProtectedSocialMediaRoute>
+            </HMSLayout>
+          } />
+          
+          <Route path="/reports" element={
+            <HMSLayout>
+              <Reports />
+            </HMSLayout>
+          } />
+          <Route path="/settings" element={
+            <HMSLayout>
+              <Settings />
+            </HMSLayout>
+          } />
+          <Route path="/audit-log" element={
+            <HMSLayout>
+              <AuditLog />
+            </HMSLayout>
+          } />
+          
+          {/* Hotel Management Routes */}
+          <Route path="/hotel/dashboard" element={
+            <HotelManagerLayout>
+              <HotelDashboard />
+            </HotelManagerLayout>
+          } />
+          <Route path="/hotel/reservations" element={
+            <HotelManagerLayout>
+              <HotelReservations />
+            </HotelManagerLayout>
+          } />
+          <Route path="/hotel/ari-calendar" element={
+            <HotelManagerLayout>
+              <ChannelARICalendar />
+            </HotelManagerLayout>
+          } />
+          <Route path="/hotel/notifications" element={
+            <HotelManagerLayout>
+              <HotelNotifications />
+            </HotelManagerLayout>
+          } />
+          <Route path="/hotel/folio" element={
+            <HotelManagerLayout>
+              <GuestFolio />
+            </HotelManagerLayout>
+          } />
+          <Route path="/hotel/housekeeping" element={
+            <HotelManagerLayout>
+              <HousekeepingModule />
+            </HotelManagerLayout>
+          } />
+          <Route path="/room-status" element={
+            <HotelManagerLayout>
+              <RoomStatus />
+            </HotelManagerLayout>
+          } />
+          <Route path="/occupancy" element={
+            <HotelManagerLayout>
+              <Occupancy />
+            </HotelManagerLayout>
+          } />
+          <Route path="/sales" element={
+            <HotelManagerLayout>
+              <Sales />
+            </HotelManagerLayout>
+          } />
+          <Route path="/cashier" element={
+            <HotelManagerLayout>
+              <Cashier />
+            </HotelManagerLayout>
+          } />
+          <Route path="/operations" element={
+            <HotelManagerLayout>
+              <Operations />
+            </HotelManagerLayout>
+          } />
+          <Route path="/guest-experience" element={
+            <HotelManagerLayout>
+              <GuestExperience />
+            </HotelManagerLayout>
+          } />
+          <Route path="/qa" element={
+            <HotelManagerLayout>
+              <QATestSuite />
+            </HotelManagerLayout>
+          } />
+          
+          {/* Catch all for authenticated users */}
+          <Route path="*" element={<NotFound />} />
+        </>
+      )}
     </Routes>
   );
 };
