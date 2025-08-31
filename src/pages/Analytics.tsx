@@ -164,7 +164,7 @@ const Analytics = () => {
 
         {/* Analytics Tabs */}
         <Tabs defaultValue="daily" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-5 lg:w-fit lg:grid-cols-5">
+          <TabsList className="grid w-full grid-cols-4 lg:w-fit lg:grid-cols-4">
             <TabsTrigger value="daily" className="gap-2">
               <Calendar className="h-4 w-4" />
               Daily Performance
@@ -172,10 +172,6 @@ const Analytics = () => {
             <TabsTrigger value="forecasting" className="gap-2">
               <TrendingUp className="h-4 w-4" />
               Forecasting
-            </TabsTrigger>
-            <TabsTrigger value="channels" className="gap-2">
-              <BarChart3 className="h-4 w-4" />
-              Channel Analysis
             </TabsTrigger>
             <TabsTrigger value="ai-insights" className="gap-2">
               <Brain className="h-4 w-4" />
@@ -196,13 +192,6 @@ const Analytics = () => {
 
           <TabsContent value="forecasting" className="space-y-6">
             <ForecastingReports 
-              dateRange={dateRange}
-              selectedHotel={selectedHotel}
-            />
-          </TabsContent>
-
-          <TabsContent value="channels" className="space-y-6">
-            <ChannelAnalysis 
               dateRange={dateRange}
               selectedHotel={selectedHotel}
             />
