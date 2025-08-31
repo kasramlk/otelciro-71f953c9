@@ -68,13 +68,7 @@ const businessItems: SidebarItem[] = [
   { title: "Reports", href: "/reports", icon: FileText }
 ];
 
-const channelItems: SidebarItem[] = [
-  { title: "ARI Calendar", href: "/channel/ari", icon: Calendar, color: "text-secondary" },
-  { title: "Channel Mapping", href: "/channel/mapping", icon: Globe },
-  { title: "Reconciliation", href: "/channel/reconcile", icon: Target, badge: "3" },
-  { title: "Beds24 Dashboard", href: "/beds24", icon: Building, color: "text-accent" },
-  { title: "Beds24 Advanced", href: "/beds24/advanced", icon: Zap, color: "text-accent" }
-];
+const channelItems: SidebarItem[] = [];
 
 const socialMediaItems: SidebarItem[] = [
   { title: "Content Studio", href: "/social-media", icon: Share2, color: "text-accent" },
@@ -288,8 +282,6 @@ export const HMSSidebar = () => {
         {renderNavGroup("Business", businessItems, "business")}
         <Separator className="bg-sidebar-border" />
         {renderNavGroup("Social Media", socialMediaItems, "social")}
-        <Separator className="bg-sidebar-border" />
-        {renderNavGroup("Channel Manager", channelItems, "channels")}
         <Separator className="bg-sidebar-border" />
         {renderNavGroup("System", systemItems, "system")}
       </div>

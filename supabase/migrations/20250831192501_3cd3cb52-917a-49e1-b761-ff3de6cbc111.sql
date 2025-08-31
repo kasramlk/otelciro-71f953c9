@@ -1,0 +1,14 @@
+-- Drop all channel manager and Beds24 related tables
+DROP TABLE IF EXISTS beds24_webhooks CASCADE;
+DROP TABLE IF EXISTS beds24_api_logs CASCADE;
+DROP TABLE IF EXISTS beds24_sync_logs CASCADE;
+DROP TABLE IF EXISTS beds24_inventory CASCADE;
+DROP TABLE IF EXISTS beds24_bookings CASCADE;
+DROP TABLE IF EXISTS beds24_rooms CASCADE;
+DROP TABLE IF EXISTS beds24_properties CASCADE;
+DROP TABLE IF EXISTS beds24_connections CASCADE;
+DROP TABLE IF EXISTS airbnb_sync_logs CASCADE;
+DROP TABLE IF EXISTS airbnb_reservations CASCADE;
+DROP TABLE IF EXISTS airbnb_listings CASCADE;
+DROP TABLE IF EXISTS airbnb_connections CASCADE;
+DROP TABLE IF EXISTS channels CASCADE;

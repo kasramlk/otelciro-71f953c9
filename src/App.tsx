@@ -47,16 +47,10 @@ import { HMSFrontOffice } from "./components/hms/HMSFrontOffice";
 import { HMSGuests } from "./components/hms/HMSGuests";
 import { HMSAnalytics } from "./components/hms/HMSAnalytics";
 import { HMSGuestCRM } from "./components/hms/HMSGuestCRM";
-import { HMSChannelMapping } from "./components/hms/HMSChannelMapping";
-import { HMSChannelReconciliation } from "./components/hms/HMSChannelReconciliation";
 import { HMSRevenueAI } from "./components/hms/HMSRevenueAI";
 import { HMSNewReservation } from "./components/hms/HMSNewReservation";
 import { NotificationCenter } from "./components/realtime/NotificationCenter";
 import { OnlineUsers } from "./components/realtime/OnlineUsers";
-import ChannelARICalendar from "./components/channel/ARICalendar";
-import ChannelMapping from "./components/channel/ChannelMapping";
-import ChannelReconciliation from "./components/channel/ChannelReconciliation";
-import ChannelOrders from "./components/channel/ChannelOrders";
 import { TravelAgencyLayout } from "./layouts/TravelAgencyLayout";
 import { AdminLayout } from "./layouts/AdminLayout";
 import AdminDashboard from "./pages/admin/AdminDashboard";
@@ -82,9 +76,6 @@ import SocialMediaAnalyticsPage from "./pages/SocialMediaAnalytics";
 import SocialMediaAdvanced from "./pages/SocialMediaAdvanced";
 import SocialMediaIntegration from "./pages/SocialMediaIntegration";
 import SocialMediaEnterprise from "./pages/SocialMediaEnterprise";
-import AirbnbCallback from "./pages/auth/AirbnbCallback";
-import AirbnbTest from "./pages/AirbnbTest";
-import Beds24Dashboard from "./pages/Beds24Dashboard";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -149,8 +140,6 @@ const AppContent = () => {
     <Routes>
       {/* Public Routes */}
       <Route path="/auth" element={<Auth />} />
-      <Route path="/auth/airbnb/callback" element={<AirbnbCallback />} />
-      <Route path="/airbnb-test" element={<AirbnbTest />} />
       <Route path="/" element={session ? <Navigate to="/dashboard" replace /> : <Index />} />
       
       {/* Protected Routes - Redirect to auth if no session */}
@@ -220,31 +209,6 @@ const AppContent = () => {
           <Route path="/reservations/new" element={
             <HMSLayout>
               <HMSNewReservation />
-            </HMSLayout>
-          } />
-          <Route path="/beds24" element={
-            <HMSLayout>
-              <Beds24Dashboard />
-            </HMSLayout>
-          } />
-          <Route path="/channel/ari" element={
-            <HMSLayout>
-              <ChannelARICalendar />
-            </HMSLayout>
-          } />
-          <Route path="/channel/mapping" element={
-            <HMSLayout>
-              <ChannelMapping />
-            </HMSLayout>
-          } />
-          <Route path="/channel/reconcile" element={
-            <HMSLayout>
-              <ChannelReconciliation />
-            </HMSLayout>
-          } />
-          <Route path="/channel/orders" element={
-            <HMSLayout>
-              <ChannelOrders />
             </HMSLayout>
           } />
           <Route path="/room-plan" element={
@@ -379,11 +343,6 @@ const AppContent = () => {
           <Route path="/hotel/reservations" element={
             <HotelManagerLayout>
               <HotelReservations />
-            </HotelManagerLayout>
-          } />
-          <Route path="/hotel/ari-calendar" element={
-            <HotelManagerLayout>
-              <ChannelARICalendar />
             </HotelManagerLayout>
           } />
           <Route path="/hotel/notifications" element={

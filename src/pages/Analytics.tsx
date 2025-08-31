@@ -25,7 +25,6 @@ import { DateRange } from "react-day-picker";
 // Import analytics components
 import { DailyPerformanceDashboard } from "@/components/analytics/DailyPerformanceDashboard";
 import { ForecastingReports } from "@/components/analytics/ForecastingReports";
-import { ChannelAnalysis } from "@/components/analytics/ChannelAnalysis";
 import { AIInsights } from "@/components/analytics/AIInsights";
 import { ExportReports } from "@/components/analytics/ExportReports";
 
