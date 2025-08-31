@@ -3,13 +3,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, Settings, Activity, Zap, Building2, Link2 } from "lucide-react";
+import { Plus, Settings, Activity, Zap, Building2, Link2, CheckCircle } from "lucide-react";
 import { Beds24SimpleSetup } from "@/components/beds24/Beds24SimpleSetup";
 import { Beds24ChannelManager } from "@/components/beds24/Beds24ChannelManager";
 import { Beds24SyncMonitor } from "@/components/beds24/Beds24SyncMonitor";
 import { useBeds24Connections } from "@/hooks/use-beds24";
 import { useAuth } from "@/hooks/use-auth";
 import { TestBeds24Auth } from "@/test-auth";
+import { PropertiesSync } from "@/components/beds24/PropertiesSync";
 
 export default function Beds24Dashboard() {
   const [showSetupWizard, setShowSetupWizard] = useState(false);
@@ -62,7 +63,7 @@ export default function Beds24Dashboard() {
       <div className="p-6">
         <Tabs defaultValue="test" className="space-y-6">
           <TabsList>
-            <TabsTrigger value="test">Auth Test</TabsTrigger>
+            <TabsTrigger value="test">Properties & Sync</TabsTrigger>
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="connections">Connections</TabsTrigger>
             <TabsTrigger value="logs">Logs</TabsTrigger>
@@ -71,15 +72,21 @@ export default function Beds24Dashboard() {
           <TabsContent value="test" className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle>Beds24 Authentication Test</CardTitle>
-                <CardDescription>
-                  Testing authentication with your invitation token (check browser console for details)
-                </CardDescription>
+                <CardTitle>Connection Status</CardTitle>
               </CardHeader>
               <CardContent>
+                <div className="flex items-center gap-2 mb-4">
+                  <CheckCircle className="h-5 w-5 text-green-500" />
+                  <span>Connected to Beds24</span>
+                </div>
                 <TestBeds24Auth />
               </CardContent>
             </Card>
+            
+            <PropertiesSync 
+              connectionId="5adf636c-815c-44f1-90c1-d50ed1601794"
+              hotelId="550e8400-e29b-41d4-a716-446655440000"
+            />
           </TabsContent>
 
           <TabsContent value="overview" className="space-y-6">
