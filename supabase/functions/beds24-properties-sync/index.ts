@@ -17,7 +17,7 @@ interface PropertiesSyncRequest {
 }
 
 serve(async (req) => {
-  console.log('=== BEDS24 PROPERTIES SYNC STARTED ===');
+  console.log('=== BEDS24 PROPERTIES SYNC STARTED (v2.0) ===');
   
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
