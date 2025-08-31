@@ -37,7 +37,7 @@ export function Beds24ChannelManager({ hotelId }: Beds24ChannelManagerProps) {
 
   // Beds24 data hooks
   const { data: connections = [] } = useBeds24Connections(hotelId);
-  const activeConnection = connections.find(c => c.is_active && c.connection_status === 'active');
+  const activeConnection = connections.find(c => c.is_active);
   
   const { data: properties = [] } = useBeds24Properties(activeConnection?.id || '');
   const { data: channels = [] } = useBeds24Channels(selectedProperty || properties[0]?.id || '');
@@ -55,7 +55,11 @@ export function Beds24ChannelManager({ hotelId }: Beds24ChannelManagerProps) {
       rates: { 'rate1': pushData.rate },
     };
 
-    await pushInventory.mutateAsync({ propertyId, inventoryData });
+    await pushInventory.mutateAsync({ 
+      connectionId: activeConnection?.id || '',
+      propertyId, 
+      inventoryData 
+    });
   };
 
   const channelTypeColors = {

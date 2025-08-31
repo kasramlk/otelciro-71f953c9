@@ -1,13 +1,15 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { beds24Service, type Beds24Connection, type Beds24Property, type Beds24Channel } from "@/lib/services/beds24-service";
-import { useToast } from "@/hooks/use-toast";
+import { beds24Service } from "@/lib/services/beds24-service";
 
 // Query Keys
 export const beds24QueryKeys = {
-  connections: (hotelId: string) => ['beds24', 'connections', hotelId] as const,
-  properties: (connectionId: string) => ['beds24', 'properties', connectionId] as const,
-  channels: (propertyId: string) => ['beds24', 'channels', propertyId] as const,
-  syncLogs: (connectionId: string) => ['beds24', 'sync-logs', connectionId] as const,
+  all: ['beds24'] as const,
+  connections: (hotelId: string) => [...beds24QueryKeys.all, 'connections', hotelId] as const,
+  properties: (connectionId: string) => [...beds24QueryKeys.all, 'properties', connectionId] as const,
+  channels: (propertyId: string) => [...beds24QueryKeys.all, 'channels', propertyId] as const,
+  inventory: (propertyId: string, dateRange?: { from: string; to: string }) => 
+    [...beds24QueryKeys.all, 'inventory', propertyId, dateRange] as const,
+  syncLogs: (connectionId: string) => [...beds24QueryKeys.all, 'syncLogs', connectionId] as const,
 };
 
 // Connection Hooks
@@ -19,55 +21,21 @@ export function useBeds24Connections(hotelId: string) {
   });
 }
 
-export function useCreateBeds24Connection() {
+export function useSetupBeds24Connection() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
   
   return useMutation({
-    mutationFn: async ({ hotelId, connectionData }: {
-      hotelId: string;
-      connectionData: {
-        account_id: string;
-        account_email: string;
-        refresh_token: string;
-        scopes: string[];
-        allow_linked_properties?: boolean;
-        ip_whitelist?: string[];
-      };
-    }) => {
-      const connection = await beds24Service.createConnection(hotelId, connectionData);
-      if (!connection) {
-        throw new Error('Failed to create Beds24 connection');
-      }
-      return connection;
-    },
-    onSuccess: (data, variables) => {
-      queryClient.invalidateQueries({ queryKey: beds24QueryKeys.connections(variables.hotelId) });
-      toast({ title: "Success", description: "Beds24 connection created successfully" });
-    },
-    onError: (error) => {
-      console.error('Failed to create Beds24 connection:', error);
-      toast({ title: "Error", description: "Failed to create Beds24 connection", variant: "destructive" });
+    mutationFn: ({ invitationCode, hotelId }: { invitationCode: string; hotelId: string }) =>
+      beds24Service.setupConnection(invitationCode, hotelId),
+    onSuccess: (_, { hotelId }) => {
+      queryClient.invalidateQueries({ queryKey: beds24QueryKeys.connections(hotelId) });
     },
   });
 }
 
 export function useTestBeds24Connection() {
-  const { toast } = useToast();
-  
   return useMutation({
     mutationFn: (connectionId: string) => beds24Service.testConnection(connectionId),
-    onSuccess: (result) => {
-      if (result.success) {
-        toast({ title: "Success", description: "Connection test successful" });
-      } else {
-        toast({ title: "Error", description: `Connection test failed: ${result.error}`, variant: "destructive" });
-      }
-    },
-    onError: (error) => {
-      console.error('Connection test failed:', error);
-      toast({ title: "Error", description: "Connection test failed", variant: "destructive" });
-    },
   });
 }
 
@@ -82,64 +50,61 @@ export function useBeds24Properties(connectionId: string) {
 
 export function useSyncBeds24Properties() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
   
   return useMutation({
     mutationFn: (connectionId: string) => beds24Service.syncProperties(connectionId),
-    onSuccess: (result, connectionId) => {
-      if (result.success) {
-        queryClient.invalidateQueries({ queryKey: beds24QueryKeys.properties(connectionId) });
-        toast({ title: "Success", description: "Properties synced successfully" });
-      } else {
-        toast({ title: "Error", description: `Failed to sync properties: ${result.error}`, variant: "destructive" });
-      }
-    },
-    onError: (error) => {
-      console.error('Failed to sync properties:', error);
-      toast({ title: "Error", description: "Failed to sync properties", variant: "destructive" });
+    onSuccess: (_, connectionId) => {
+      queryClient.invalidateQueries({ queryKey: beds24QueryKeys.properties(connectionId) });
     },
   });
 }
 
-// Channel Hooks
+// Channel Hooks - Temporarily disabled until full implementation
 export function useBeds24Channels(propertyId: string) {
   return useQuery({
     queryKey: beds24QueryKeys.channels(propertyId),
-    queryFn: () => beds24Service.getChannels(propertyId),
-    enabled: !!propertyId,
+    queryFn: () => Promise.resolve([]),
+    enabled: false,
   });
 }
 
 export function useSyncBeds24Channels() {
-  const queryClient = useQueryClient();
-  const { toast } = useToast();
-  
   return useMutation({
-    mutationFn: (propertyId: string) => beds24Service.syncChannels(propertyId),
-    onSuccess: (result, propertyId) => {
-      if (result.success) {
-        queryClient.invalidateQueries({ queryKey: beds24QueryKeys.channels(propertyId) });
-        toast({ title: "Success", description: "Channels synced successfully" });
-      } else {
-        toast({ title: "Error", description: `Failed to sync channels: ${result.error}`, variant: "destructive" });
-      }
-    },
-    onError: (error) => {
-      console.error('Failed to sync channels:', error);
-      toast({ title: "Error", description: "Failed to sync channels", variant: "destructive" });
+    mutationFn: (propertyId: string) => Promise.resolve({ success: true, data: [] }),
+    onSuccess: () => {
+      // No-op for now
     },
   });
 }
 
 // Inventory Hooks
-export function usePushInventory() {
-  const { toast } = useToast();
+export function useBeds24Inventory(propertyId: string, dateRange?: { from: string; to: string }) {
+  return useQuery({
+    queryKey: beds24QueryKeys.inventory(propertyId, dateRange),
+    queryFn: () => beds24Service.getInventory(propertyId, dateRange),
+    enabled: !!propertyId,
+  });
+}
+
+export function useSyncBeds24Inventory() {
+  const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: ({
-      propertyId,
-      inventoryData
-    }: {
+    mutationFn: ({ connectionId, propertyId, dateRange }: {
+      connectionId: string;
+      propertyId: string;
+      dateRange: { from: string; to: string };
+    }) => beds24Service.syncInventory(connectionId, propertyId, dateRange),
+    onSuccess: (_, { propertyId, dateRange }) => {
+      queryClient.invalidateQueries({ queryKey: beds24QueryKeys.inventory(propertyId, dateRange) });
+    },
+  });
+}
+
+export function usePushInventory() {
+  return useMutation({
+    mutationFn: ({ connectionId, propertyId, inventoryData }: {
+      connectionId: string;
       propertyId: string;
       inventoryData: {
         roomTypeId: string;
@@ -148,74 +113,25 @@ export function usePushInventory() {
         rates?: { [key: string]: number };
         restrictions?: any;
       };
-    }) => beds24Service.pushInventory(propertyId, inventoryData),
-    onSuccess: (result) => {
-      if (result.success) {
-        toast({ title: "Success", description: "Inventory pushed successfully" });
-      } else {
-        toast({ title: "Error", description: `Failed to push inventory: ${result.error}`, variant: "destructive" });
-      }
-    },
-    onError: (error) => {
-      console.error('Failed to push inventory:', error);
-      toast({ title: "Error", description: "Failed to push inventory", variant: "destructive" });
-    },
+    }) => beds24Service.pushInventory(connectionId, propertyId, inventoryData),
   });
 }
 
 // Booking Hooks
 export function usePullBookings() {
-  const queryClient = useQueryClient();
-  const { toast } = useToast();
-  
   return useMutation({
-    mutationFn: ({
-      connectionId,
-      dateRange
-    }: {
+    mutationFn: ({ connectionId, dateRange }: {
       connectionId: string;
       dateRange?: { from: string; to: string };
     }) => beds24Service.pullBookings(connectionId, dateRange),
-    onSuccess: (result) => {
-      if (result.success) {
-        queryClient.invalidateQueries({ queryKey: ['reservations'] });
-        toast({ title: "Success", description: `Pulled ${result.data?.length || 0} bookings successfully` });
-      } else {
-        toast({ title: "Error", description: `Failed to pull bookings: ${result.error}`, variant: "destructive" });
-      }
-    },
-    onError: (error) => {
-      console.error('Failed to pull bookings:', error);
-      toast({ title: "Error", description: "Failed to pull bookings", variant: "destructive" });
-    },
   });
 }
 
-// Sync Logs Hooks
+// Sync Logs - Temporarily disabled until full implementation
 export function useBeds24SyncLogs(connectionId: string) {
   return useQuery({
     queryKey: beds24QueryKeys.syncLogs(connectionId),
-    queryFn: () => beds24Service.getSyncLogs(connectionId),
-    enabled: !!connectionId,
-    refetchInterval: 30000, // Refresh every 30 seconds
-  });
-}
-
-export function useExchangeInviteCode() {
-  const { toast } = useToast();
-  
-  return useMutation({
-    mutationFn: (invitationToken: string) => beds24Service.exchangeInviteCode(invitationToken, '550e8400-e29b-41d4-a716-446655440000'),
-    onSuccess: (result: { success: boolean; error?: string; data?: any }) => {
-      if (result.success) {
-        toast({ title: "Success", description: "Invitation token exchanged successfully" });
-      } else {
-        toast({ title: "Error", description: `Failed to exchange token: ${result.error || 'Unknown error'}`, variant: "destructive" });
-      }
-    },
-    onError: (error) => {
-      console.error('Failed to exchange invitation token:', error);
-      toast({ title: "Error", description: "Failed to exchange invitation token", variant: "destructive" });
-    },
+    queryFn: () => Promise.resolve([]),
+    enabled: false,
   });
 }

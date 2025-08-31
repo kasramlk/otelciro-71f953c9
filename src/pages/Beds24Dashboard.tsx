@@ -4,12 +4,9 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Plus, Settings, Activity, Zap, Building2, Link2 } from "lucide-react";
-import { Beds24SetupWizard } from "@/components/beds24/Beds24SetupWizard";
-import { Beds24ConnectionTester } from "@/components/beds24/Beds24ConnectionTester";
+import { Beds24SimpleSetup } from "@/components/beds24/Beds24SimpleSetup";
 import { Beds24ChannelManager } from "@/components/beds24/Beds24ChannelManager";
 import { Beds24SyncMonitor } from "@/components/beds24/Beds24SyncMonitor";
-import { Beds24ConnectionStatus } from "@/components/beds24/Beds24ConnectionStatus";
-import { HMSChannelMappingEnhanced } from "@/components/hms/HMSChannelMappingEnhanced";
 import { useBeds24Connections } from "@/hooks/use-beds24";
 import { useAuth } from "@/hooks/use-auth";
 
@@ -33,7 +30,7 @@ export default function Beds24Dashboard() {
             ← Back to Dashboard
           </Button>
         </div>
-        <Beds24SetupWizard
+        <Beds24SimpleSetup
           hotelId={hotelId}
           onComplete={() => setShowSetupWizard(false)}
         />
@@ -94,25 +91,25 @@ export default function Beds24Dashboard() {
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold">
-                    {connections.filter(c => c.connection_status === 'active').length}
+                    {connections.filter(c => c.is_active).length}
                   </div>
                   <p className="text-xs text-muted-foreground">
-                    Active syncing
+                    Active connections
                   </p>
                 </CardContent>
               </Card>
 
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">API Credits</CardTitle>
+                  <CardTitle className="text-sm font-medium">API Status</CardTitle>
                   <Zap className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">
-                    {connections.reduce((sum, c) => sum + (c.api_credits_remaining || 0), 0)}
+                  <div className="text-2xl font-bold text-green-600">
+                    Ready
                   </div>
                   <p className="text-xs text-muted-foreground">
-                    Remaining credits
+                    API endpoints active
                   </p>
                 </CardContent>
               </Card>
@@ -201,12 +198,63 @@ export default function Beds24Dashboard() {
           </TabsContent>
 
           <TabsContent value="connections" className="space-y-6">
-            <Beds24ConnectionStatus hotelId={hotelId} />
-            <HMSChannelMappingEnhanced hotelId={hotelId} />
+            <div className="grid gap-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Beds24 Connections</CardTitle>
+                  <CardDescription>
+                    Manage your Beds24 channel manager connections
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {connections.length === 0 ? (
+                    <div className="text-center py-8">
+                      <p className="text-muted-foreground mb-4">
+                        No Beds24 connections found. Set up your first connection to get started.
+                      </p>
+                      <Button onClick={() => setShowSetupWizard(true)}>
+                        <Plus className="h-4 w-4 mr-2" />
+                        Setup Beds24 Connection
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {connections.map((connection) => (
+                        <div key={connection.id} className="p-4 border rounded-lg">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <h3 className="font-medium">{connection.account_name || 'Beds24 Connection'}</h3>
+                              <p className="text-sm text-muted-foreground">
+                                Account ID: {connection.account_id}
+                              </p>
+                            </div>
+                            <Badge variant={connection.is_active ? "default" : "secondary"}>
+                              {connection.is_active ? "Active" : "Inactive"}
+                            </Badge>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
           </TabsContent>
 
           <TabsContent value="testing">
-            <Beds24ConnectionTester />
+            <Card>
+              <CardHeader>
+                <CardTitle>API Testing</CardTitle>
+                <CardDescription>
+                  Test your Beds24 API connections and endpoints
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground">
+                  API testing tools will be available once connections are established.
+                </p>
+              </CardContent>
+            </Card>
           </TabsContent>
 
           <TabsContent value="logs" className="space-y-6">

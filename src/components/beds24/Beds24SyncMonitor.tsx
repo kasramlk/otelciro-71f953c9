@@ -25,7 +25,7 @@ export function Beds24SyncMonitor({ hotelId }: Beds24SyncMonitorProps) {
   const [autoRefresh, setAutoRefresh] = useState(true);
 
   const { data: connections = [] } = useBeds24Connections(hotelId);
-  const activeConnection = connections.find(c => c.is_active && c.connection_status === 'active');
+  const activeConnection = connections.find(c => c.is_active);
   
   const { data: syncLogs = [], refetch } = useBeds24SyncLogs(activeConnection?.id || '');
 
@@ -123,7 +123,7 @@ export function Beds24SyncMonitor({ hotelId }: Beds24SyncMonitorProps) {
             <Zap className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{activeConnection.api_credits_remaining}</div>
+            <div className="text-2xl font-bold text-muted-foreground">-</div>
             <p className="text-xs text-muted-foreground">
               Remaining credits
             </p>

@@ -598,17 +598,11 @@ export type Database = {
           account_email: string | null
           account_id: number
           account_name: string | null
-          api_credits_remaining: number | null
-          api_credits_reset_at: string | null
-          connection_status: string
           created_at: string
           hotel_id: string
           id: string
-          invitation_token: string | null
           is_active: boolean | null
-          last_sync_at: string | null
           refresh_token: string
-          sync_errors: Json | null
           token_expires_at: string | null
           updated_at: string
         }
@@ -617,17 +611,11 @@ export type Database = {
           account_email?: string | null
           account_id: number
           account_name?: string | null
-          api_credits_remaining?: number | null
-          api_credits_reset_at?: string | null
-          connection_status?: string
           created_at?: string
           hotel_id: string
           id?: string
-          invitation_token?: string | null
           is_active?: boolean | null
-          last_sync_at?: string | null
           refresh_token: string
-          sync_errors?: Json | null
           token_expires_at?: string | null
           updated_at?: string
         }
@@ -636,17 +624,11 @@ export type Database = {
           account_email?: string | null
           account_id?: number
           account_name?: string | null
-          api_credits_remaining?: number | null
-          api_credits_reset_at?: string | null
-          connection_status?: string
           created_at?: string
           hotel_id?: string
           id?: string
-          invitation_token?: string | null
           is_active?: boolean | null
-          last_sync_at?: string | null
           refresh_token?: string
-          sync_errors?: Json | null
           token_expires_at?: string | null
           updated_at?: string
         }
