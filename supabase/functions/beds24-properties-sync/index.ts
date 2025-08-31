@@ -77,8 +77,8 @@ serve(async (req) => {
 
     // Make API call to Beds24
     console.log('=== MAKING BEDS24 API CALL ===');
-    const BEDS24_API_URL = Deno.env.get('BEDS24_API_URL') || 'https://api.beds24.com/v2';
-    const BEDS24_ORGANIZATION = Deno.env.get('BEDS24_ORGANIZATION') || 'otelciro';
+    const BEDS24_API_URL = 'https://api.beds24.com/v2';
+    const BEDS24_ORGANIZATION = 'otelciro';
     
     const apiUrl = `${BEDS24_API_URL}/properties?includeAllRooms=true`;
     const apiHeaders = {
