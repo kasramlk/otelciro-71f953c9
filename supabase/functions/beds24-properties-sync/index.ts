@@ -94,19 +94,22 @@ serve(async (req) => {
     }
 
     const propertiesData = await propertiesResponse.json();
-    console.log(`Fetched ${propertiesData.length || 0} properties`);
+    console.log('Raw properties response:', JSON.stringify(propertiesData, null, 2));
+    
+    const properties = propertiesData.data || propertiesData || [];
+    console.log(`Fetched ${properties.length} properties`);
 
     // Process and store properties
     const processedProperties = [];
     const processedRooms = [];
 
-    for (const property of propertiesData) {
+    for (const property of properties) {
       // Insert/update property
       const { data: existingProperty } = await supabase
         .from('beds24_properties')
         .select('id')
         .eq('connection_id', connectionId)
-        .eq('beds24_property_id', property.propId)
+        .eq('beds24_property_id', property.id)
         .single();
 
       let propertyId;
@@ -114,8 +117,8 @@ serve(async (req) => {
         const { data: updatedProperty } = await supabase
           .from('beds24_properties')
           .update({
-            property_name: property.propName,
-            property_code: property.propCode || null,
+            property_name: property.name,
+            property_code: property.code || null,
             property_status: property.status || 'active',
             last_rates_sync: now.toISOString(),
           })
@@ -129,9 +132,9 @@ serve(async (req) => {
           .insert({
             connection_id: connectionId,
             hotel_id: connection.hotel_id,
-            beds24_property_id: property.propId,
-            property_name: property.propName,
-            property_code: property.propCode || null,
+            beds24_property_id: property.id,
+            property_name: property.name,
+            property_code: property.code || null,
             property_status: property.status || 'active',
             last_rates_sync: now.toISOString(),
           })
@@ -143,29 +146,29 @@ serve(async (req) => {
       if (propertyId) {
         processedProperties.push({
           id: propertyId,
-          beds24_property_id: property.propId,
-          name: property.propName,
+          beds24_property_id: property.id,
+          name: property.name,
         });
 
         // Process rooms for this property
-        if (property.rooms && Array.isArray(property.rooms)) {
-          for (const room of property.rooms) {
+        if (property.roomTypes && Array.isArray(property.roomTypes)) {
+          for (const room of property.roomTypes) {
             // Insert/update room
             const { data: existingRoom } = await supabase
               .from('beds24_rooms')
               .select('id')
               .eq('beds24_property_id', propertyId)
-              .eq('beds24_room_id', room.roomId)
+              .eq('beds24_room_id', room.id)
               .single();
 
             if (existingRoom) {
               await supabase
                 .from('beds24_rooms')
                 .update({
-                  room_name: room.roomName,
-                  room_code: room.roomCode || null,
-                  max_occupancy: room.maxOccupancy || 2,
-                  room_settings: room.settings || {},
+                  room_name: room.name,
+                  room_code: room.code || null,
+                  max_occupancy: room.maxPeople || 2,
+                  room_settings: room || {},
                 })
                 .eq('id', existingRoom.id);
             } else {
@@ -174,11 +177,11 @@ serve(async (req) => {
                 .insert({
                   beds24_property_id: propertyId,
                   hotel_id: connection.hotel_id,
-                  beds24_room_id: room.roomId,
-                  room_name: room.roomName,
-                  room_code: room.roomCode || null,
-                  max_occupancy: room.maxOccupancy || 2,
-                  room_settings: room.settings || {},
+                  beds24_room_id: room.id,
+                  room_name: room.name,
+                  room_code: room.code || null,
+                  max_occupancy: room.maxPeople || 2,
+                  room_settings: room || {},
                 })
                 .select('*')
                 .single();

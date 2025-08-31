@@ -22,17 +22,25 @@ export function PropertiesSync({ connectionId, hotelId }: PropertiesSyncProps) {
   const handleSync = async () => {
     setSyncing(true);
     try {
-      await syncMutation.mutateAsync(connectionId);
-      toast({
-        title: "Properties synced successfully!",
-        description: "Your Beds24 properties have been imported.",
-      });
+      console.log('Starting properties sync...');
+      const result = await syncMutation.mutateAsync(connectionId);
+      
+      if (result.success) {
+        const propertiesCount = result.data?.length || 0;
+        toast({
+          title: "Properties synced successfully!",
+          description: `${propertiesCount} properties have been imported from Beds24.`,
+        });
+      } else {
+        throw new Error(result.error || 'Sync failed');
+      }
+      
       await refetch();
     } catch (error) {
       console.error('Sync failed:', error);
       toast({
         title: "Sync failed",
-        description: "Failed to sync properties from Beds24.",
+        description: error instanceof Error ? error.message : "Failed to sync properties from Beds24.",
         variant: "destructive",
       });
     } finally {

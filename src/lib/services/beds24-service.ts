@@ -248,37 +248,34 @@ export class Beds24Service {
 
   async syncProperties(connectionId: string): Promise<Beds24ApiResponse<Beds24Property[]>> {
     try {
-      const propertiesData = await this.makeApiCall(connectionId, '/properties');
+      console.log('Syncing properties for connection:', connectionId);
       
-      // Process and store properties in database
-      const properties: Beds24Property[] = [];
-      
-      for (const prop of propertiesData) {
-        const { data, error } = await supabase
-          .from('beds24_properties')
-          .upsert({
-            connection_id: connectionId,
-            hotel_id: '', // Will need to get from connection
-            beds24_property_id: prop.id,
-            property_name: prop.name,
-            property_code: prop.code,
-            currency: prop.currency || 'USD',
-            sync_enabled: true,
-            sync_settings: {},
-            property_status: 'active'
-          })
-          .select()
-          .single();
-          
-        if (!error && data) {
-          properties.push(data);
-        }
+      // Call the Supabase Edge Function for properties sync
+      const { data: functionResult, error: functionError } = await supabase.functions.invoke('beds24-properties-sync', {
+        body: { connectionId }
+      });
+
+      if (functionError) {
+        throw new Error(`Edge function error: ${functionError.message}`);
       }
+
+      if (!functionResult.success) {
+        throw new Error(functionResult.error || 'Properties sync failed');
+      }
+
+      console.log('Properties sync successful:', functionResult.data);
       
-      return { success: true, data: properties };
+      // Return the synced properties
+      return { 
+        success: true, 
+        data: functionResult.data?.properties || [] 
+      };
     } catch (error) {
       console.error('Error syncing properties:', error);
-      return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
+      return { 
+        success: false, 
+        error: error instanceof Error ? error.message : 'Unknown error' 
+      };
     }
   }
 
