@@ -7,12 +7,10 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-const BEDS24_API_URL = 'https://api.beds24.com/v2';
-const BEDS24_ORGANIZATION = 'otelciro';
-const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
-const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-
-const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+const supabase = createClient(
+  Deno.env.get('SUPABASE_URL')!,
+  Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+);
 
 interface PropertiesSyncRequest {
   connectionId: string;
@@ -31,6 +29,8 @@ serve(async (req) => {
       throw new Error('Connection ID is required');
     }
 
+    console.log('Syncing properties for connection:', connectionId);
+
     // Get connection details
     const { data: connection, error: connError } = await supabase
       .from('beds24_connections')
@@ -39,8 +39,11 @@ serve(async (req) => {
       .single();
 
     if (connError || !connection) {
+      console.error('Connection error:', connError);
       throw new Error('Connection not found');
     }
+
+    console.log('Connection found, checking token validity...');
 
     // Ensure we have a valid token
     let accessToken = connection.access_token;
@@ -48,7 +51,10 @@ serve(async (req) => {
     const now = new Date();
 
     if (!accessToken || !tokenExpiresAt || tokenExpiresAt <= now) {
-      console.log('Token expired, refreshing...');
+      console.log('Token expired or missing, refreshing...');
+      
+      const BEDS24_API_URL = Deno.env.get('BEDS24_API_URL') || 'https://api.beds24.com/v2';
+      const BEDS24_ORGANIZATION = Deno.env.get('BEDS24_ORGANIZATION') || 'otelciro';
       
       const refreshResponse = await fetch(`${BEDS24_API_URL}/authentication/token`, {
         method: 'GET',
@@ -60,7 +66,9 @@ serve(async (req) => {
       });
 
       if (!refreshResponse.ok) {
-        throw new Error(`Failed to refresh token: ${refreshResponse.status}`);
+        const errorText = await refreshResponse.text();
+        console.error('Token refresh failed:', refreshResponse.status, errorText);
+        throw new Error(`Failed to refresh token: ${refreshResponse.status} - ${errorText}`);
       }
 
       const refreshData = await refreshResponse.json();
@@ -68,17 +76,27 @@ serve(async (req) => {
 
       // Update connection with new token
       const expiresAt = new Date(now.getTime() + (refreshData.expiresIn * 1000));
-      await supabase
+      const { error: updateError } = await supabase
         .from('beds24_connections')
         .update({ 
           access_token: accessToken,
           token_expires_at: expiresAt.toISOString(),
         })
         .eq('id', connectionId);
+
+      if (updateError) {
+        console.error('Failed to update token:', updateError);
+        throw new Error('Failed to update token in database');
+      }
+
+      console.log('Token refreshed successfully');
     }
 
-    // Fetch properties with all rooms
+    // Fetch properties from Beds24
     console.log('Fetching properties from Beds24...');
+    const BEDS24_API_URL = Deno.env.get('BEDS24_API_URL') || 'https://api.beds24.com/v2';
+    const BEDS24_ORGANIZATION = Deno.env.get('BEDS24_ORGANIZATION') || 'otelciro';
+    
     const propertiesResponse = await fetch(`${BEDS24_API_URL}/properties?includeAllRooms=true`, {
       method: 'GET',
       headers: {
@@ -90,20 +108,32 @@ serve(async (req) => {
 
     if (!propertiesResponse.ok) {
       const errorText = await propertiesResponse.text();
-      throw new Error(`Failed to fetch properties: ${propertiesResponse.status} ${errorText}`);
+      console.error('Failed to fetch properties:', propertiesResponse.status, errorText);
+      throw new Error(`Failed to fetch properties: ${propertiesResponse.status} - ${errorText}`);
     }
 
     const propertiesData = await propertiesResponse.json();
     console.log('Raw properties response:', JSON.stringify(propertiesData, null, 2));
     
-    const properties = propertiesData.data || propertiesData || [];
-    console.log(`Fetched ${properties.length} properties`);
+    // Handle different response formats from Beds24 API
+    let properties = [];
+    if (propertiesData.data && Array.isArray(propertiesData.data)) {
+      properties = propertiesData.data;
+    } else if (Array.isArray(propertiesData)) {
+      properties = propertiesData;
+    } else {
+      console.log('Unexpected properties response format:', propertiesData);
+    }
+    
+    console.log(`Found ${properties.length} properties to sync`);
 
     // Process and store properties
     const processedProperties = [];
     const processedRooms = [];
 
     for (const property of properties) {
+      console.log('Processing property:', property.id, property.name);
+      
       // Insert/update property
       const { data: existingProperty } = await supabase
         .from('beds24_properties')
@@ -114,7 +144,8 @@ serve(async (req) => {
 
       let propertyId;
       if (existingProperty) {
-        const { data: updatedProperty } = await supabase
+        console.log('Updating existing property:', existingProperty.id);
+        const { data: updatedProperty, error: updateError } = await supabase
           .from('beds24_properties')
           .update({
             property_name: property.name,
@@ -125,9 +156,15 @@ serve(async (req) => {
           .eq('id', existingProperty.id)
           .select('id')
           .single();
+        
+        if (updateError) {
+          console.error('Error updating property:', updateError);
+          continue;
+        }
         propertyId = updatedProperty?.id;
       } else {
-        const { data: newProperty } = await supabase
+        console.log('Creating new property:', property.name);
+        const { data: newProperty, error: insertError } = await supabase
           .from('beds24_properties')
           .insert({
             connection_id: connectionId,
@@ -140,6 +177,11 @@ serve(async (req) => {
           })
           .select('id')
           .single();
+        
+        if (insertError) {
+          console.error('Error inserting property:', insertError);
+          continue;
+        }
         propertyId = newProperty?.id;
       }
 
@@ -150,9 +192,13 @@ serve(async (req) => {
           name: property.name,
         });
 
-        // Process rooms for this property
+        // Process room types for this property
         if (property.roomTypes && Array.isArray(property.roomTypes)) {
+          console.log(`Processing ${property.roomTypes.length} room types for property ${property.name}`);
+          
           for (const room of property.roomTypes) {
+            console.log('Processing room:', room.id, room.name);
+            
             // Insert/update room
             const { data: existingRoom } = await supabase
               .from('beds24_rooms')
@@ -162,7 +208,7 @@ serve(async (req) => {
               .single();
 
             if (existingRoom) {
-              await supabase
+              const { error: roomUpdateError } = await supabase
                 .from('beds24_rooms')
                 .update({
                   room_name: room.name,
@@ -171,8 +217,12 @@ serve(async (req) => {
                   room_settings: room || {},
                 })
                 .eq('id', existingRoom.id);
+              
+              if (roomUpdateError) {
+                console.error('Error updating room:', roomUpdateError);
+              }
             } else {
-              const { data: newRoom } = await supabase
+              const { data: newRoom, error: roomInsertError } = await supabase
                 .from('beds24_rooms')
                 .insert({
                   beds24_property_id: propertyId,
@@ -186,7 +236,9 @@ serve(async (req) => {
                 .select('*')
                 .single();
               
-              if (newRoom) {
+              if (roomInsertError) {
+                console.error('Error inserting room:', roomInsertError);
+              } else if (newRoom) {
                 processedRooms.push(newRoom);
               }
             }
@@ -205,7 +257,7 @@ serve(async (req) => {
         success: true,
       });
 
-    console.log(`Processed ${processedProperties.length} properties and ${processedRooms.length} rooms`);
+    console.log(`Successfully processed ${processedProperties.length} properties and ${processedRooms.length} rooms`);
 
     return new Response(
       JSON.stringify({
@@ -227,7 +279,7 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({
         success: false,
-        error: error instanceof Error ? error.message : 'Unknown error',
+        error: error instanceof Error ? error.message : 'Unknown error occurred',
       }),
       {
         status: 500,

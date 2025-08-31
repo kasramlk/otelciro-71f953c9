@@ -39,3 +39,6 @@ verify_jwt = true
 
 [functions.beds24-webhook]
 verify_jwt = false
+
+[functions.beds24-properties-sync]
+verify_jwt = true

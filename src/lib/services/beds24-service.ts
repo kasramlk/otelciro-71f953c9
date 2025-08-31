@@ -255,11 +255,19 @@ export class Beds24Service {
         body: { connectionId }
       });
 
+      console.log('Edge function response:', { functionResult, functionError });
+
       if (functionError) {
+        console.error('Edge function error details:', functionError);
         throw new Error(`Edge function error: ${functionError.message}`);
       }
 
+      if (!functionResult) {
+        throw new Error('No response from edge function');
+      }
+
       if (!functionResult.success) {
+        console.error('Edge function returned error:', functionResult.error);
         throw new Error(functionResult.error || 'Properties sync failed');
       }
 
