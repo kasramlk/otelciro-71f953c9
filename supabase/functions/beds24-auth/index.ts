@@ -201,24 +201,49 @@ async function handleSetup(invitationCode: string, hotelId: string, deviceName: 
  */
 async function handleRefresh(refreshToken: string) {
   console.log('Refreshing access token')
+  console.log('Using refresh token:', refreshToken.substring(0, 20) + '...')
   
   try {
+    const url = `${BEDS24_API_URL}/authentication/token`
+    console.log('Making token refresh request to:', url)
+    
+    const headers = {
+      'refreshToken': refreshToken,
+      'Accept': 'application/json',
+    }
+    console.log('Refresh request headers:', { ...headers, refreshToken: headers.refreshToken.substring(0, 20) + '...' })
+    
     // Use GET request with refreshToken in header as per Beds24 API documentation
-    const response = await fetch(`${BEDS24_API_URL}/authentication/token`, {
+    const response = await fetch(url, {
       method: 'GET',
-      headers: {
-        'refreshToken': refreshToken,
-        'Accept': 'application/json',
-      }
+      headers
     })
+
+    console.log('Refresh response status:', response.status)
+    console.log('Refresh response headers:', Object.fromEntries(response.headers.entries()))
 
     if (!response.ok) {
       const errorData = await response.text()
-      console.error('Token refresh failed:', errorData)
+      console.error('Token refresh failed with status:', response.status)
+      console.error('Refresh error response:', errorData)
+      
+      // Try to parse the error as JSON for better debugging
+      try {
+        const parsedError = JSON.parse(errorData)
+        console.error('Parsed refresh error:', parsedError)
+      } catch (e) {
+        console.error('Could not parse refresh error as JSON')
+      }
+      
       return new Response(
         JSON.stringify({ 
           success: false, 
-          error: `Token refresh failed: ${response.status} - ${errorData}` 
+          error: `Token refresh failed: ${errorData}`,
+          debug: {
+            status: response.status,
+            url: url,
+            refreshTokenLength: refreshToken.length
+          }
         }),
         { 
           status: 401, 
@@ -231,6 +256,20 @@ async function handleRefresh(refreshToken: string) {
     console.log('Beds24 refresh token response:', tokenData)
     
     const { token: accessToken, expiresIn } = tokenData
+    
+    if (!accessToken || !expiresIn) {
+      console.error('Missing required fields in refresh response:', tokenData)
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: 'Missing tokens in refresh response' 
+        }),
+        { 
+          status: 400, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      )
+    }
     
     return new Response(
       JSON.stringify({ 
