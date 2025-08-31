@@ -11,6 +11,7 @@ import { useBeds24Connections } from "@/hooks/use-beds24";
 import { useAuth } from "@/hooks/use-auth";
 import { TestBeds24Auth } from "@/test-auth";
 import { PropertiesSync } from "@/components/beds24/PropertiesSync";
+import { TokenManager } from "@/components/beds24/TokenManager";
 
 export default function Beds24Dashboard() {
   const [showSetupWizard, setShowSetupWizard] = useState(false);
@@ -64,6 +65,7 @@ export default function Beds24Dashboard() {
         <Tabs defaultValue="test" className="space-y-6">
           <TabsList>
             <TabsTrigger value="test">Properties & Sync</TabsTrigger>
+            <TabsTrigger value="tokens">Token Management</TabsTrigger>
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="connections">Connections</TabsTrigger>
             <TabsTrigger value="logs">Logs</TabsTrigger>
@@ -86,6 +88,13 @@ export default function Beds24Dashboard() {
             <PropertiesSync 
               connectionId="5adf636c-815c-44f1-90c1-d50ed1601794"
               hotelId="550e8400-e29b-41d4-a716-446655440000"
+            />
+          </TabsContent>
+
+          <TabsContent value="tokens" className="space-y-6">
+            <TokenManager 
+              connectionId="5adf636c-815c-44f1-90c1-d50ed1601794"
+              connection={connections.find(c => c.id === "5adf636c-815c-44f1-90c1-d50ed1601794")}
             />
           </TabsContent>
 

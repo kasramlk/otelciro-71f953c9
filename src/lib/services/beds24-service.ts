@@ -372,6 +372,53 @@ export class Beds24Service {
     }
   }
 
+  // Token Management
+  async updateAccessToken(connectionId: string, accessToken: string, expiresAt: string): Promise<Beds24ApiResponse<{ success: boolean }>> {
+    try {
+      const { error } = await supabase
+        .from('beds24_connections')
+        .update({
+          access_token: accessToken,
+          token_expires_at: expiresAt,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', connectionId);
+
+      if (error) throw error;
+
+      return { success: true, data: { success: true } };
+    } catch (error) {
+      console.error('Error updating access token:', error);
+      return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
+    }
+  }
+
+  async testAccessToken(accessToken: string): Promise<Beds24ApiResponse<{ valid: boolean }>> {
+    try {
+      const BEDS24_API_URL = 'https://api.beds24.com/v2';
+      const BEDS24_ORGANIZATION = 'otelciro';
+      
+      const response = await fetch(`${BEDS24_API_URL}/authentication/test`, {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json',
+          'organization': BEDS24_ORGANIZATION,
+          'token': accessToken,
+        }
+      });
+
+      return { 
+        success: true, 
+        data: { 
+          valid: response.ok
+        }
+      };
+    } catch (error) {
+      console.error('Error testing access token:', error);
+      return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
+    }
+  }
+
   // Health Check
   async testConnection(connectionId: string): Promise<Beds24ApiResponse<{ status: string }>> {
     try {
