@@ -63,25 +63,51 @@ Deno.serve(async (req) => {
  */
 async function handleSetup(invitationCode: string, hotelId: string, deviceName: string) {
   console.log('Setting up Beds24 connection with invitation code')
+  console.log('Invitation code:', invitationCode.substring(0, 20) + '...')
+  console.log('Device name:', deviceName)
   
   try {
     // Use GET request with headers as per Beds24 API documentation
-    const response = await fetch(`${BEDS24_API_URL}/authentication/setup`, {
+    const url = `${BEDS24_API_URL}/authentication/setup`
+    console.log('Making request to:', url)
+    
+    const headers = {
+      'code': invitationCode,
+      'deviceName': deviceName,
+      'Accept': 'application/json',
+    }
+    console.log('Request headers:', { ...headers, code: headers.code.substring(0, 20) + '...' })
+    
+    const response = await fetch(url, {
       method: 'GET',
-      headers: {
-        'code': invitationCode,
-        'deviceName': deviceName,
-        'Accept': 'application/json',
-      }
+      headers
     })
+
+    console.log('Response status:', response.status)
+    console.log('Response headers:', Object.fromEntries(response.headers.entries()))
 
     if (!response.ok) {
       const errorData = await response.text()
-      console.error('Setup failed:', errorData)
+      console.error('Setup failed with status:', response.status)
+      console.error('Error response:', errorData)
+      
+      // Try to parse the error as JSON for better debugging
+      try {
+        const parsedError = JSON.parse(errorData)
+        console.error('Parsed error:', parsedError)
+      } catch (e) {
+        console.error('Could not parse error as JSON')
+      }
+      
       return new Response(
         JSON.stringify({ 
           success: false, 
-          error: `Setup failed: ${response.status} - ${errorData}` 
+          error: `Setup failed: ${errorData}`,
+          debug: {
+            status: response.status,
+            url: url,
+            invitationCodeLength: invitationCode.length
+          }
         }),
         { 
           status: response.status, 
