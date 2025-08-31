@@ -7,6 +7,44 @@ export function TestBeds24Auth() {
     try {
       console.log('Testing Beds24 authentication...');
       
+      // First, check if we already have a valid connection
+      const { data: existingConnections, error: dbError } = await supabase
+        .from('beds24_connections')
+        .select('*')
+        .eq('hotel_id', '550e8400-e29b-41d4-a716-446655440000')
+        .eq('is_active', true)
+        .order('created_at', { ascending: false })
+        .limit(1);
+      
+      if (dbError) {
+        console.error('❌ Database check failed:', dbError);
+        return;
+      }
+
+      if (existingConnections && existingConnections.length > 0) {
+        const connection = existingConnections[0];
+        const expiresAt = new Date(connection.token_expires_at);
+        const now = new Date();
+        
+        if (expiresAt > now) {
+          console.log('🎉 ✅ Already have valid Beds24 connection!');
+          console.log('🔗 Connection ID:', connection.id);
+          console.log('📅 Created at:', connection.created_at);
+          console.log('⏰ Expires at:', connection.token_expires_at);
+          const hoursRemaining = Math.round((expiresAt.getTime() - now.getTime()) / (1000 * 60 * 60));
+          console.log('⏳ Time remaining:', hoursRemaining, 'hours');
+          console.log('🔑 Has access token:', !!connection.access_token);
+          console.log('🔄 Has refresh token:', !!connection.refresh_token);
+          console.log('💼 Account ID:', connection.account_id);
+          return;
+        } else {
+          console.log('⚠️ Existing connection expired, trying to refresh or create new one...');
+        }
+      } else {
+        console.log('⚠️ No existing connections found, setting up new one...');
+      }
+
+      // If no valid connection exists, try to set up new one
       const { data, error } = await supabase.functions.invoke('beds24-auth', {
         body: {
           action: 'setup',
@@ -31,15 +69,15 @@ export function TestBeds24Auth() {
         console.log('⏰ Expires in:', data.data.expiresIn, 'seconds');
         
         // Now let's check if the connection was stored in the database
-        const { data: connections, error: dbError } = await supabase
+        const { data: connections, error: dbError2 } = await supabase
           .from('beds24_connections')
           .select('*')
           .eq('hotel_id', '550e8400-e29b-41d4-a716-446655440000')
           .order('created_at', { ascending: false })
           .limit(1);
 
-        if (dbError) {
-          console.error('❌ Database query error:', dbError);
+        if (dbError2) {
+          console.error('❌ Database query error:', dbError2);
         } else {
           console.log('💾 Connection stored in database:', connections?.[0] ? 'Yes' : 'No');
           if (connections?.[0]) {
