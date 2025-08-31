@@ -85,7 +85,6 @@ import SocialMediaEnterprise from "./pages/SocialMediaEnterprise";
 import AirbnbCallback from "./pages/auth/AirbnbCallback";
 import AirbnbTest from "./pages/AirbnbTest";
 import Beds24Dashboard from "./pages/Beds24Dashboard";
-import Beds24Advanced from "./pages/Beds24Advanced";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -253,11 +252,6 @@ const AppContent = () => {
       <Route path="/beds24" element={
         <HMSLayout>
           <Beds24Dashboard />
-        </HMSLayout>
-      } />
-      <Route path="/beds24/advanced" element={
-        <HMSLayout>
-          <Beds24Advanced />
         </HMSLayout>
       } />
       <Route path="/channel/orders" element={
