@@ -9,6 +9,7 @@ import { Beds24ChannelManager } from "@/components/beds24/Beds24ChannelManager";
 import { Beds24SyncMonitor } from "@/components/beds24/Beds24SyncMonitor";
 import { useBeds24Connections } from "@/hooks/use-beds24";
 import { useAuth } from "@/hooks/use-auth";
+import { TestBeds24Auth } from "@/test-auth";
 
 export default function Beds24Dashboard() {
   const [showSetupWizard, setShowSetupWizard] = useState(false);
@@ -59,13 +60,27 @@ export default function Beds24Dashboard() {
       </div>
 
       <div className="p-6">
-        <Tabs defaultValue="overview" className="space-y-6">
+        <Tabs defaultValue="test" className="space-y-6">
           <TabsList>
+            <TabsTrigger value="test">Auth Test</TabsTrigger>
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="connections">Connections</TabsTrigger>
-            <TabsTrigger value="testing">API Testing</TabsTrigger>
-            <TabsTrigger value="logs">Sync Logs</TabsTrigger>
+            <TabsTrigger value="logs">Logs</TabsTrigger>
           </TabsList>
+
+          <TabsContent value="test" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Beds24 Authentication Test</CardTitle>
+                <CardDescription>
+                  Testing authentication with your invitation token (check browser console for details)
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <TestBeds24Auth />
+              </CardContent>
+            </Card>
+          </TabsContent>
 
           <TabsContent value="overview" className="space-y-6">
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
