@@ -46,18 +46,24 @@ export const ChannelAnalytics: React.FC = () => {
       // Fetch channel performance data
       const { data: performanceData, error: performanceError } = await supabase
         .from('channel_reservations')
-        .select(`
-          *,
-          channels (channel_name)
-        `);
+        .select('*');
+      
+      const { data: channelsData } = await supabase
+        .from('channels')
+        .select('id, channel_name');
 
       if (performanceError) throw performanceError;
 
       // Process performance data
       const channelStats: { [key: string]: ChannelPerformance } = {};
       
+      const channelMap = channelsData?.reduce((acc, channel) => {
+        acc[channel.id] = channel.channel_name;
+        return acc;
+      }, {} as Record<string, string>) || {};
+
       performanceData?.forEach(reservation => {
-        const channelName = reservation.channels?.channel_name || 'Unknown';
+        const channelName = channelMap[reservation.channel_id] || 'Unknown';
         
         if (!channelStats[channelName]) {
           channelStats[channelName] = {

@@ -83,9 +83,14 @@ export const ChannelMappings: React.FC = () => {
         setRoomTypes(roomTypesData || []);
       }
 
+      const channelMap = channelsData?.reduce((acc, channel) => {
+        acc[channel.id] = channel.channel_name;
+        return acc;
+      }, {} as Record<string, string>) || {};
+
       setMappings(mappingsData?.map(m => ({
         ...m,
-        channel_name: m.channels?.channel_name || '',
+        channel_name: channelMap[m.channel_id] || '',
         hotel_room_type_name: roomTypesData?.find(rt => rt.id === m.hotel_room_type_id)?.name || 'Unknown'
       })) || []);
       

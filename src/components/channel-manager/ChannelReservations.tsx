@@ -84,10 +84,7 @@ export const ChannelReservations: React.FC = () => {
     try {
       let query = supabase
         .from('channel_reservations')
-        .select(`
-          *,
-          channels (channel_name)
-        `)
+        .select('*')
         .order('imported_at', { ascending: false });
 
       if (selectedChannel !== 'all') {
@@ -102,9 +99,19 @@ export const ChannelReservations: React.FC = () => {
 
       if (error) throw error;
 
+      // Fetch channels separately
+      const { data: channelsData } = await supabase
+        .from('channels')
+        .select('id, channel_name');
+
+      const channelMap = channelsData?.reduce((acc, channel) => {
+        acc[channel.id] = channel.channel_name;
+        return acc;
+      }, {} as Record<string, string>) || {};
+
       const formattedReservations = data?.map(reservation => ({
         ...reservation,
-        channel_name: reservation.channels?.channel_name || 'Unknown'
+        channel_name: channelMap[reservation.channel_id] || 'Unknown'
       })) || [];
 
       setReservations(formattedReservations);

@@ -76,13 +76,7 @@ export const ChannelInventory: React.FC = () => {
     try {
       let query = supabase
         .from('channel_inventory')
-        .select(`
-          *,
-          channels (channel_name),
-          channel_mappings (
-            room_types (name)
-          )
-        `)
+        .select('*')
         .gte('date', format(selectedDate, 'yyyy-MM-dd'))
         .lte('date', format(endDate, 'yyyy-MM-dd'))
         .order('date', { ascending: true });
@@ -95,10 +89,29 @@ export const ChannelInventory: React.FC = () => {
 
       if (error) throw error;
 
+      // Fetch channels and mappings separately
+      const { data: channelsData } = await supabase
+        .from('channels')
+        .select('id, channel_name');
+      
+      const { data: mappingsData } = await supabase
+        .from('channel_mappings')
+        .select('id, channel_room_type_name');
+
+      const channelMap = channelsData?.reduce((acc, channel) => {
+        acc[channel.id] = channel.channel_name;
+        return acc;
+      }, {} as Record<string, string>) || {};
+
+      const mappingMap = mappingsData?.reduce((acc, mapping) => {
+        acc[mapping.id] = mapping.channel_room_type_name;
+        return acc;
+      }, {} as Record<string, string>) || {};
+
       const formattedInventory = data?.map(inv => ({
         ...inv,
-        channel_name: inv.channels?.channel_name || 'Unknown',
-        room_type_name: inv.channel_mappings?.room_types?.name || 'Unknown'
+        channel_name: channelMap[inv.channel_id] || 'Unknown',
+        room_type_name: mappingMap[inv.mapping_id] || 'Unknown'
       })) || [];
 
       setInventory(formattedInventory);
@@ -447,7 +460,6 @@ export const ChannelInventory: React.FC = () => {
                         <Switch
                           checked={inv.stop_sell}
                           onCheckedChange={(checked) => toggleStopSell(inv.id, checked)}
-                          size="sm"
                         />
                       </td>
                       <td className="p-2">
