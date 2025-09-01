@@ -391,6 +391,300 @@ export type Database = {
           },
         ]
       }
+      channel_inventory: {
+        Row: {
+          available_rooms: number
+          channel_id: string
+          created_at: string
+          date: string
+          error_message: string | null
+          id: string
+          mapping_id: string
+          push_status: string | null
+          pushed_at: string | null
+          stop_sell: boolean | null
+          updated_at: string
+        }
+        Insert: {
+          available_rooms?: number
+          channel_id: string
+          created_at?: string
+          date: string
+          error_message?: string | null
+          id?: string
+          mapping_id: string
+          push_status?: string | null
+          pushed_at?: string | null
+          stop_sell?: boolean | null
+          updated_at?: string
+        }
+        Update: {
+          available_rooms?: number
+          channel_id?: string
+          created_at?: string
+          date?: string
+          error_message?: string | null
+          id?: string
+          mapping_id?: string
+          push_status?: string | null
+          pushed_at?: string | null
+          stop_sell?: boolean | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      channel_mappings: {
+        Row: {
+          channel_id: string
+          channel_room_type_id: string
+          channel_room_type_name: string | null
+          created_at: string
+          hotel_room_type_id: string
+          id: string
+          is_active: boolean | null
+          mapping_config: Json | null
+          updated_at: string
+        }
+        Insert: {
+          channel_id: string
+          channel_room_type_id: string
+          channel_room_type_name?: string | null
+          created_at?: string
+          hotel_room_type_id: string
+          id?: string
+          is_active?: boolean | null
+          mapping_config?: Json | null
+          updated_at?: string
+        }
+        Update: {
+          channel_id?: string
+          channel_room_type_id?: string
+          channel_room_type_name?: string | null
+          created_at?: string
+          hotel_room_type_id?: string
+          id?: string
+          is_active?: boolean | null
+          mapping_config?: Json | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      channel_rates: {
+        Row: {
+          channel_id: string
+          created_at: string
+          currency: string | null
+          date: string
+          error_message: string | null
+          id: string
+          mapping_id: string
+          push_status: string | null
+          pushed_at: string | null
+          rate: number
+          rate_plan_name: string | null
+          updated_at: string
+        }
+        Insert: {
+          channel_id: string
+          created_at?: string
+          currency?: string | null
+          date: string
+          error_message?: string | null
+          id?: string
+          mapping_id: string
+          push_status?: string | null
+          pushed_at?: string | null
+          rate: number
+          rate_plan_name?: string | null
+          updated_at?: string
+        }
+        Update: {
+          channel_id?: string
+          created_at?: string
+          currency?: string | null
+          date?: string
+          error_message?: string | null
+          id?: string
+          mapping_id?: string
+          push_status?: string | null
+          pushed_at?: string | null
+          rate?: number
+          rate_plan_name?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      channel_reservations: {
+        Row: {
+          adults: number | null
+          channel_id: string
+          channel_reservation_id: string
+          check_in: string
+          check_out: string
+          children: number | null
+          commission_amount: number | null
+          commission_rate: number | null
+          created_at: string
+          currency: string | null
+          guest_email: string | null
+          guest_name: string
+          guest_phone: string | null
+          hotel_id: string
+          id: string
+          imported_at: string
+          pms_reservation_id: string | null
+          room_type: string | null
+          special_requests: string | null
+          status: string | null
+          sync_status: string | null
+          total_amount: number | null
+          updated_at: string
+        }
+        Insert: {
+          adults?: number | null
+          channel_id: string
+          channel_reservation_id: string
+          check_in: string
+          check_out: string
+          children?: number | null
+          commission_amount?: number | null
+          commission_rate?: number | null
+          created_at?: string
+          currency?: string | null
+          guest_email?: string | null
+          guest_name: string
+          guest_phone?: string | null
+          hotel_id: string
+          id?: string
+          imported_at?: string
+          pms_reservation_id?: string | null
+          room_type?: string | null
+          special_requests?: string | null
+          status?: string | null
+          sync_status?: string | null
+          total_amount?: number | null
+          updated_at?: string
+        }
+        Update: {
+          adults?: number | null
+          channel_id?: string
+          channel_reservation_id?: string
+          check_in?: string
+          check_out?: string
+          children?: number | null
+          commission_amount?: number | null
+          commission_rate?: number | null
+          created_at?: string
+          currency?: string | null
+          guest_email?: string | null
+          guest_name?: string
+          guest_phone?: string | null
+          hotel_id?: string
+          id?: string
+          imported_at?: string
+          pms_reservation_id?: string | null
+          room_type?: string | null
+          special_requests?: string | null
+          status?: string | null
+          sync_status?: string | null
+          total_amount?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      channel_sync_logs: {
+        Row: {
+          channel_id: string
+          created_at: string
+          end_time: string | null
+          error_details: Json | null
+          id: string
+          operation: string
+          records_failed: number | null
+          records_processed: number | null
+          records_success: number | null
+          start_time: string
+          status: string
+          sync_type: string
+        }
+        Insert: {
+          channel_id: string
+          created_at?: string
+          end_time?: string | null
+          error_details?: Json | null
+          id?: string
+          operation: string
+          records_failed?: number | null
+          records_processed?: number | null
+          records_success?: number | null
+          start_time?: string
+          status: string
+          sync_type: string
+        }
+        Update: {
+          channel_id?: string
+          created_at?: string
+          end_time?: string | null
+          error_details?: Json | null
+          id?: string
+          operation?: string
+          records_failed?: number | null
+          records_processed?: number | null
+          records_success?: number | null
+          start_time?: string
+          status?: string
+          sync_type?: string
+        }
+        Relationships: []
+      }
+      channels: {
+        Row: {
+          api_credentials: Json | null
+          api_endpoint: string | null
+          channel_name: string
+          channel_type: string
+          created_at: string
+          hotel_id: string
+          id: string
+          is_active: boolean | null
+          last_sync_at: string | null
+          settings: Json | null
+          sync_enabled: boolean | null
+          sync_frequency: number | null
+          updated_at: string
+        }
+        Insert: {
+          api_credentials?: Json | null
+          api_endpoint?: string | null
+          channel_name: string
+          channel_type: string
+          created_at?: string
+          hotel_id: string
+          id?: string
+          is_active?: boolean | null
+          last_sync_at?: string | null
+          settings?: Json | null
+          sync_enabled?: boolean | null
+          sync_frequency?: number | null
+          updated_at?: string
+        }
+        Update: {
+          api_credentials?: Json | null
+          api_endpoint?: string | null
+          channel_name?: string
+          channel_type?: string
+          created_at?: string
+          hotel_id?: string
+          id?: string
+          is_active?: boolean | null
+          last_sync_at?: string | null
+          settings?: Json | null
+          sync_enabled?: boolean | null
+          sync_frequency?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       checkin_logs: {
         Row: {
           checked_in_at: string
