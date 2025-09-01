@@ -32,7 +32,8 @@ import {
   Image,
   Calendar1,
   Palette,
-  Zap
+  Zap,
+  Link
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -68,7 +69,9 @@ const businessItems: SidebarItem[] = [
   { title: "Reports", href: "/reports", icon: FileText }
 ];
 
-const channelItems: SidebarItem[] = [];
+const channelItems: SidebarItem[] = [
+  { title: "Channel Manager", href: "/channel-manager", icon: Link, color: "text-accent" }
+];
 
 const socialMediaItems: SidebarItem[] = [
   { title: "Content Studio", href: "/social-media", icon: Share2, color: "text-accent" },
@@ -280,6 +283,8 @@ export const HMSSidebar = () => {
         {renderNavGroup("Operations", operationsItems, "operations")}
         <Separator className="bg-sidebar-border" />
         {renderNavGroup("Business", businessItems, "business")}
+        <Separator className="bg-sidebar-border" />
+        {renderNavGroup("Channels", channelItems, "channels")}
         <Separator className="bg-sidebar-border" />
         {renderNavGroup("Social Media", socialMediaItems, "social")}
         <Separator className="bg-sidebar-border" />

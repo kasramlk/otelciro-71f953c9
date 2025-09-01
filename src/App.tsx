@@ -76,6 +76,7 @@ import SocialMediaAnalyticsPage from "./pages/SocialMediaAnalytics";
 import SocialMediaAdvanced from "./pages/SocialMediaAdvanced";
 import SocialMediaIntegration from "./pages/SocialMediaIntegration";
 import SocialMediaEnterprise from "./pages/SocialMediaEnterprise";
+import ChannelManager from "./pages/ChannelManager";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -246,6 +247,7 @@ const AppContent = () => {
               <HMSRevenueAI />
             </HMSLayout>
           } />
+          <Route path="/channel-manager" element={<ChannelManager />} />
           <Route path="/notifications" element={
             <HMSLayout>
               <div className="p-6">
