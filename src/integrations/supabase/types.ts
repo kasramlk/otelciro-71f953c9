@@ -196,6 +196,494 @@ export type Database = {
           },
         ]
       }
+      beds24_bookings: {
+        Row: {
+          adults: number | null
+          beds24_booking_id: string
+          beds24_property_id: string
+          booking_data: Json | null
+          booking_source: string | null
+          check_in: string
+          check_out: string
+          children: number | null
+          created_at: string | null
+          currency: string | null
+          guest_email: string | null
+          guest_name: string
+          guest_phone: string | null
+          id: string
+          pms_reservation_id: string | null
+          status: string | null
+          sync_status: string | null
+          total_amount: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          adults?: number | null
+          beds24_booking_id: string
+          beds24_property_id: string
+          booking_data?: Json | null
+          booking_source?: string | null
+          check_in: string
+          check_out: string
+          children?: number | null
+          created_at?: string | null
+          currency?: string | null
+          guest_email?: string | null
+          guest_name: string
+          guest_phone?: string | null
+          id?: string
+          pms_reservation_id?: string | null
+          status?: string | null
+          sync_status?: string | null
+          total_amount?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          adults?: number | null
+          beds24_booking_id?: string
+          beds24_property_id?: string
+          booking_data?: Json | null
+          booking_source?: string | null
+          check_in?: string
+          check_out?: string
+          children?: number | null
+          created_at?: string | null
+          currency?: string | null
+          guest_email?: string | null
+          guest_name?: string
+          guest_phone?: string | null
+          id?: string
+          pms_reservation_id?: string | null
+          status?: string | null
+          sync_status?: string | null
+          total_amount?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "beds24_bookings_pms_reservation_id_fkey"
+            columns: ["pms_reservation_id"]
+            isOneToOne: false
+            referencedRelation: "reservations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      beds24_calendar: {
+        Row: {
+          arrival_allowed: boolean | null
+          available: number | null
+          beds24_property_id: string
+          beds24_room_id: string
+          calendar_data: Json | null
+          closed_arrival: boolean | null
+          closed_departure: boolean | null
+          created_at: string | null
+          date: string
+          departure_allowed: boolean | null
+          id: string
+          max_stay: number | null
+          min_stay: number | null
+          rate: number | null
+          sync_status: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          arrival_allowed?: boolean | null
+          available?: number | null
+          beds24_property_id: string
+          beds24_room_id: string
+          calendar_data?: Json | null
+          closed_arrival?: boolean | null
+          closed_departure?: boolean | null
+          created_at?: string | null
+          date: string
+          departure_allowed?: boolean | null
+          id?: string
+          max_stay?: number | null
+          min_stay?: number | null
+          rate?: number | null
+          sync_status?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          arrival_allowed?: boolean | null
+          available?: number | null
+          beds24_property_id?: string
+          beds24_room_id?: string
+          calendar_data?: Json | null
+          closed_arrival?: boolean | null
+          closed_departure?: boolean | null
+          created_at?: string | null
+          date?: string
+          departure_allowed?: boolean | null
+          id?: string
+          max_stay?: number | null
+          min_stay?: number | null
+          rate?: number | null
+          sync_status?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      beds24_config: {
+        Row: {
+          auto_push_updates: boolean | null
+          auto_sync_bookings: boolean | null
+          auto_sync_calendar: boolean | null
+          auto_sync_messages: boolean | null
+          beds24_property_id: string | null
+          config_data: Json | null
+          created_at: string | null
+          hotel_id: string | null
+          id: string
+          last_full_sync: string | null
+          sync_enabled: boolean | null
+          sync_frequency: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          auto_push_updates?: boolean | null
+          auto_sync_bookings?: boolean | null
+          auto_sync_calendar?: boolean | null
+          auto_sync_messages?: boolean | null
+          beds24_property_id?: string | null
+          config_data?: Json | null
+          created_at?: string | null
+          hotel_id?: string | null
+          id?: string
+          last_full_sync?: string | null
+          sync_enabled?: boolean | null
+          sync_frequency?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          auto_push_updates?: boolean | null
+          auto_sync_bookings?: boolean | null
+          auto_sync_calendar?: boolean | null
+          auto_sync_messages?: boolean | null
+          beds24_property_id?: string | null
+          config_data?: Json | null
+          created_at?: string | null
+          hotel_id?: string | null
+          id?: string
+          last_full_sync?: string | null
+          sync_enabled?: boolean | null
+          sync_frequency?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "beds24_config_hotel_id_fkey"
+            columns: ["hotel_id"]
+            isOneToOne: true
+            referencedRelation: "hotels"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      beds24_invoices: {
+        Row: {
+          beds24_booking_id: string | null
+          beds24_invoice_id: string
+          beds24_property_id: string
+          created_at: string | null
+          currency: string | null
+          due_date: string | null
+          id: string
+          invoice_data: Json | null
+          invoice_number: string | null
+          pms_invoice_id: string | null
+          status: string | null
+          sync_status: string | null
+          total_amount: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          beds24_booking_id?: string | null
+          beds24_invoice_id: string
+          beds24_property_id: string
+          created_at?: string | null
+          currency?: string | null
+          due_date?: string | null
+          id?: string
+          invoice_data?: Json | null
+          invoice_number?: string | null
+          pms_invoice_id?: string | null
+          status?: string | null
+          sync_status?: string | null
+          total_amount?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          beds24_booking_id?: string | null
+          beds24_invoice_id?: string
+          beds24_property_id?: string
+          created_at?: string | null
+          currency?: string | null
+          due_date?: string | null
+          id?: string
+          invoice_data?: Json | null
+          invoice_number?: string | null
+          pms_invoice_id?: string | null
+          status?: string | null
+          sync_status?: string | null
+          total_amount?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "beds24_invoices_pms_invoice_id_fkey"
+            columns: ["pms_invoice_id"]
+            isOneToOne: false
+            referencedRelation: "invoices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      beds24_messages: {
+        Row: {
+          beds24_booking_id: string | null
+          beds24_message_id: string
+          beds24_property_id: string
+          content: string | null
+          created_at: string | null
+          id: string
+          message_data: Json | null
+          message_type: string | null
+          recipient: string | null
+          sender: string | null
+          sent_at: string | null
+          subject: string | null
+          sync_status: string | null
+        }
+        Insert: {
+          beds24_booking_id?: string | null
+          beds24_message_id: string
+          beds24_property_id: string
+          content?: string | null
+          created_at?: string | null
+          id?: string
+          message_data?: Json | null
+          message_type?: string | null
+          recipient?: string | null
+          sender?: string | null
+          sent_at?: string | null
+          subject?: string | null
+          sync_status?: string | null
+        }
+        Update: {
+          beds24_booking_id?: string | null
+          beds24_message_id?: string
+          beds24_property_id?: string
+          content?: string | null
+          created_at?: string | null
+          id?: string
+          message_data?: Json | null
+          message_type?: string | null
+          recipient?: string | null
+          sender?: string | null
+          sent_at?: string | null
+          subject?: string | null
+          sync_status?: string | null
+        }
+        Relationships: []
+      }
+      beds24_properties: {
+        Row: {
+          address: string | null
+          beds24_property_id: string
+          city: string | null
+          country: string | null
+          created_at: string | null
+          currency: string | null
+          hotel_id: string | null
+          id: string
+          last_sync_at: string | null
+          name: string
+          property_data: Json | null
+          sync_status: string | null
+          timezone: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          address?: string | null
+          beds24_property_id: string
+          city?: string | null
+          country?: string | null
+          created_at?: string | null
+          currency?: string | null
+          hotel_id?: string | null
+          id?: string
+          last_sync_at?: string | null
+          name: string
+          property_data?: Json | null
+          sync_status?: string | null
+          timezone?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          address?: string | null
+          beds24_property_id?: string
+          city?: string | null
+          country?: string | null
+          created_at?: string | null
+          currency?: string | null
+          hotel_id?: string | null
+          id?: string
+          last_sync_at?: string | null
+          name?: string
+          property_data?: Json | null
+          sync_status?: string | null
+          timezone?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "beds24_properties_hotel_id_fkey"
+            columns: ["hotel_id"]
+            isOneToOne: false
+            referencedRelation: "hotels"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      beds24_rate_limits: {
+        Row: {
+          created_at: string | null
+          daily_credits_remaining: number | null
+          five_min_credits_remaining: number | null
+          id: string
+          request_cost: number | null
+          request_timestamp: string | null
+          response_headers: Json | null
+        }
+        Insert: {
+          created_at?: string | null
+          daily_credits_remaining?: number | null
+          five_min_credits_remaining?: number | null
+          id?: string
+          request_cost?: number | null
+          request_timestamp?: string | null
+          response_headers?: Json | null
+        }
+        Update: {
+          created_at?: string | null
+          daily_credits_remaining?: number | null
+          five_min_credits_remaining?: number | null
+          id?: string
+          request_cost?: number | null
+          request_timestamp?: string | null
+          response_headers?: Json | null
+        }
+        Relationships: []
+      }
+      beds24_room_types: {
+        Row: {
+          beds24_property_id: string
+          beds24_room_id: string
+          created_at: string | null
+          hotel_id: string | null
+          id: string
+          max_occupancy: number | null
+          name: string
+          room_data: Json | null
+          room_type_id: string | null
+          sync_status: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          beds24_property_id: string
+          beds24_room_id: string
+          created_at?: string | null
+          hotel_id?: string | null
+          id?: string
+          max_occupancy?: number | null
+          name: string
+          room_data?: Json | null
+          room_type_id?: string | null
+          sync_status?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          beds24_property_id?: string
+          beds24_room_id?: string
+          created_at?: string | null
+          hotel_id?: string | null
+          id?: string
+          max_occupancy?: number | null
+          name?: string
+          room_data?: Json | null
+          room_type_id?: string | null
+          sync_status?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "beds24_room_types_hotel_id_fkey"
+            columns: ["hotel_id"]
+            isOneToOne: false
+            referencedRelation: "hotels"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "beds24_room_types_room_type_id_fkey"
+            columns: ["room_type_id"]
+            isOneToOne: false
+            referencedRelation: "room_types"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      beds24_sync_logs: {
+        Row: {
+          completed_at: string | null
+          created_at: string | null
+          entity_id: string | null
+          entity_type: string
+          error_details: Json | null
+          id: string
+          operation: string
+          rate_limit_info: Json | null
+          records_failed: number | null
+          records_processed: number | null
+          records_success: number | null
+          started_at: string | null
+          status: string | null
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string | null
+          entity_id?: string | null
+          entity_type: string
+          error_details?: Json | null
+          id?: string
+          operation: string
+          rate_limit_info?: Json | null
+          records_failed?: number | null
+          records_processed?: number | null
+          records_success?: number | null
+          started_at?: string | null
+          status?: string | null
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string | null
+          entity_id?: string | null
+          entity_type?: string
+          error_details?: Json | null
+          id?: string
+          operation?: string
+          rate_limit_info?: Json | null
+          records_failed?: number | null
+          records_processed?: number | null
+          records_success?: number | null
+          started_at?: string | null
+          status?: string | null
+        }
+        Relationships: []
+      }
       booking_holds: {
         Row: {
           adults: number

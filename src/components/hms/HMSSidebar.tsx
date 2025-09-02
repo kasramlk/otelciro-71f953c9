@@ -33,7 +33,8 @@ import {
   Calendar1,
   Palette,
   Zap,
-  Link
+  Link,
+  Database
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -70,7 +71,8 @@ const businessItems: SidebarItem[] = [
 ];
 
 const channelItems: SidebarItem[] = [
-  { title: "Channel Manager", href: "/channel-manager", icon: Link, color: "text-accent" }
+  { title: "Channel Manager", href: "/channel-manager", icon: Link, color: "text-accent" },
+  { title: "Beds24 Integration", href: "/beds24-integration", icon: Database, color: "text-accent" }
 ];
 
 const socialMediaItems: SidebarItem[] = [
