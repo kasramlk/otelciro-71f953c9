@@ -16,12 +16,15 @@ serve(async (req) => {
   }
 
   try {
-    // Initialize Supabase client
+    // Initialize Supabase clients
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
-
-    // Verify admin access
+    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
+    
+    // Service client for database operations
+    const supabaseService = createClient(supabaseUrl, supabaseServiceKey);
+    
+    // User client for auth validation
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
       return new Response(JSON.stringify({ error: 'Missing authorization' }), {
@@ -30,9 +33,15 @@ serve(async (req) => {
       });
     }
 
-    // Get user from JWT token
     const token = authHeader.replace('Bearer ', '');
-    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+    const supabaseUser = createClient(supabaseUrl, supabaseAnonKey, {
+      global: {
+        headers: { Authorization: authHeader }
+      }
+    });
+
+    // Get user from JWT token
+    const { data: { user }, error: authError } = await supabaseUser.auth.getUser();
 
     if (authError || !user) {
       console.error('Auth error:', authError);
@@ -42,8 +51,8 @@ serve(async (req) => {
       });
     }
 
-    // Check admin role
-    const { data: roles } = await supabase
+    // Check admin role using service client
+    const { data: roles } = await supabaseService
       .from('user_roles')
       .select('role')
       .eq('user_id', user.id);
@@ -94,7 +103,7 @@ serve(async (req) => {
       `beds24_refresh_write_${crypto.randomUUID()}` : null;
 
     // Create connection record
-    const { data: connection, error: connectionError } = await supabase
+    const { data: connection, error: connectionError } = await supabaseService
       .from('beds24_connections')
       .insert([{
         org_id: orgId,
@@ -117,7 +126,7 @@ serve(async (req) => {
     }
 
     // Initialize sync state
-    await supabase
+    await supabaseService
       .from('beds24_sync_state')
       .insert([{
         hotel_id: hotelId,
@@ -126,7 +135,7 @@ serve(async (req) => {
       }]);
 
     // Trigger initial import (async)
-    supabase.functions.invoke('beds24-initial-import', {
+    supabaseService.functions.invoke('beds24-initial-import', {
       body: { hotelId, beds24PropertyId }
     }).catch(error => {
       console.error('Failed to trigger initial import:', error);

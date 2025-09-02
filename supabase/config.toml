@@ -46,6 +46,9 @@ verify_jwt = true
 [functions.beds24-admin-link]
 verify_jwt = true
 
+[env]
+SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpsZGNvdHVteG91YXNnemRzdm1oIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU2NjY5NDEsImV4cCI6MjA3MTI0Mjk0MX0.tMMHzRMpmm4lLvRq27M1O7rcOsUnYr2bFEki3TdqFeQ"
+
 [functions.beds24-token-service] 
 verify_jwt = false
 
