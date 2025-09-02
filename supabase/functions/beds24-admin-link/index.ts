@@ -1,7 +1,6 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.55.0";
-import { decode } from "https://deno.land/x/djwt@v3.0.2/mod.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -17,34 +16,31 @@ serve(async (req) => {
   }
 
   try {
-    // Initialize Supabase service client
+    // Initialize Supabase client
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Verify admin access
+    // Get user from Supabase JWT verification (automatic with verify_jwt = true)
     const authHeader = req.headers.get('Authorization');
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return new Response(JSON.stringify({ error: 'Missing or invalid authorization header' }), {
+    if (!authHeader) {
+      return new Response(JSON.stringify({ error: 'Missing authorization header' }), {
         status: 401,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
     }
 
-    // Decode JWT token to get user info
-    const token = authHeader.replace('Bearer ', '');
-    let userId: string;
-    
-    try {
-      const [header, payload, signature] = decode(token);
-      userId = payload.sub as string;
-      
-      if (!userId) {
-        throw new Error('No user ID in token');
-      }
-    } catch (error) {
-      console.error('JWT decode error:', error);
-      return new Response(JSON.stringify({ error: 'Invalid JWT token', details: error.message }), {
+    // Create a client with the user's JWT for user validation
+    const supabaseAuth = createClient(
+      supabaseUrl, 
+      Deno.env.get('SUPABASE_ANON_KEY')!,
+      { global: { headers: { Authorization: authHeader } } }
+    );
+
+    const { data: { user }, error: userError } = await supabaseAuth.auth.getUser();
+    if (userError || !user) {
+      console.error('User validation error:', userError);
+      return new Response(JSON.stringify({ error: 'Invalid user session', details: userError?.message }), {
         status: 401,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
@@ -54,7 +50,7 @@ serve(async (req) => {
     const { data: roles } = await supabase
       .from('user_roles')
       .select('role')
-      .eq('user_id', userId);
+      .eq('user_id', user.id);
 
     const isAdmin = roles?.some(r => ['admin', 'owner'].includes(r.role));
     if (!isAdmin) {
