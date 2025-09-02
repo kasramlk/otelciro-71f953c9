@@ -1,510 +1,475 @@
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Switch } from '@/components/ui/switch';
-import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Separator } from '@/components/ui/separator';
+import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
+import { useToast } from '@/components/ui/use-toast';
 import { 
-  Settings, 
-  Database, 
-  Key, 
+  CheckCircle, 
+  XCircle, 
   Clock, 
-  Save, 
-  TestTube,
-  AlertTriangle,
-  CheckCircle,
-  RefreshCw,
   Monitor,
+  Link as LinkIcon,
   Activity
 } from 'lucide-react';
 
-interface Beds24Config {
-  id?: string;
-  hotel_id?: string;
-  beds24_property_id?: string;
-  sync_enabled: boolean;
-  sync_frequency: number;
-  auto_sync_calendar: boolean;
-  auto_sync_bookings: boolean;
-  auto_sync_messages: boolean;
-  auto_push_updates: boolean;
-  config_data: any;
+interface Beds24Connection {
+  id: string;
+  org_id: string;
+  hotel_id: string;
+  beds24_property_id: number;
+  scopes: string[];
+  status: string;
+  last_token_use_at?: string;
+  created_at: string;
 }
 
 interface Hotel {
   id: string;
   name: string;
-  code: string;
+  address?: string;
+  city?: string;
+  country?: string;
 }
 
-interface RateLimit {
-  request_timestamp: string;
-  five_min_credits_remaining: number;
-  daily_credits_remaining: number;
-  request_cost: number;
+interface ApiLog {
+  id: number;
+  hotel_id?: string;
+  beds24_property_id?: number;
+  method?: string;
+  path?: string;
+  status?: number;
+  request_cost?: number;
+  five_min_remaining?: number;
+  started_at: string;
+  duration_ms?: number;
+  error?: string;
 }
 
-export const Beds24AdminSettings: React.FC = () => {
+interface ConnectionHealth {
+  connection: any;
+  syncState: any;
+  accountDetails: any;
+  rateLimitInfo: any;
+  statistics: any;
+  recentLogs: ApiLog[];
+}
+
+const Beds24AdminSettings: React.FC = () => {
   const [loading, setLoading] = useState(false);
-  const [testingConnection, setTestingConnection] = useState(false);
-  const [config, setConfig] = useState<Beds24Config>({
-    sync_enabled: false,
-    sync_frequency: 3600,
-    auto_sync_calendar: true,
-    auto_sync_bookings: true,
-    auto_sync_messages: false,
-    auto_push_updates: false,
-    config_data: {}
-  });
+  const [testing, setTesting] = useState(false);
+  const [connections, setConnections] = useState<Beds24Connection[]>([]);
   const [hotels, setHotels] = useState<Hotel[]>([]);
-  const [rateLimits, setRateLimits] = useState<RateLimit[]>([]);
-  const [connectionStatus, setConnectionStatus] = useState<'unknown' | 'connected' | 'error'>('unknown');
+  const [apiLogs, setApiLogs] = useState<ApiLog[]>([]);
+  const [connectionHealth, setConnectionHealth] = useState<ConnectionHealth | null>(null);
+  
+  // Form state for new connection
+  const [linkForm, setLinkForm] = useState({
+    orgId: '550e8400-e29b-41d4-a716-446655440000', // Default org ID
+    hotelId: '',
+    beds24PropertyId: '',
+    inviteCode: '',
+    scopes: ['bookings', 'inventory', 'properties', 'accounts', 'channels']
+  });
+  
+  const { toast } = useToast();
 
   useEffect(() => {
     fetchHotels();
-    fetchConfig();
-    fetchRateLimits();
+    fetchConnections();
+    fetchApiLogs();
   }, []);
 
   const fetchHotels = async () => {
     try {
       const { data, error } = await supabase
         .from('hotels')
-        .select('id, name, code');
+        .select('id, name, address, city, country')
+        .order('name');
 
       if (error) throw error;
       setHotels(data || []);
     } catch (error) {
-      console.error('Failed to fetch hotels:', error);
+      console.error('Error fetching hotels:', error);
+      toast({
+        title: "Error",
+        description: "Failed to fetch hotels",
+        variant: "destructive",
+      });
     }
   };
 
-  const fetchConfig = async () => {
+  const fetchConnections = async () => {
     try {
       const { data, error } = await supabase
-        .from('beds24_config')
+        .from('beds24_connections')
         .select('*')
-        .single();
-
-      if (error && error.code !== 'PGRST116') throw error;
-      
-      if (data) {
-        setConfig(data);
-      }
-    } catch (error) {
-      console.error('Failed to fetch config:', error);
-    }
-  };
-
-  const fetchRateLimits = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('beds24_rate_limits')
-        .select('*')
-        .order('created_at', { ascending: false })
-        .limit(10);
+        .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setRateLimits(data || []);
+      setConnections(data || []);
     } catch (error) {
-      console.error('Failed to fetch rate limits:', error);
+      console.error('Error fetching connections:', error);
+      toast({
+        title: "Error",
+        description: "Failed to fetch connections",
+        variant: "destructive",
+      });
     }
   };
 
-  const testConnection = async () => {
-    setTestingConnection(true);
-    setConnectionStatus('unknown');
-
+  const fetchApiLogs = async () => {
     try {
-      const { data, error } = await supabase.functions.invoke('beds24-sync', {
+      const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+      const { data, error } = await supabase
+        .from('beds24_api_logs')
+        .select('*')
+        .gte('started_at', twentyFourHoursAgo.toISOString())
+        .order('started_at', { ascending: false })
+        .limit(20);
+
+      if (error) throw error;
+      setApiLogs(data || []);
+    } catch (error) {
+      console.error('Error fetching API logs:', error);
+    }
+  };
+
+  const linkProperty = async () => {
+    if (!linkForm.orgId || !linkForm.hotelId || !linkForm.beds24PropertyId || !linkForm.inviteCode) {
+      toast({
+        title: "Error",
+        description: "Please fill in all required fields",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const response = await supabase.functions.invoke('beds24-admin-link', {
         body: {
-          operation: 'sync_properties'
+          orgId: linkForm.orgId,
+          hotelId: linkForm.hotelId,
+          beds24PropertyId: parseInt(linkForm.beds24PropertyId),
+          inviteCode: linkForm.inviteCode,
+          scopes: linkForm.scopes
         }
       });
 
-      if (error) throw error;
+      if (response.error) {
+        throw new Error(response.error.message || 'Failed to link property');
+      }
 
-      setConnectionStatus('connected');
-      toast.success('Connection test successful');
+      toast({
+        title: "Success",
+        description: "Property linked successfully! Initial import has started.",
+      });
+
+      // Reset form and refresh data
+      setLinkForm({
+        orgId: '550e8400-e29b-41d4-a716-446655440000',
+        hotelId: '',
+        beds24PropertyId: '',
+        inviteCode: '',
+        scopes: ['bookings', 'inventory', 'properties', 'accounts', 'channels']
+      });
       
-      // Refresh rate limits after test
-      setTimeout(() => {
-        fetchRateLimits();
-      }, 1000);
-
+      fetchConnections();
     } catch (error: any) {
-      console.error('Connection test failed:', error);
-      setConnectionStatus('error');
-      toast.error(`Connection test failed: ${error.message}`);
-    } finally {
-      setTestingConnection(false);
-    }
-  };
-
-  const saveConfig = async () => {
-    setLoading(true);
-
-    try {
-      const configData = {
-        ...config,
-        updated_at: new Date().toISOString()
-      };
-
-      const { error } = await supabase
-        .from('beds24_config')
-        .upsert(configData, { onConflict: 'hotel_id' });
-
-      if (error) throw error;
-
-      toast.success('Configuration saved successfully');
-      
-    } catch (error: any) {
-      console.error('Failed to save config:', error);
-      toast.error(`Failed to save configuration: ${error.message}`);
+      console.error('Link failed:', error);
+      toast({
+        title: "Link Failed",
+        description: error.message || "Failed to link property",
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }
   };
 
-  const getConnectionStatusBadge = () => {
-    switch (connectionStatus) {
-      case 'connected':
-        return <Badge className="bg-success/10 text-success border-success/20"><CheckCircle className="w-3 h-3 mr-1" />Connected</Badge>;
-      case 'error':
-        return <Badge className="bg-destructive/10 text-destructive border-destructive/20"><AlertTriangle className="w-3 h-3 mr-1" />Error</Badge>;
-      default:
-        return <Badge variant="outline"><Monitor className="w-3 h-3 mr-1" />Unknown</Badge>;
+  const checkConnectionHealth = async (hotelId: string) => {
+    setTesting(true);
+    try {
+      const response = await supabase.functions.invoke('beds24-connection-health', {
+        body: { hotelId }
+      });
+
+      if (response.error) {
+        throw new Error(response.error.message);
+      }
+
+      setConnectionHealth(response.data);
+      toast({
+        title: "Success",
+        description: "Connection health check completed",
+      });
+    } catch (error: any) {
+      console.error('Health check failed:', error);
+      toast({
+        title: "Health Check Failed",
+        description: error.message || "Failed to check connection health",
+        variant: "destructive",
+      });
+    } finally {
+      setTesting(false);
     }
   };
 
-  const getCurrentRateLimit = () => {
-    if (rateLimits.length === 0) return null;
-    return rateLimits[0];
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case 'active':
+        return <Badge className="bg-green-500 hover:bg-green-600"><CheckCircle className="w-3 h-3 mr-1" />Active</Badge>;
+      case 'error':
+        return <Badge variant="destructive"><XCircle className="w-3 h-3 mr-1" />Error</Badge>;
+      case 'disabled':
+        return <Badge variant="secondary"><Clock className="w-3 h-3 mr-1" />Disabled</Badge>;
+      default:
+        return <Badge variant="outline">Unknown</Badge>;
+    }
+  };
+
+  const getHotelName = (hotelId: string) => {
+    const hotel = hotels.find(h => h.id === hotelId);
+    return hotel?.name || 'Unknown Hotel';
+  };
+
+  const getRecentStats = () => {
+    const totalRequests = apiLogs.length;
+    const errorRequests = apiLogs.filter(log => (log.status || 0) >= 400).length;
+    const avgResponseTime = totalRequests > 0 ? 
+      apiLogs.reduce((sum, log) => sum + (log.duration_ms || 0), 0) / totalRequests : 0;
+    
+    return {
+      totalRequests,
+      errorRequests,
+      errorRate: totalRequests > 0 ? ((errorRequests / totalRequests) * 100).toFixed(1) + '%' : '0%',
+      avgResponseTime: Math.round(avgResponseTime) + 'ms'
+    };
   };
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Beds24 Administration</h1>
-          <p className="text-muted-foreground">
-            Configure and manage Beds24 API integration settings
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <Button
-            onClick={testConnection}
-            disabled={testingConnection}
-            variant="outline"
-          >
-            {testingConnection ? (
-              <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-            ) : (
-              <TestTube className="w-4 h-4 mr-2" />
-            )}
-            Test Connection
-          </Button>
-          <Button onClick={saveConfig} disabled={loading}>
-            <Save className="w-4 h-4 mr-2" />
-            Save Settings
-          </Button>
-        </div>
+      <div>
+        <h1 className="text-3xl font-bold">Beds24 Integration Management</h1>
+        <p className="text-muted-foreground">Admin-only interface for managing Beds24 connections via invitation codes</p>
       </div>
 
-      {/* Status Card */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center justify-between">
-            Connection Status
-            {getConnectionStatusBadge()}
-          </CardTitle>
-          <CardDescription>
-            Current status of your Beds24 API connection
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid gap-4 md:grid-cols-3">
-            <div>
-              <Label className="text-sm text-muted-foreground">API Endpoint</Label>
-              <div className="font-mono text-sm">https://api.beds24.com/v2</div>
-            </div>
-            <div>
-              <Label className="text-sm text-muted-foreground">5-Min Credits</Label>
-              <div className="font-mono text-sm">
-                {getCurrentRateLimit()?.five_min_credits_remaining ?? 'N/A'}
-              </div>
-            </div>
-            <div>
-              <Label className="text-sm text-muted-foreground">Daily Credits</Label>
-              <div className="font-mono text-sm">
-                {getCurrentRateLimit()?.daily_credits_remaining ?? 'N/A'}
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      <Alert>
+        <LinkIcon className="h-4 w-4" />
+        <AlertDescription>
+          This is the admin interface for linking properties using Beds24 invitation codes. 
+          Hotel users will never see Beds24 directly - they only interact with the PMS import process.
+        </AlertDescription>
+      </Alert>
 
-      <Tabs defaultValue="general" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="general">General</TabsTrigger>
-          <TabsTrigger value="sync">Sync Settings</TabsTrigger>
-          <TabsTrigger value="mapping">Hotel Mapping</TabsTrigger>
+      <Tabs defaultValue="connections" className="space-y-4">
+        <TabsList>
+          <TabsTrigger value="connections">Active Connections</TabsTrigger>
+          <TabsTrigger value="link">Link New Property</TabsTrigger>
           <TabsTrigger value="monitoring">Monitoring</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="general" className="space-y-4">
+        <TabsContent value="connections" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>API Configuration</CardTitle>
-              <CardDescription>
-                Configure your Beds24 API credentials and basic settings
-              </CardDescription>
+              <CardTitle>Active Beds24 Connections</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-6">
-              <Alert>
-                <Key className="h-4 w-4" />
-                <AlertDescription>
-                  API tokens are securely stored in Supabase secrets. The current token is configured and ready for use.
-                </AlertDescription>
-              </Alert>
-
-              <div className="space-y-4">
-                <div>
-                  <Label htmlFor="property-id">Beds24 Property ID</Label>
-                  <Input
-                    id="property-id"
-                    placeholder="Enter your Beds24 property ID"
-                    value={config.beds24_property_id || ''}
-                    onChange={(e) => setConfig({ ...config, beds24_property_id: e.target.value })}
-                  />
-                  <p className="text-sm text-muted-foreground mt-1">
-                    The main property ID from your Beds24 account
-                  </p>
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label>Enable Integration</Label>
-                    <p className="text-sm text-muted-foreground">
-                      Allow data synchronization with Beds24
-                    </p>
-                  </div>
-                  <Switch
-                    checked={config.sync_enabled}
-                    onCheckedChange={(checked) => setConfig({ ...config, sync_enabled: checked })}
-                  />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="sync" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Synchronization Settings</CardTitle>
-              <CardDescription>
-                Configure automatic synchronization preferences
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div>
-                <Label htmlFor="sync-frequency">Sync Frequency (hours)</Label>
-                <Input
-                  id="sync-frequency"
-                  type="number"
-                  min="1"
-                  max="24"
-                  value={config.sync_frequency / 3600}
-                  onChange={(e) => setConfig({ 
-                    ...config, 
-                    sync_frequency: parseInt(e.target.value) * 3600 
-                  })}
-                />
-                <p className="text-sm text-muted-foreground mt-1">
-                  How often to automatically sync data (1-24 hours)
-                </p>
-              </div>
-
-              <Separator />
-
-              <div className="space-y-4">
-                <h4 className="text-sm font-medium">Auto-Sync Options</h4>
-                
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label>Calendar & Rates (ARI)</Label>
-                    <p className="text-sm text-muted-foreground">
-                      Automatically sync availability, rates, and restrictions
-                    </p>
-                  </div>
-                  <Switch
-                    checked={config.auto_sync_calendar}
-                    onCheckedChange={(checked) => setConfig({ ...config, auto_sync_calendar: checked })}
-                  />
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label>Bookings & Reservations</Label>
-                    <p className="text-sm text-muted-foreground">
-                      Automatically import new bookings from channels
-                    </p>
-                  </div>
-                  <Switch
-                    checked={config.auto_sync_bookings}
-                    onCheckedChange={(checked) => setConfig({ ...config, auto_sync_bookings: checked })}
-                  />
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label>Guest Messages</Label>
-                    <p className="text-sm text-muted-foreground">
-                      Automatically sync guest communication
-                    </p>
-                  </div>
-                  <Switch
-                    checked={config.auto_sync_messages}
-                    onCheckedChange={(checked) => setConfig({ ...config, auto_sync_messages: checked })}
-                  />
-                </div>
-
-                <Separator />
-
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label>Push Updates to Beds24</Label>
-                    <p className="text-sm text-muted-foreground">
-                      Send PMS changes back to Beds24 (two-way sync)
-                    </p>
-                  </div>
-                  <Switch
-                    checked={config.auto_push_updates}
-                    onCheckedChange={(checked) => setConfig({ ...config, auto_push_updates: checked })}
-                  />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="mapping" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Hotel Property Mapping</CardTitle>
-              <CardDescription>
-                Map your PMS hotels to Beds24 properties
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <Label htmlFor="hotel-select">Select Hotel</Label>
-                <select
-                  id="hotel-select"
-                  className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
-                  value={config.hotel_id || ''}
-                  onChange={(e) => setConfig({ ...config, hotel_id: e.target.value })}
-                >
-                  <option value="">Select a hotel...</option>
-                  {hotels.map((hotel) => (
-                    <option key={hotel.id} value={hotel.id}>
-                      {hotel.name} ({hotel.code})
-                    </option>
+            <CardContent>
+              {connections.length > 0 ? (
+                <div className="space-y-4">
+                  {connections.map((connection) => (
+                    <div key={connection.id} className="flex items-center justify-between p-4 border rounded-lg">
+                      <div>
+                        <h4 className="font-medium">{getHotelName(connection.hotel_id)}</h4>
+                        <p className="text-sm text-muted-foreground">
+                          Beds24 Property ID: {connection.beds24_property_id}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          Scopes: {connection.scopes?.join(', ')}
+                        </p>
+                        {connection.last_token_use_at && (
+                          <p className="text-xs text-muted-foreground">
+                            Last activity: {new Date(connection.last_token_use_at).toLocaleString()}
+                          </p>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {getStatusBadge(connection.status)}
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => checkConnectionHealth(connection.hotel_id)}
+                          disabled={testing}
+                        >
+                          {testing ? <Clock className="w-3 h-3 animate-spin" /> : <Monitor className="w-3 h-3" />}
+                        </Button>
+                      </div>
+                    </div>
                   ))}
-                </select>
-                <p className="text-sm text-muted-foreground mt-1">
-                  Choose which hotel this Beds24 integration belongs to
-                </p>
-              </div>
-
-              {config.hotel_id && (
-                <Alert>
-                  <Database className="h-4 w-4" />
-                  <AlertDescription>
-                    This integration will sync data for the selected hotel. Make sure your Beds24 property ID corresponds to this hotel.
-                  </AlertDescription>
-                </Alert>
+                </div>
+              ) : (
+                <p className="text-muted-foreground">No active connections. Use the Link New Property tab to get started.</p>
               )}
             </CardContent>
           </Card>
         </TabsContent>
 
-        <TabsContent value="monitoring" className="space-y-4">
+        <TabsContent value="link" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>API Usage Monitoring</CardTitle>
-              <CardDescription>
-                Monitor your Beds24 API usage and rate limits
-              </CardDescription>
+              <CardTitle>Link New Property via Invitation</CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="grid gap-4 md:grid-cols-2">
-                  <Card>
-                    <CardHeader className="pb-2">
-                      <CardTitle className="text-base">Current Rate Limits</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      {getCurrentRateLimit() ? (
-                        <div className="space-y-2">
-                          <div className="flex justify-between text-sm">
-                            <span>5-min credits:</span>
-                            <span className="font-mono">{getCurrentRateLimit()?.five_min_credits_remaining}</span>
-                          </div>
-                          <div className="flex justify-between text-sm">
-                            <span>Daily credits:</span>
-                            <span className="font-mono">{getCurrentRateLimit()?.daily_credits_remaining}</span>
-                          </div>
-                          <div className="flex justify-between text-sm">
-                            <span>Last request cost:</span>
-                            <span className="font-mono">{getCurrentRateLimit()?.request_cost}</span>
-                          </div>
-                        </div>
-                      ) : (
-                        <p className="text-sm text-muted-foreground">No usage data available</p>
-                      )}
-                    </CardContent>
-                  </Card>
+            <CardContent className="space-y-4">
+              <Alert>
+                <AlertDescription>
+                  Get the invitation code from Beds24 for the specific property and scopes you want to access.
+                  This will establish a secure server-side connection with long-lived refresh tokens.
+                </AlertDescription>
+              </Alert>
 
-                  <Card>
-                    <CardHeader className="pb-2">
-                      <CardTitle className="text-base">Recent Activity</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-2">
-                        {rateLimits.slice(0, 5).map((limit, index) => (
-                          <div key={index} className="flex justify-between text-sm">
-                            <span>{new Date(limit.request_timestamp).toLocaleTimeString()}</span>
-                            <span className="font-mono">-{limit.request_cost}</span>
-                          </div>
-                        ))}
-                        {rateLimits.length === 0 && (
-                          <p className="text-sm text-muted-foreground">No recent activity</p>
-                        )}
-                      </div>
-                    </CardContent>
-                  </Card>
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="orgId">Organization ID</Label>
+                  <Input
+                    id="orgId"
+                    placeholder="550e8400-e29b-41d4-a716-446655440000"
+                    value={linkForm.orgId}
+                    onChange={(e) => setLinkForm(prev => ({ ...prev, orgId: e.target.value }))}
+                  />
                 </div>
 
-                <Alert>
-                  <Activity className="h-4 w-4" />
-                  <AlertDescription>
-                    Beds24 API has rate limits: 1000 requests per 5 minutes and 10,000 requests per day. 
-                    The system automatically manages these limits to prevent service interruption.
-                  </AlertDescription>
-                </Alert>
+                <div className="space-y-2">
+                  <Label htmlFor="hotelSelect">PMS Hotel</Label>
+                  <select 
+                    id="hotelSelect"
+                    className="w-full p-2 border rounded-md bg-background"
+                    value={linkForm.hotelId}
+                    onChange={(e) => setLinkForm(prev => ({ ...prev, hotelId: e.target.value }))}
+                  >
+                    <option value="">Select a hotel...</option>
+                    {hotels.map((hotel) => (
+                      <option key={hotel.id} value={hotel.id}>
+                        {hotel.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="propertyId">Beds24 Property ID</Label>
+                  <Input
+                    id="propertyId"
+                    type="number"
+                    placeholder="123456"
+                    value={linkForm.beds24PropertyId}
+                    onChange={(e) => setLinkForm(prev => ({ ...prev, beds24PropertyId: e.target.value }))}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="inviteCode">Invitation Code</Label>
+                  <Input
+                    id="inviteCode"
+                    placeholder="Enter invitation code from Beds24"
+                    value={linkForm.inviteCode}
+                    onChange={(e) => setLinkForm(prev => ({ ...prev, inviteCode: e.target.value }))}
+                  />
+                </div>
               </div>
+
+              <Button 
+                onClick={linkProperty}
+                disabled={loading}
+                className="w-full"
+              >
+                {loading ? <Clock className="w-4 h-4 mr-2 animate-spin" /> : <LinkIcon className="w-4 h-4 mr-2" />}
+                Link Property
+              </Button>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="monitoring" className="space-y-4">
+          <div className="grid gap-4 md:grid-cols-3">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <Activity className="w-4 h-4" />
+                  API Usage (24h)
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  <div className="flex justify-between">
+                    <span className="text-sm">Total Requests:</span>
+                    <span className="font-medium">{getRecentStats().totalRequests}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-sm">Error Rate:</span>
+                    <span className="font-medium">{getRecentStats().errorRate}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-sm">Avg Response:</span>
+                    <span className="font-medium">{getRecentStats().avgResponseTime}</span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Connection Health</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {connectionHealth ? (
+                  <div className="space-y-2">
+                    <div className="flex justify-between">
+                      <span className="text-sm">Status:</span>
+                      {getStatusBadge(connectionHealth.connection?.status)}
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm">5min Credits:</span>
+                      <span className="font-medium">{connectionHealth.rateLimitInfo?.fiveMinRemaining || 'N/A'}</span>
+                    </div>
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground">Click monitor button on a connection to view health details</p>
+                )}
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Recent Activity</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  {apiLogs.slice(0, 5).map((log, index) => (
+                    <div key={log.id} className="text-sm">
+                      <div className="flex justify-between">
+                        <span className="truncate">{log.method} {log.path}</span>
+                        <span className={`ml-2 ${(log.status || 0) >= 400 ? 'text-red-500' : 'text-green-500'}`}>
+                          {log.status}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                  {apiLogs.length === 0 && (
+                    <p className="text-sm text-muted-foreground">No recent activity</p>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         </TabsContent>
       </Tabs>
     </div>
   );
 };
+
+export { Beds24AdminSettings };

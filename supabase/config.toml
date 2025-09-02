@@ -42,3 +42,21 @@ verify_jwt = false
 
 [functions.beds24-properties-sync]
 verify_jwt = true
+
+[functions.beds24-admin-link]
+verify_jwt = true
+
+[functions.beds24-token-service] 
+verify_jwt = false
+
+[functions.beds24-api-client]
+verify_jwt = false
+
+[functions.beds24-initial-import]
+verify_jwt = false
+
+[functions.beds24-connection-health]
+verify_jwt = true
+
+[functions.beds24-keep-alive]
+verify_jwt = false
