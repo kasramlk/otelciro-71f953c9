@@ -63,3 +63,6 @@ verify_jwt = true
 
 [functions.beds24-keep-alive]
 verify_jwt = false
+
+[functions.beds24-token-helper]
+verify_jwt = false

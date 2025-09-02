@@ -373,53 +373,73 @@ export type Database = {
         }
         Relationships: []
       }
+      beds24_connection_secrets: {
+        Row: {
+          created_at: string
+          id: string
+          refresh_token_read: string
+          refresh_token_write: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          refresh_token_read: string
+          refresh_token_write?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          refresh_token_read?: string
+          refresh_token_write?: string | null
+        }
+        Relationships: []
+      }
       beds24_connections: {
         Row: {
-          access_expires_at: string | null
-          access_token_cache: string | null
-          beds24_property_id: number
+          beds24_property_id: string
           created_at: string
           hotel_id: string
           id: string
           last_token_use_at: string | null
           org_id: string
-          refresh_token_read_secret: string
-          refresh_token_write_secret: string | null
           scopes: string[]
+          secret_id: string | null
           status: string
           updated_at: string
         }
         Insert: {
-          access_expires_at?: string | null
-          access_token_cache?: string | null
-          beds24_property_id: number
+          beds24_property_id: string
           created_at?: string
           hotel_id: string
           id?: string
           last_token_use_at?: string | null
           org_id: string
-          refresh_token_read_secret: string
-          refresh_token_write_secret?: string | null
           scopes?: string[]
+          secret_id?: string | null
           status?: string
           updated_at?: string
         }
         Update: {
-          access_expires_at?: string | null
-          access_token_cache?: string | null
-          beds24_property_id?: number
+          beds24_property_id?: string
           created_at?: string
           hotel_id?: string
           id?: string
           last_token_use_at?: string | null
           org_id?: string
-          refresh_token_read_secret?: string
-          refresh_token_write_secret?: string | null
           scopes?: string[]
+          secret_id?: string | null
           status?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "beds24_connections_secret_id_fkey"
+            columns: ["secret_id"]
+            isOneToOne: false
+            referencedRelation: "beds24_connection_secrets"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       beds24_id_map: {
         Row: {

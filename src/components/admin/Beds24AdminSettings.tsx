@@ -21,11 +21,12 @@ interface Beds24Connection {
   id: string;
   org_id: string;
   hotel_id: string;
-  beds24_property_id: number;
+  beds24_property_id: string; // Changed from number to string
   scopes: string[];
   status: string;
   last_token_use_at?: string;
   created_at: string;
+  secret_id?: string; // Added optional secret_id field
 }
 
 interface Hotel {

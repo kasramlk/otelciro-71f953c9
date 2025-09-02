@@ -64,24 +64,20 @@ serve(async (req) => {
 
     console.log('Processing admin link request:', { orgId, hotelId, beds24PropertyId });
 
-    // Exchange invite code for refresh tokens
-    const tokenExchangeResponse = await fetch(`${BEDS24_BASE_URL}/authentication/token`, {
-      method: 'POST',
+    // Exchange invite code for refresh tokens using correct Beds24 v2 flow
+    const setupResponse = await fetch(`${BEDS24_BASE_URL}/authentication/setup`, {
+      method: 'GET',
       headers: {
-        'Content-Type': 'application/json',
         'accept': 'application/json',
+        'code': inviteCode, // Pass invite code in header, not body
       },
-      body: JSON.stringify({
-        code: inviteCode,
-        grant_type: 'invitation'
-      })
     });
 
-    if (!tokenExchangeResponse.ok) {
-      const errorData = await tokenExchangeResponse.text();
-      console.error('Beds24 token exchange failed:', errorData);
+    if (!setupResponse.ok) {
+      const errorData = await setupResponse.text();
+      console.error('Beds24 setup exchange failed:', errorData);
       return new Response(JSON.stringify({ 
-        error: 'Failed to exchange invite code', 
+        error: 'Failed to exchange invite code at /authentication/setup', 
         details: errorData 
       }), {
         status: 400,
@@ -89,24 +85,50 @@ serve(async (req) => {
       });
     }
 
-    const tokenData = await tokenExchangeResponse.json();
-    console.log('Token exchange successful');
+    const setupData = await setupResponse.json();
+    console.log('Beds24 setup successful');
 
-    // Store refresh tokens as Supabase secrets (simulate with IDs for now)
-    const readTokenSecretId = `beds24_refresh_read_${crypto.randomUUID()}`;
-    const writeTokenSecretId = tokenData.refresh_token_write ? 
-      `beds24_refresh_write_${crypto.randomUUID()}` : null;
+    // Extract refresh tokens from response
+    const refreshRead = setupData.refreshToken || setupData.refresh_token || setupData.read?.refreshToken;
+    const refreshWrite = setupData.refreshTokenWrite || setupData.refresh_token_write || setupData.write?.refreshToken;
 
-    // Create connection record
+    if (!refreshRead) {
+      return new Response(JSON.stringify({
+        error: 'Beds24 did not return a refresh token',
+        raw: setupData,
+      }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    // Store refresh tokens securely in secrets table
+    const { data: secret, error: secretError } = await supabase
+      .from('beds24_connection_secrets')
+      .insert({
+        refresh_token_read: refreshRead,
+        refresh_token_write: refreshWrite || null,
+      })
+      .select('id')
+      .single();
+
+    if (secretError) {
+      console.error('Failed to store Beds24 secrets:', secretError);
+      return new Response(JSON.stringify({ error: 'Failed to store Beds24 secrets' }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    // Create connection record with reference to secrets
     const { data: connection, error: connectionError } = await supabase
       .from('beds24_connections')
       .insert([{
         org_id: orgId,
         hotel_id: hotelId,
-        beds24_property_id: beds24PropertyId,
-        scopes: scopes || ['bookings', 'inventory', 'properties', 'accounts', 'channels'],
-        refresh_token_read_secret: readTokenSecretId,
-        refresh_token_write_secret: writeTokenSecretId,
+        beds24_property_id: beds24PropertyId.toString(),
+        scopes: scopes || ['properties', 'inventory', 'bookings', 'channels', 'accounts'],
+        secret_id: secret.id,
         last_token_use_at: new Date().toISOString()
       }])
       .select()
@@ -125,7 +147,7 @@ serve(async (req) => {
       .from('beds24_sync_state')
       .insert([{
         hotel_id: hotelId,
-        beds24_property_id: beds24PropertyId,
+        beds24_property_id: beds24PropertyId.toString(),
         bookings_modified_from: new Date().toISOString()
       }]);
 
