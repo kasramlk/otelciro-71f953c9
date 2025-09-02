@@ -1,6 +1,7 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.55.0";
+import { decode } from "https://deno.land/x/djwt@v3.0.2/mod.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -16,46 +17,44 @@ serve(async (req) => {
   }
 
   try {
-    // Initialize Supabase clients
+    // Initialize Supabase service client
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
-    
-    // Service client for database operations
-    const supabaseService = createClient(supabaseUrl, supabaseServiceKey);
-    
-    // User client for auth validation
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+    // Verify admin access
     const authHeader = req.headers.get('Authorization');
-    if (!authHeader) {
-      return new Response(JSON.stringify({ error: 'Missing authorization' }), {
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return new Response(JSON.stringify({ error: 'Missing or invalid authorization header' }), {
         status: 401,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
     }
 
+    // Decode JWT token to get user info
     const token = authHeader.replace('Bearer ', '');
-    const supabaseUser = createClient(supabaseUrl, supabaseAnonKey, {
-      global: {
-        headers: { Authorization: authHeader }
+    let userId: string;
+    
+    try {
+      const [header, payload, signature] = decode(token);
+      userId = payload.sub as string;
+      
+      if (!userId) {
+        throw new Error('No user ID in token');
       }
-    });
-
-    // Get user from JWT token
-    const { data: { user }, error: authError } = await supabaseUser.auth.getUser();
-
-    if (authError || !user) {
-      console.error('Auth error:', authError);
-      return new Response(JSON.stringify({ error: 'Invalid token', details: authError?.message }), {
+    } catch (error) {
+      console.error('JWT decode error:', error);
+      return new Response(JSON.stringify({ error: 'Invalid JWT token', details: error.message }), {
         status: 401,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
     }
 
     // Check admin role using service client
-    const { data: roles } = await supabaseService
+    const { data: roles } = await supabase
       .from('user_roles')
       .select('role')
-      .eq('user_id', user.id);
+      .eq('user_id', userId);
 
     const isAdmin = roles?.some(r => ['admin', 'owner'].includes(r.role));
     if (!isAdmin) {
@@ -103,7 +102,7 @@ serve(async (req) => {
       `beds24_refresh_write_${crypto.randomUUID()}` : null;
 
     // Create connection record
-    const { data: connection, error: connectionError } = await supabaseService
+    const { data: connection, error: connectionError } = await supabase
       .from('beds24_connections')
       .insert([{
         org_id: orgId,
@@ -126,7 +125,7 @@ serve(async (req) => {
     }
 
     // Initialize sync state
-    await supabaseService
+    await supabase
       .from('beds24_sync_state')
       .insert([{
         hotel_id: hotelId,
@@ -135,7 +134,7 @@ serve(async (req) => {
       }]);
 
     // Trigger initial import (async)
-    supabaseService.functions.invoke('beds24-initial-import', {
+    supabase.functions.invoke('beds24-initial-import', {
       body: { hotelId, beds24PropertyId }
     }).catch(error => {
       console.error('Failed to trigger initial import:', error);
