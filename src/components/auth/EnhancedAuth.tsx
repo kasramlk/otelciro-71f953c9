@@ -269,17 +269,15 @@ export const EnhancedAuth = ({ role, onBackToRoleSelector, onBackToHome }: Enhan
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.8, delay: 0.8 }}
                 >
-                  <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                    <TabsList className="grid w-full grid-cols-2 bg-white/5 backdrop-blur-sm">
-                      <TabsTrigger value="signin" className="text-white data-[state=active]:bg-white/20">
-                        {t('common.signIn')}
-                      </TabsTrigger>
-                      <TabsTrigger value="signup" className="text-white data-[state=active]:bg-white/20">
-                        {t('common.signUp')}
-                      </TabsTrigger>
-                    </TabsList>
+                  <div className="w-full">
+                    <div className="text-center mb-6">
+                      <h3 className="text-white font-semibold text-lg mb-2">{t('common.signIn')}</h3>
+                      <p className="text-white/70 text-sm">
+                        User accounts are managed by administrators. Contact your admin for access.
+                      </p>
+                    </div>
                     
-                    <TabsContent value="signin" className="space-y-6 mt-6">
+                    <div className="space-y-6 mt-6">
                       {/* Social Login Buttons */}
                       {role === 'hotel_manager' && (
                         <motion.div
@@ -390,97 +388,8 @@ export const EnhancedAuth = ({ role, onBackToRoleSelector, onBackToHome }: Enhan
                           )}
                         </Button>
                       </motion.div>
-                    </TabsContent>
-                    
-                    <TabsContent value="signup" className="space-y-4 mt-6">
-                      <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.6, delay: 1 }}
-                        className="space-y-4"
-                      >
-                        <Input
-                          type="text"
-                          placeholder={t('common.fullName')}
-                          value={name}
-                          onChange={(e) => setName(e.target.value)}
-                          className="bg-white/10 border-white/20 text-white placeholder:text-white/60 backdrop-blur-sm"
-                        />
-                        <Input
-                          type="text"
-                          placeholder={role === 'travel_agency' ? t('form.agencyName') : t('form.hotelName')}
-                          value={orgName}
-                          onChange={(e) => setOrgName(e.target.value)}
-                          className="bg-white/10 border-white/20 text-white placeholder:text-white/60 backdrop-blur-sm"
-                        />
-                        <Input
-                          type="email"
-                          placeholder={t('common.email')}
-                          value={email}
-                          onChange={(e) => setEmail(e.target.value)}
-                          className="bg-white/10 border-white/20 text-white placeholder:text-white/60 backdrop-blur-sm"
-                        />
-                        <div className="relative">
-                          <Input
-                            type={showPassword ? "text" : "password"}
-                            placeholder={t('common.password')}
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                            className="bg-white/10 border-white/20 text-white placeholder:text-white/60 backdrop-blur-sm pr-10"
-                          />
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                            onClick={() => setShowPassword(!showPassword)}
-                          >
-                            {showPassword ? (
-                              <EyeOff className="h-4 w-4 text-white/60" />
-                            ) : (
-                              <Eye className="h-4 w-4 text-white/60" />
-                            )}
-                          </Button>
-                        </div>
-                        
-                        <Select value={role} disabled>
-                          <SelectTrigger className="bg-white/10 border-white/20 text-white">
-                            <SelectValue placeholder={t('form.selectRole')} />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="hotel_manager">{t('roles.hotel_manager.title')}</SelectItem>
-                            <SelectItem value="travel_agency">{t('roles.travel_agency.title')}</SelectItem>
-                            <SelectItem value="admin">{t('roles.admin.title')}</SelectItem>
-                            <SelectItem value="social_media">{t('roles.social_media.title')}</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </motion.div>
-                      
-                      <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.6, delay: 1.2 }}
-                      >
-                        <Button 
-                          onClick={signUp} 
-                          className={`w-full bg-gradient-to-r ${getRoleGradient()} hover:shadow-xl transition-all duration-300 border-0 text-white font-semibold py-3`}
-                          disabled={loading}
-                        >
-                          {loading ? (
-                            <div className="flex items-center gap-2">
-                              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                              {t('auth.creatingAccount')}
-                            </div>
-                          ) : (
-                            <>
-                              <Sparkles className="mr-2 h-4 w-4" />
-                              {t('common.createAccount')}
-                            </>
-                          )}
-                        </Button>
-                      </motion.div>
-                    </TabsContent>
-                  </Tabs>
+                    </div>
+                  </div>
                 </motion.div>
 
                 {/* Security Notice */}
