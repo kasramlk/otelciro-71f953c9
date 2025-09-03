@@ -25,6 +25,14 @@ serve(async (req) => {
   );
 
   try {
+    const url = new URL(req.url);
+    
+    // Health endpoint for system monitoring
+    if (url.pathname === '/health') {
+      return await getHealthCheck(supabase);
+    }
+
+    // Legacy endpoint handling
     const { action, hotel_id, time_range = '24h' }: MonitoringRequest = await req.json();
 
     switch (action) {
@@ -51,6 +59,166 @@ serve(async (req) => {
     });
   }
 });
+
+async function getHealthCheck(supabase: any) {
+  const timestamp = new Date().toISOString();
+  let overallStatus: 'healthy' | 'degraded' | 'unhealthy' = 'healthy';
+
+  // Check database accessibility
+  let databaseAccessible = false;
+  try {
+    const { error } = await supabase.from('sync_state').select('id').limit(1);
+    databaseAccessible = !error;
+  } catch {
+    databaseAccessible = false;
+  }
+
+  if (!databaseAccessible) {
+    overallStatus = 'unhealthy';
+  }
+
+  // Get sync status for all hotels
+  let syncStatus = {
+    last_bookings_sync: null as string | null,
+    last_calendar_sync: null as string | null,
+    hotels_synced: 0
+  };
+
+  try {
+    const { data: syncData } = await supabase
+      .from('sync_state')
+      .select('hotel_id, last_bookings_sync, last_calendar_sync, sync_enabled')
+      .eq('sync_enabled', true);
+
+    if (syncData && syncData.length > 0) {
+      syncStatus.hotels_synced = syncData.length;
+      
+      // Get most recent sync timestamps
+      const bookingsSyncs = syncData
+        .map(s => s.last_bookings_sync)
+        .filter(Boolean)
+        .sort((a, b) => new Date(b).getTime() - new Date(a).getTime());
+      
+      const calendarSyncs = syncData
+        .map(s => s.last_calendar_sync)
+        .filter(Boolean)
+        .sort((a, b) => new Date(b).getTime() - new Date(a).getTime());
+
+      syncStatus.last_bookings_sync = bookingsSyncs[0] || null;
+      syncStatus.last_calendar_sync = calendarSyncs[0] || null;
+
+      // Check if syncs are stale
+      const now = new Date();
+      const hourAgo = new Date(now.getTime() - 60 * 60 * 1000);
+      const sixHoursAgo = new Date(now.getTime() - 6 * 60 * 60 * 1000);
+
+      const lastBookingSync = syncStatus.last_bookings_sync ? new Date(syncStatus.last_bookings_sync) : null;
+      const lastCalendarSync = syncStatus.last_calendar_sync ? new Date(syncStatus.last_calendar_sync) : null;
+
+      if (
+        (lastBookingSync && lastBookingSync < hourAgo) ||
+        (lastCalendarSync && lastCalendarSync < sixHoursAgo)
+      ) {
+        overallStatus = overallStatus === 'unhealthy' ? 'unhealthy' : 'degraded';
+      }
+    }
+  } catch (error) {
+    console.error('Error fetching sync status:', error);
+    overallStatus = 'unhealthy';
+  }
+
+  // Get credit status from most recent audit log
+  let creditStatus = {
+    remaining: 0,
+    reset_eta: null as string | null,
+    warning_threshold: false,
+    critical_threshold: false
+  };
+
+  try {
+    const { data: auditData } = await supabase
+      .from('ingestion_audit')
+      .select('limit_remaining, limit_resets_in, created_at')
+      .not('limit_remaining', 'is', null)
+      .order('created_at', { ascending: false })
+      .limit(1);
+
+    if (auditData && auditData.length > 0) {
+      const latest = auditData[0];
+      creditStatus.remaining = latest.limit_remaining || 0;
+      
+      if (latest.limit_resets_in) {
+        const resetTime = new Date(Date.now() + latest.limit_resets_in * 1000);
+        creditStatus.reset_eta = resetTime.toISOString();
+      }
+
+      creditStatus.warning_threshold = creditStatus.remaining < 100;
+      creditStatus.critical_threshold = creditStatus.remaining < 50;
+
+      if (creditStatus.critical_threshold) {
+        console.warn('CRITICAL: Beds24 credit limit below 50', {
+          remaining: creditStatus.remaining,
+          reset_eta: creditStatus.reset_eta
+        });
+        overallStatus = 'unhealthy';
+      } else if (creditStatus.warning_threshold) {
+        console.warn('WARNING: Beds24 credit limit below 100', {
+          remaining: creditStatus.remaining,
+          reset_eta: creditStatus.reset_eta
+        });
+        overallStatus = overallStatus === 'unhealthy' ? 'unhealthy' : 'degraded';
+      }
+    }
+  } catch (error) {
+    console.error('Error fetching credit status:', error);
+  }
+
+  // Check tokens validity
+  let tokensValid = false;
+  try {
+    const { data: tokenData } = await supabase
+      .from('beds24_tokens')
+      .select('expires_at, token_type')
+      .order('created_at', { ascending: false })
+      .limit(1);
+
+    if (tokenData && tokenData.length > 0) {
+      const token = tokenData[0];
+      if (!token.expires_at || new Date(token.expires_at) > new Date()) {
+        tokensValid = true;
+      }
+    }
+  } catch (error) {
+    console.error('Error checking token validity:', error);
+  }
+
+  if (!tokensValid) {
+    overallStatus = overallStatus === 'unhealthy' ? 'unhealthy' : 'degraded';
+  }
+
+  const healthStatus = {
+    status: overallStatus,
+    timestamp,
+    sync_status: syncStatus,
+    credit_status: creditStatus,
+    system_health: {
+      database_accessible: databaseAccessible,
+      tokens_valid: tokensValid
+    }
+  };
+
+  return new Response(
+    JSON.stringify(healthStatus, null, 2),
+    {
+      headers: {
+        ...corsHeaders,
+        'Content-Type': 'application/json',
+      },
+      status: overallStatus === 'healthy' ? 200 : 
+              overallStatus === 'degraded' ? 200 : 503
+    }
+  );
+}
 
 async function getHealthOverview(supabase: any) {
   const now = new Date();
