@@ -244,7 +244,7 @@ const Beds24AdminSettings: React.FC = () => {
       case 'active':
         return <Badge className="bg-green-500 hover:bg-green-600"><CheckCircle className="w-3 h-3 mr-1" />Active</Badge>;
       case 'error':
-        return <Badge variant="destructive"><XCircle className="w-3 h-3 mr-1" />Error</Badge>;
+        return <Badge variant="destructive"><XCircle className="w-3 h-3 mr-1" />Token Expired</Badge>;
       case 'disabled':
         return <Badge variant="secondary"><Clock className="w-3 h-3 mr-1" />Disabled</Badge>;
       default:
@@ -407,7 +407,7 @@ const Beds24AdminSettings: React.FC = () => {
                               variant="outline" 
                               size="sm"
                               onClick={() => triggerManualImport(connection)}
-                              disabled={importResult?.loading}
+                              disabled={importResult?.loading || connection.status === 'error'}
                             >
                               {importResult?.loading ? (
                                 <Clock className="w-3 h-3 animate-spin" />
@@ -416,6 +416,22 @@ const Beds24AdminSettings: React.FC = () => {
                               )}
                               {importResult?.loading ? 'Importing...' : 'Import Data'}
                             </Button>
+                            {connection.status === 'error' && (
+                              <Button 
+                                variant="destructive" 
+                                size="sm"
+                                onClick={() => {
+                                  toast({
+                                    title: "Connection Error",
+                                    description: "This connection has expired. Please use the 'Link New Property' tab to re-establish the connection with a new invitation code.",
+                                    variant: "destructive",
+                                  });
+                                }}
+                              >
+                                <AlertCircle className="w-3 h-3" />
+                                Re-link Required
+                              </Button>
+                            )}
                           </div>
                         </div>
                         

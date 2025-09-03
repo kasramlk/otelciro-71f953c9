@@ -39,7 +39,7 @@ class TokenService {
       `)
       .eq('hotel_id', hotelId)
       .eq('status', 'active')
-      .single();
+      .maybeSingle();
 
     if (!connection) {
       throw new Error('No active Beds24 connection found for hotel');
@@ -83,8 +83,26 @@ class TokenService {
 
     if (!tokenResponse.ok) {
       const errorText = await tokenResponse.text();
-      console.error('Failed to mint access token:', errorText);
-      throw new Error(`Failed to mint access token: ${errorText}`);
+      console.error('Token refresh failed:', {
+        status: tokenResponse.status,
+        statusText: tokenResponse.statusText,
+          error: errorText,
+          hotelId,
+          forWrite,
+          tokenLength: refreshToken?.length,
+          refreshTokenStart: refreshToken?.substring(0, 20) + '...'
+      });
+      
+      // Mark connection as error if refresh fails
+      await this.supabase
+        .from('beds24_connections')
+        .update({ 
+          status: 'error',
+          last_token_use_at: new Date().toISOString()
+        })
+        .eq('id', connection.id);
+      
+      throw new Error(`Token refresh failed (${tokenResponse.status}): ${errorText}`);
     }
 
     const tokenData = await tokenResponse.json();
