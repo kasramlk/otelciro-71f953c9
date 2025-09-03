@@ -10,7 +10,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useToast } from '@/hooks/use-toast';
-import { AlertCircle, CheckCircle, Clock, RefreshCw, Play, Download } from 'lucide-react';
+import { AlertCircle, CheckCircle, Clock, RefreshCw, Play, Download, Activity, Shield, BarChart3, AlertTriangle, TrendingUp, Zap, Settings, Wrench } from 'lucide-react';
 import { format } from 'date-fns';
 
 interface TokenDiagnostics {
@@ -53,6 +53,60 @@ interface AuditLog {
   hotels?: { name: string };
 }
 
+interface HealthOverview {
+  system_status: 'healthy' | 'warning' | 'critical';
+  issues: string[];
+  metrics: {
+    total_tokens: number;
+    expired_tokens: number;
+    enabled_hotels: number;
+    total_hotels: number;
+    error_rate_24h: number;
+    active_jobs: number;
+    sync_success_rate: number;
+  };
+  last_updated: string;
+}
+
+interface PerformanceMetrics {
+  time_range: string;
+  total_operations: number;
+  avg_response_time: number;
+  success_rate: number;
+  api_usage: {
+    total_cost: number;
+    avg_cost_per_operation: number;
+  };
+  operations_by_type: Record<string, number>;
+  performance_trends: Array<{
+    timestamp: string;
+    operations: number;
+    avg_response_time: number;
+    success_rate: number;
+    api_cost: number;
+  }>;
+}
+
+interface SyncStatusData {
+  hotel_sync_status: Array<{
+    hotel_id: string;
+    hotel_name: string;
+    hotel_code: string;
+    sync_enabled: boolean;
+    bootstrap_completed: boolean;
+    last_booking_sync: string | null;
+    last_calendar_sync: string | null;
+    recent_errors: number;
+    total_operations_24h: number;
+  }>;
+  summary: {
+    total_hotels: number;
+    enabled_hotels: number;
+    bootstrapped_hotels: number;
+    hotels_with_errors: number;
+  };
+}
+
 export default function Beds24IntegrationManager() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -76,6 +130,21 @@ export default function Beds24IntegrationManager() {
     stopSell: false,
     closedArrival: false
   });
+
+  // Phase 3: Monitoring & Recovery state
+  const [selectedTimeRange, setSelectedTimeRange] = useState<'1h' | '24h' | '7d' | '30d'>('24h');
+  const [autoRefreshEnabled, setAutoRefreshEnabled] = useState(true);
+
+  // Auto-refresh interval effect
+  useEffect(() => {
+    if (!autoRefreshEnabled) return;
+    
+    const interval = setInterval(() => {
+      queryClient.invalidateQueries({ queryKey: ['beds24-health-overview'] });
+    }, 30000);
+    
+    return () => clearInterval(interval);
+  }, [autoRefreshEnabled, queryClient]);
 
   // Fetch token diagnostics
   const { data: tokenDiagnostics, isLoading: loadingTokens } = useQuery({
@@ -182,6 +251,46 @@ export default function Beds24IntegrationManager() {
       if (error) throw error;
       return data;
     }
+  });
+
+  // Phase 3: Monitoring queries
+  const { data: healthOverview, isLoading: loadingHealth } = useQuery({
+    queryKey: ['beds24-health-overview'],
+    queryFn: async () => {
+      const { data, error } = await supabase.functions.invoke('beds24-monitoring', {
+        body: { action: 'health_overview' }
+      });
+      if (error) throw error;
+      return data as HealthOverview;
+    },
+    refetchInterval: autoRefreshEnabled ? 30000 : false
+  });
+
+  const { data: performanceMetrics, isLoading: loadingPerformance } = useQuery({
+    queryKey: ['beds24-performance', selectedTimeRange],
+    queryFn: async () => {
+      const { data, error } = await supabase.functions.invoke('beds24-monitoring', {
+        body: { 
+          action: 'performance_metrics',
+          time_range: selectedTimeRange
+        }
+      });
+      if (error) throw error;
+      return data as PerformanceMetrics;
+    },
+    refetchInterval: autoRefreshEnabled ? 60000 : false
+  });
+
+  const { data: syncStatusData, isLoading: loadingSyncStatus } = useQuery({
+    queryKey: ['beds24-sync-status'],
+    queryFn: async () => {
+      const { data, error } = await supabase.functions.invoke('beds24-monitoring', {
+        body: { action: 'sync_status' }
+      });
+      if (error) throw error;
+      return data as SyncStatusData;
+    },
+    refetchInterval: autoRefreshEnabled ? 45000 : false
   });
 
   // Refresh token mutation
@@ -300,6 +409,63 @@ export default function Beds24IntegrationManager() {
     }
   });
 
+  // Phase 3: Recovery mutations
+  const autoRecoveryMutation = useMutation({
+    mutationFn: async (hotelId?: string) => {
+      const { data, error } = await supabase.functions.invoke('beds24-recovery', {
+        body: { 
+          action: 'auto_recovery',
+          hotel_id: hotelId
+        }
+      });
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['beds24-health-overview'] });
+      queryClient.invalidateQueries({ queryKey: ['beds24-audit-logs'] });
+      toast({
+        title: 'Auto-recovery completed',
+        description: `${data.actions_taken?.length || 0} recovery actions performed`
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: 'Auto-recovery failed',
+        description: error.message,
+        variant: 'destructive'
+      });
+    }
+  });
+
+  const manualRecoveryMutation = useMutation({
+    mutationFn: async (options: any) => {
+      const { data, error } = await supabase.functions.invoke('beds24-recovery', {
+        body: { 
+          action: 'manual_recovery',
+          ...options
+        }
+      });
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['beds24-health-overview'] });
+      queryClient.invalidateQueries({ queryKey: ['beds24-sync-status'] });
+      toast({
+        title: 'Manual recovery completed',
+        description: data.message
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: 'Manual recovery failed',
+        description: error.message,
+        variant: 'destructive'
+      });
+    }
+  });
+
   const getStatusBadge = (status: string) => {
     const variants: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
       success: "default",
@@ -354,6 +520,14 @@ export default function Beds24IntegrationManager() {
           <TabsTrigger value="sync-states">Sync States</TabsTrigger>
           <TabsTrigger value="delta-sync">Delta Sync</TabsTrigger>
           <TabsTrigger value="rate-push">Rate Push</TabsTrigger>
+          <TabsTrigger value="monitoring">
+            <Activity className="h-4 w-4 mr-2" />
+            Monitoring
+          </TabsTrigger>
+          <TabsTrigger value="recovery">
+            <Shield className="h-4 w-4 mr-2" />
+            Recovery
+          </TabsTrigger>
           <TabsTrigger value="audit-logs">Audit Logs</TabsTrigger>
         </TabsList>
 
@@ -903,6 +1077,339 @@ export default function Beds24IntegrationManager() {
               </div>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        {/* Phase 3: Monitoring Tab */}
+        <TabsContent value="monitoring">
+          <div className="space-y-6">
+            {/* System Health Overview */}
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="flex items-center gap-2">
+                      <Activity className="h-5 w-5" />
+                      System Health Overview
+                    </CardTitle>
+                    <CardDescription>
+                      Real-time monitoring of Beds24 integration health
+                    </CardDescription>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setAutoRefreshEnabled(!autoRefreshEnabled)}
+                    >
+                      <RefreshCw className={`h-4 w-4 mr-2 ${autoRefreshEnabled ? 'animate-spin' : ''}`} />
+                      {autoRefreshEnabled ? 'Auto-refresh: ON' : 'Auto-refresh: OFF'}
+                    </Button>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {loadingHealth ? (
+                  <div className="flex items-center justify-center h-32">
+                    <RefreshCw className="h-6 w-6 animate-spin" />
+                  </div>
+                ) : healthOverview ? (
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-4">
+                      <div className={`px-3 py-1 rounded-full text-sm font-medium ${
+                        healthOverview.system_status === 'healthy' ? 'bg-green-100 text-green-800' :
+                        healthOverview.system_status === 'warning' ? 'bg-yellow-100 text-yellow-800' :
+                        'bg-red-100 text-red-800'
+                      }`}>
+                        {healthOverview.system_status.toUpperCase()}
+                      </div>
+                      <div className="text-sm text-muted-foreground">
+                        Last updated: {format(new Date(healthOverview.last_updated), 'MMM dd, HH:mm:ss')}
+                      </div>
+                    </div>
+
+                    {healthOverview.issues.length > 0 && (
+                      <Alert className="border-yellow-200 bg-yellow-50">
+                        <AlertTriangle className="h-4 w-4" />
+                        <AlertDescription>
+                          <strong>Issues detected:</strong>
+                          <ul className="mt-2 list-disc list-inside">
+                            {healthOverview.issues.map((issue, index) => (
+                              <li key={index}>{issue}</li>
+                            ))}
+                          </ul>
+                        </AlertDescription>
+                      </Alert>
+                    )}
+
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                      <div className="text-center p-4 border rounded-lg">
+                        <div className="text-2xl font-bold text-primary">{healthOverview.metrics.enabled_hotels}/{healthOverview.metrics.total_hotels}</div>
+                        <div className="text-sm text-muted-foreground">Hotels Enabled</div>
+                      </div>
+                      <div className="text-center p-4 border rounded-lg">
+                        <div className="text-2xl font-bold text-primary">{healthOverview.metrics.total_tokens}</div>
+                        <div className="text-sm text-muted-foreground">Active Tokens</div>
+                      </div>
+                      <div className="text-center p-4 border rounded-lg">
+                        <div className="text-2xl font-bold text-green-600">{Math.round(healthOverview.metrics.sync_success_rate)}%</div>
+                        <div className="text-sm text-muted-foreground">Sync Success Rate</div>
+                      </div>
+                      <div className="text-center p-4 border rounded-lg">
+                        <div className="text-2xl font-bold text-destructive">{healthOverview.metrics.error_rate_24h}</div>
+                        <div className="text-sm text-muted-foreground">Errors (24h)</div>
+                      </div>
+                    </div>
+                  </div>
+                ) : null}
+              </CardContent>
+            </Card>
+
+            {/* Performance Metrics */}
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="flex items-center gap-2">
+                      <BarChart3 className="h-5 w-5" />
+                      Performance Metrics
+                    </CardTitle>
+                    <CardDescription>
+                      API performance and usage statistics
+                    </CardDescription>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <select
+                      value={selectedTimeRange}
+                      onChange={(e) => setSelectedTimeRange(e.target.value as any)}
+                      className="rounded-md border border-input bg-background px-3 py-2 text-sm"
+                    >
+                      <option value="1h">Last Hour</option>
+                      <option value="24h">Last 24 Hours</option>
+                      <option value="7d">Last 7 Days</option>
+                      <option value="30d">Last 30 Days</option>
+                    </select>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {loadingPerformance ? (
+                  <div className="flex items-center justify-center h-32">
+                    <RefreshCw className="h-6 w-6 animate-spin" />
+                  </div>
+                ) : performanceMetrics ? (
+                  <div className="space-y-6">
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                      <div className="text-center p-4 border rounded-lg">
+                        <div className="text-2xl font-bold text-primary">{performanceMetrics.total_operations}</div>
+                        <div className="text-sm text-muted-foreground">Total Operations</div>
+                      </div>
+                      <div className="text-center p-4 border rounded-lg">
+                        <div className="text-2xl font-bold text-blue-600">{performanceMetrics.avg_response_time}ms</div>
+                        <div className="text-sm text-muted-foreground">Avg Response Time</div>
+                      </div>
+                      <div className="text-center p-4 border rounded-lg">
+                        <div className="text-2xl font-bold text-green-600">{performanceMetrics.success_rate}%</div>
+                        <div className="text-sm text-muted-foreground">Success Rate</div>
+                      </div>
+                      <div className="text-center p-4 border rounded-lg">
+                        <div className="text-2xl font-bold text-orange-600">{performanceMetrics.api_usage.total_cost}</div>
+                        <div className="text-sm text-muted-foreground">API Cost</div>
+                      </div>
+                    </div>
+
+                    <div>
+                      <h4 className="font-medium mb-3">Operations by Type</h4>
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                        {Object.entries(performanceMetrics.operations_by_type).map(([type, count]) => (
+                          <div key={type} className="flex justify-between p-2 border rounded text-sm">
+                            <span className="font-mono">{type}</span>
+                            <span className="font-medium">{count}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                ) : null}
+              </CardContent>
+            </Card>
+
+            {/* Sync Status */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <TrendingUp className="h-5 w-5" />
+                  Hotel Sync Status
+                </CardTitle>
+                <CardDescription>
+                  Detailed synchronization status per hotel
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {loadingSyncStatus ? (
+                  <div className="flex items-center justify-center h-32">
+                    <RefreshCw className="h-6 w-6 animate-spin" />
+                  </div>
+                ) : syncStatusData ? (
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                      <div className="text-center p-3 border rounded">
+                        <div className="text-lg font-bold">{syncStatusData.summary.total_hotels}</div>
+                        <div className="text-xs text-muted-foreground">Total Hotels</div>
+                      </div>
+                      <div className="text-center p-3 border rounded">
+                        <div className="text-lg font-bold text-green-600">{syncStatusData.summary.enabled_hotels}</div>
+                        <div className="text-xs text-muted-foreground">Enabled</div>
+                      </div>
+                      <div className="text-center p-3 border rounded">
+                        <div className="text-lg font-bold text-blue-600">{syncStatusData.summary.bootstrapped_hotels}</div>
+                        <div className="text-xs text-muted-foreground">Bootstrapped</div>
+                      </div>
+                      <div className="text-center p-3 border rounded">
+                        <div className="text-lg font-bold text-red-600">{syncStatusData.summary.hotels_with_errors}</div>
+                        <div className="text-xs text-muted-foreground">With Errors</div>
+                      </div>
+                    </div>
+
+                    <div className="space-y-2 max-h-96 overflow-y-auto">
+                      {syncStatusData.hotel_sync_status.map((hotel) => (
+                        <div key={hotel.hotel_id} className="border rounded-lg p-3">
+                          <div className="flex items-center justify-between mb-2">
+                            <div className="font-medium">{hotel.hotel_name} ({hotel.hotel_code})</div>
+                            <div className="flex gap-1">
+                              <Badge variant={hotel.sync_enabled ? "default" : "secondary"}>
+                                {hotel.sync_enabled ? "Enabled" : "Disabled"}
+                              </Badge>
+                              {hotel.recent_errors > 0 && (
+                                <Badge variant="destructive">{hotel.recent_errors} errors</Badge>
+                              )}
+                            </div>
+                          </div>
+                          <div className="text-sm text-muted-foreground grid grid-cols-2 gap-4">
+                            <div>
+                              <div>Last booking sync: {hotel.last_booking_sync ? format(new Date(hotel.last_booking_sync), 'MMM dd, HH:mm') : 'Never'}</div>
+                              <div>Last calendar sync: {hotel.last_calendar_sync ? format(new Date(hotel.last_calendar_sync), 'MMM dd, HH:mm') : 'Never'}</div>
+                            </div>
+                            <div>
+                              <div>Operations (24h): {hotel.total_operations_24h}</div>
+                              <div>Bootstrap: {hotel.bootstrap_completed ? '✓ Complete' : '✗ Pending'}</div>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+
+        {/* Phase 3: Recovery Tab */}
+        <TabsContent value="recovery">
+          <div className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Shield className="h-5 w-5" />
+                  System Recovery & Maintenance
+                </CardTitle>
+                <CardDescription>
+                  Tools for recovering from errors and maintaining system health
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid gap-6 md:grid-cols-2">
+                  <div className="space-y-4">
+                    <h4 className="font-medium flex items-center gap-2">
+                      <Zap className="h-4 w-4" />
+                      Auto Recovery
+                    </h4>
+                    <p className="text-sm text-muted-foreground">
+                      Automatically diagnose and attempt to fix common issues
+                    </p>
+                    <Button
+                      onClick={() => autoRecoveryMutation.mutate()}
+                      disabled={autoRecoveryMutation.isPending}
+                      className="w-full"
+                      variant="default"
+                    >
+                      {autoRecoveryMutation.isPending ? (
+                        <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                      ) : (
+                        <Zap className="h-4 w-4 mr-2" />
+                      )}
+                      Run Auto Recovery
+                    </Button>
+                  </div>
+
+                  <div className="space-y-4">
+                    <h4 className="font-medium flex items-center gap-2">
+                      <Wrench className="h-4 w-4" />
+                      Manual Recovery Options
+                    </h4>
+                    <div className="space-y-2">
+                      <Button
+                        onClick={() => manualRecoveryMutation.mutate({
+                          recovery_options: { reset_tokens: true }
+                        })}
+                        disabled={manualRecoveryMutation.isPending}
+                        variant="outline"
+                        size="sm"
+                        className="w-full"
+                      >
+                        Reset Authentication Tokens
+                      </Button>
+                      <Button
+                        onClick={() => manualRecoveryMutation.mutate({
+                          recovery_options: { clear_errors: true }
+                        })}
+                        disabled={manualRecoveryMutation.isPending}
+                        variant="outline"
+                        size="sm"
+                        className="w-full"
+                      >
+                        Clear Error Logs
+                      </Button>
+                      <Button
+                        onClick={() => supabase.functions.invoke('beds24-recovery', {
+                          body: { action: 'reset_sync_state' }
+                        }).then((result) => {
+                          queryClient.invalidateQueries({ queryKey: ['beds24-sync-states'] });
+                          toast({ title: 'Sync state reset completed' });
+                        })}
+                        variant="outline"
+                        size="sm"
+                        className="w-full"
+                      >
+                        Reset All Sync States
+                      </Button>
+                      <Button
+                        onClick={() => supabase.functions.invoke('beds24-recovery', {
+                          body: { action: 'repair_data_integrity' }
+                        }).then((result) => {
+                          queryClient.invalidateQueries({ queryKey: ['beds24-health-overview'] });
+                          toast({ title: 'Data integrity repair completed' });
+                        })}
+                        variant="outline"
+                        size="sm"
+                        className="w-full"
+                      >
+                        Repair Data Integrity
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+
+                <Alert className="mt-6">
+                  <AlertTriangle className="h-4 w-4" />
+                  <AlertDescription>
+                    <strong>Warning:</strong> Recovery operations may temporarily disrupt sync processes. 
+                    Use with caution in production environments.
+                  </AlertDescription>
+                </Alert>
+              </CardContent>
+            </Card>
+          </div>
         </TabsContent>
       </Tabs>
     </div>
