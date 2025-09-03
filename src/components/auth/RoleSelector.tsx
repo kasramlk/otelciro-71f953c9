@@ -25,7 +25,7 @@ const roles = [
     title: 'Hotel Manager',
     description: 'Manage your property, reservations, and operations',
     icon: Building2,
-    features: ['PMS Dashboard', 'Room Management', 'Channel Manager', 'Reports & Analytics'],
+    features: ['PMS Dashboard', 'Room Management', 'Reports & Analytics'],
     color: 'bg-blue-500',
     gradient: 'from-blue-500 to-blue-600'
   },
@@ -84,7 +84,7 @@ export const RoleSelector = ({ onRoleSelect }: RoleSelectorProps) => {
             </h1>
           </div>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-            Next-generation Hotel PMS + Channel Manager + Mini-GDS Agency Dashboard
+            Next-generation Hotel PMS + Mini-GDS Agency Dashboard
           </p>
           <div className="flex items-center justify-center gap-6 mt-6 text-sm text-muted-foreground">
             <div className="flex items-center gap-2">

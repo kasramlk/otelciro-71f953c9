@@ -42,7 +42,6 @@ interface PlatformSettings {
   
   // Feature Flags
   enable_multi_currency: boolean;
-  enable_channel_manager: boolean;
   enable_revenue_ai: boolean;
   enable_guest_portal: boolean;
 }
@@ -69,7 +68,6 @@ const PlatformSettings = () => {
       require_symbols: false,
     },
     enable_multi_currency: true,
-    enable_channel_manager: true,
     enable_revenue_ai: true,
     enable_guest_portal: false,
   });
@@ -561,18 +559,6 @@ const PlatformSettings = () => {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <Label htmlFor="enable_channel_manager" className="text-base font-medium">Channel Manager</Label>
-                    <p className="text-sm text-muted-foreground">Connect with OTAs and distribution channels</p>
-                  </div>
-                  <Switch
-                    id="enable_channel_manager"
-                    checked={settings.enable_channel_manager}
-                    onCheckedChange={(checked) => setSettings(prev => ({ ...prev, enable_channel_manager: checked }))}
-                  />
-                </div>
-
                 <div className="flex items-center justify-between">
                   <div>
                     <Label htmlFor="enable_revenue_ai" className="text-base font-medium">Revenue AI</Label>

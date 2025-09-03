@@ -18,7 +18,6 @@ import {
 const footerLinks = {
   products: [
     { name: "Hotel PMS", href: "/dashboard", icon: Hotel },
-    { name: "Channel Manager", href: "/channel-management", icon: Network },
     { name: "Mini GDS", href: "/agency", icon: Globe },
     { name: "Social Media Kit", href: "/social-media", icon: Megaphone, badge: "NEW" }
   ],

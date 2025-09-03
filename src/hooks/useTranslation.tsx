@@ -51,7 +51,7 @@ const translations = {
         'benefit1': 'Maximize your revenue',
         'benefit2': 'Minimize your costs', 
         'benefit3': "Tailor every strategy to your hotel's unique strengths and your goals",
-        'positioning': 'Instead of giving you just a PMS or Channel Manager, we become your sales department.'
+        'positioning': 'Instead of giving you just a PMS, we become your sales department.'
       },
       'howWeWork': {
         'title': 'How We Work',
@@ -68,7 +68,6 @@ const translations = {
         'title': 'Our Ecosystem – Free for Our Hotels',
         'subtitle': 'Hotels in our portfolio get access to our full ecosystem at no extra cost:',
         'pms': 'Hotel PMS – Manage your property with ease',
-        'channelManager': 'Channel Manager – Connect to OTAs and agencies worldwide',
         'miniGDS': 'Mini-GDS – Access 100+ B2B agencies and distribute your inventory globally',
         'socialKit': 'Social Branding Kit – Professional social media and content creation',
         'note': 'All included free of charge when you partner with us.'
@@ -140,7 +139,7 @@ const translations = {
         'period': 'Revenue Share',
         'feature1': 'Revenue analysis & optimization',
         'feature2': 'Basic sales strategy',
-        'feature3': 'Free PMS & Channel Manager',
+        'feature3': 'Free PMS',
         'feature4': 'Email support',
         'feature5': 'Monthly performance reports'
       },
@@ -283,10 +282,6 @@ const translations = {
         'title': 'Hotel PMS',
         'description': 'Advanced property management system with AI-powered automation, real-time analytics, and seamless guest experience management.'
       },
-      'channelManager': {
-        'title': 'Channel Manager',
-        'description': 'Intelligent distribution management connecting to 500+ OTAs worldwide with dynamic pricing and inventory optimization.'
-      },
       'miniGds': {
         'title': 'Mini-GDS',
         'description': 'Global distribution system accessing 100+ B2B agencies with real-time booking engine and commission management.'
@@ -372,7 +367,6 @@ const translations = {
         'title': 'Ekosimsitemiz – Otellerimiz İçin Ücretsiz',
         'subtitle': 'Portföyümüzdeki oteller tam ekosimsitemize hiçbir ek ücret ödemeden erişir:',
         'pms': 'Otel PMS – Mülkünüzü kolayca yönetin',
-        'channelManager': 'Kanal Yöneticisi – Dünya çapında OTA\'lar ve acentelerle bağlantı kurun',
         'miniGDS': 'Mini-GDS – 100+ B2B acenteye erişin ve envanterinizi küresel olarak dağıtın',
         'socialKit': 'Sosyal Marka Kiti – Profesyonel sosyal medya ve içerik oluşturma',
         'note': 'Bizimle ortak olduğunuzda hepsi ücretsiz dahil.'
@@ -445,7 +439,7 @@ const translations = {
         'feature1': 'Özel gelir paylaşımı',
         'feature2': 'Gelir analizi & optimizasyon',
         'feature3': 'Temel satış stratejisi',
-        'feature4': 'Ücretsiz PMS & Channel Manager',
+        'feature4': 'Ücretsiz PMS',
         'feature5': 'E-posta desteği',
         'feature6': 'Aylık performans raporları'
       },
@@ -586,10 +580,6 @@ const translations = {
       'hotelPms': {
         'title': 'Otel Yönetim Sistemi',
         'description': 'Yapay zeka destekli otomasyon, gerçek zamanlı analitik ve kusursuz misafir deneyimi yönetimi ile gelişmiş otel yönetim sistemi.'
-      },
-      'channelManager': {
-        'title': 'Kanal Yöneticisi',
-        'description': 'Dinamik fiyatlandırma ve stok optimizasyonu ile dünya çapında 500+ OTA\'ya bağlanan akıllı dağıtım yönetimi.'
       },
       'miniGds': {
         'title': 'Mini-GDS Sistemi',

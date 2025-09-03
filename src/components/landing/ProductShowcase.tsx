@@ -73,40 +73,6 @@ const products: Product[] = [
     ctaRoute: '/dashboard'
   },
   {
-    id: 'channel',
-    title: 'Channel Manager',
-    subtitle: 'Multi-Channel Distribution',
-    description: 'Intelligent distribution that automatically optimizes rates and inventory across all channels',
-    icon: Network,
-    gradient: 'from-secondary to-secondary-light',
-    borderColor: 'border-secondary/30',
-    features: [
-      {
-        icon: Target,
-        title: 'Intelligent Rate Distribution',
-        description: 'AI optimizes rates for each channel based on demand and competition'
-      },
-      {
-        icon: TrendingUp,
-        title: 'Market Demand Analysis',
-        description: 'Real-time market insights to adjust pricing strategy instantly'
-      },
-      {
-        icon: BarChart3,
-        title: 'Competitor Price Intelligence',
-        description: 'Monitor and respond to competitor pricing automatically'
-      },
-      {
-        icon: Zap,
-        title: 'Auto-Inventory Synchronization',
-        description: 'Seamless real-time inventory updates across 200+ channels'
-      }
-    ],
-    demoComponent: <ChannelDemo />,
-    ctaText: 'Experience CM AI',
-    ctaRoute: '/channel-management'
-  },
-  {
     id: 'gds',
     title: 'Mini GDS',
     subtitle: 'Global Distribution System',
@@ -202,33 +168,6 @@ function PMSDemo() {
   );
 }
 
-function ChannelDemo() {
-  return (
-    <div className="bg-secondary/5 rounded-lg p-4 space-y-3">
-      <div className="flex justify-between items-center">
-        <span className="text-sm font-medium">Channel Sync Status</span>
-        <Badge className="bg-green-500">All Synced</Badge>
-      </div>
-      <div className="space-y-2">
-        {['Booking.com', 'Expedia', 'Airbnb'].map((channel, i) => (
-          <div key={channel} className="flex justify-between items-center text-xs">
-            <span>{channel}</span>
-            <div className="flex items-center gap-2">
-              <div className="w-16 bg-secondary/20 rounded-full h-1">
-                <div className="bg-secondary h-1 rounded-full" style={{width: `${90 + i * 3}%`}} />
-              </div>
-              <span className="text-secondary font-medium">{90 + i * 3}%</span>
-            </div>
-          </div>
-        ))}
-      </div>
-      <div className="bg-secondary/10 rounded p-2 text-xs">
-        <div className="font-medium">🎯 AI Optimization</div>
-        <div className="text-muted-foreground">Rate adjusted on 3 channels - Competition analysis complete</div>
-      </div>
-    </div>
-  );
-}
 
 function GDSDemo() {
   return (
@@ -292,7 +231,7 @@ export const ProductShowcase = () => {
           className="text-center mb-16"
         >
           <h2 className="text-5xl font-bold mb-6 bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
-            Four AI-Enhanced Solutions
+            Three AI-Enhanced Solutions
           </h2>
           <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
             Each product powered by cutting-edge artificial intelligence that learns, adapts, and optimizes your hotel operations in real-time.
