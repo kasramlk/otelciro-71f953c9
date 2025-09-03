@@ -880,6 +880,7 @@ export type Database = {
       }
       daily_rates: {
         Row: {
+          beds24_price_index: number | null
           created_at: string
           date: string
           hotel_id: string
@@ -889,6 +890,7 @@ export type Database = {
           room_type_id: string
         }
         Insert: {
+          beds24_price_index?: number | null
           created_at?: string
           date: string
           hotel_id: string
@@ -898,6 +900,7 @@ export type Database = {
           room_type_id: string
         }
         Update: {
+          beds24_price_index?: number | null
           created_at?: string
           date?: string
           hotel_id?: string
@@ -1524,6 +1527,7 @@ export type Database = {
           code: string
           country: string | null
           created_at: string
+          email: string | null
           id: string
           name: string
           org_id: string
@@ -1536,6 +1540,7 @@ export type Database = {
           code: string
           country?: string | null
           created_at?: string
+          email?: string | null
           id?: string
           name: string
           org_id: string
@@ -1548,6 +1553,7 @@ export type Database = {
           code?: string
           country?: string | null
           created_at?: string
+          email?: string | null
           id?: string
           name?: string
           org_id?: string
@@ -2793,6 +2799,51 @@ export type Database = {
           },
         ]
       }
+      room_inventory: {
+        Row: {
+          allotment: number | null
+          closed_to_arrival: boolean | null
+          closed_to_departure: boolean | null
+          created_at: string
+          date: string
+          hotel_id: string
+          id: string
+          max_stay: number | null
+          min_stay: number | null
+          room_type_id: string
+          stop_sell: boolean | null
+          updated_at: string
+        }
+        Insert: {
+          allotment?: number | null
+          closed_to_arrival?: boolean | null
+          closed_to_departure?: boolean | null
+          created_at?: string
+          date: string
+          hotel_id: string
+          id?: string
+          max_stay?: number | null
+          min_stay?: number | null
+          room_type_id: string
+          stop_sell?: boolean | null
+          updated_at?: string
+        }
+        Update: {
+          allotment?: number | null
+          closed_to_arrival?: boolean | null
+          closed_to_departure?: boolean | null
+          created_at?: string
+          date?: string
+          hotel_id?: string
+          id?: string
+          max_stay?: number | null
+          min_stay?: number | null
+          room_type_id?: string
+          stop_sell?: boolean | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       room_maintenance: {
         Row: {
           actual_completion: string | null
@@ -3636,7 +3687,98 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      v_external_ids: {
+        Row: {
+          created_at: string | null
+          entity: string | null
+          external_id: string | null
+          id: string | null
+          metadata: Json | null
+          otelciro_id: string | null
+          provider: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          entity?: string | null
+          external_id?: string | null
+          id?: string | null
+          metadata?: Json | null
+          otelciro_id?: string | null
+          provider?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          entity?: string | null
+          external_id?: string | null
+          id?: string | null
+          metadata?: Json | null
+          otelciro_id?: string | null
+          provider?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      v_ingestion_audit: {
+        Row: {
+          created_at: string | null
+          credit_limit_remaining: number | null
+          credit_limit_resets_in: number | null
+          duration_ms: number | null
+          error_details: string | null
+          external_id: string | null
+          hotel_id: string | null
+          id: number | null
+          operation: string | null
+          provider: string | null
+          request_cost: number | null
+          request_payload: Json | null
+          response_payload: Json | null
+          status: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          credit_limit_remaining?: number | null
+          credit_limit_resets_in?: number | null
+          duration_ms?: number | null
+          error_details?: string | null
+          external_id?: string | null
+          hotel_id?: string | null
+          id?: number | null
+          operation?: string | null
+          provider?: string | null
+          request_cost?: number | null
+          request_payload?: Json | null
+          response_payload?: Json | null
+          status?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          credit_limit_remaining?: number | null
+          credit_limit_resets_in?: number | null
+          duration_ms?: number | null
+          error_details?: string | null
+          external_id?: string | null
+          hotel_id?: string | null
+          id?: number | null
+          operation?: string | null
+          provider?: string | null
+          request_cost?: number | null
+          request_payload?: Json | null
+          response_payload?: Json | null
+          status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ingestion_audit_hotel_id_fkey"
+            columns: ["hotel_id"]
+            isOneToOne: false
+            referencedRelation: "hotels"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       calculate_next_run: {
