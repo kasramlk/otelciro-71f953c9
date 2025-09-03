@@ -2419,6 +2419,72 @@ export type Database = {
           },
         ]
       }
+      rate_push_history: {
+        Row: {
+          beds24_response: Json | null
+          created_at: string
+          date_range_end: string
+          date_range_start: string
+          error_message: string | null
+          hotel_id: string
+          id: string
+          lines_successful: number | null
+          lines_total: number | null
+          pushed_by: string | null
+          room_type_id: string
+          status: string
+          trace_id: string | null
+          updates_pushed: Json
+        }
+        Insert: {
+          beds24_response?: Json | null
+          created_at?: string
+          date_range_end: string
+          date_range_start: string
+          error_message?: string | null
+          hotel_id: string
+          id?: string
+          lines_successful?: number | null
+          lines_total?: number | null
+          pushed_by?: string | null
+          room_type_id: string
+          status?: string
+          trace_id?: string | null
+          updates_pushed: Json
+        }
+        Update: {
+          beds24_response?: Json | null
+          created_at?: string
+          date_range_end?: string
+          date_range_start?: string
+          error_message?: string | null
+          hotel_id?: string
+          id?: string
+          lines_successful?: number | null
+          lines_total?: number | null
+          pushed_by?: string | null
+          room_type_id?: string
+          status?: string
+          trace_id?: string | null
+          updates_pushed?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rate_push_history_hotel_id_fkey"
+            columns: ["hotel_id"]
+            isOneToOne: false
+            referencedRelation: "hotels"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rate_push_history_room_type_id_fkey"
+            columns: ["room_type_id"]
+            isOneToOne: false
+            referencedRelation: "room_types"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       reservation_charges: {
         Row: {
           amount: number
@@ -2875,6 +2941,57 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      scheduled_jobs: {
+        Row: {
+          created_at: string
+          error_count: number | null
+          id: string
+          is_enabled: boolean | null
+          job_name: string
+          job_type: string
+          last_run_at: string | null
+          last_run_duration_ms: number | null
+          last_run_status: string | null
+          next_run_at: string | null
+          run_count: number | null
+          schedule_cron: string
+          settings: Json | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          error_count?: number | null
+          id?: string
+          is_enabled?: boolean | null
+          job_name: string
+          job_type: string
+          last_run_at?: string | null
+          last_run_duration_ms?: number | null
+          last_run_status?: string | null
+          next_run_at?: string | null
+          run_count?: number | null
+          schedule_cron: string
+          settings?: Json | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          error_count?: number | null
+          id?: string
+          is_enabled?: boolean | null
+          job_name?: string
+          job_type?: string
+          last_run_at?: string | null
+          last_run_duration_ms?: number | null
+          last_run_status?: string | null
+          next_run_at?: string | null
+          run_count?: number | null
+          schedule_cron?: string
+          settings?: Json | null
+          updated_at?: string
+        }
+        Relationships: []
       }
       service_requests: {
         Row: {
@@ -3522,6 +3639,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      calculate_next_run: {
+        Args: { cron_expression: string; from_time?: string }
+        Returns: string
+      }
       get_current_user_role: {
         Args: Record<PropertyKey, never>
         Returns: string
