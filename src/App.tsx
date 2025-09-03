@@ -76,9 +76,6 @@ import SocialMediaAnalyticsPage from "./pages/SocialMediaAnalytics";
 import SocialMediaAdvanced from "./pages/SocialMediaAdvanced";
 import SocialMediaIntegration from "./pages/SocialMediaIntegration";
 import SocialMediaEnterprise from "./pages/SocialMediaEnterprise";
-import ChannelManager from "./pages/ChannelManager";
-import Beds24Integration from "./pages/Beds24Integration";
-import Beds24Management from "./pages/admin/Beds24Management";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -249,9 +246,6 @@ const AppContent = () => {
               <HMSRevenueAI />
             </HMSLayout>
           } />
-          <Route path="/channel-manager" element={<ChannelManager />} />
-          <Route path="/beds24-integration" element={<Beds24Integration />} />
-          <Route path="/admin/beds24-management" element={<Beds24Management />} />
           <Route path="/notifications" element={
             <HMSLayout>
               <div className="p-6">
