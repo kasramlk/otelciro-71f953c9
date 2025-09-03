@@ -583,18 +583,44 @@ export default function Beds24Page() {
                           )}
                         </TableCell>
                         <TableCell>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => manualSyncMutation.mutate({ 
-                              type: 'both', 
-                              hotelId: state.hotel_id 
-                            })}
-                            disabled={manualSyncMutation.isPending || !state.sync_enabled}
-                          >
-                            <RefreshCw className="h-3 w-3 mr-1" />
-                            Sync Now
-                          </Button>
+                          <div className="flex items-center gap-2">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => manualSyncMutation.mutate({ 
+                                type: 'bookings', 
+                                hotelId: state.hotel_id 
+                              })}
+                              disabled={manualSyncMutation.isPending || !state.sync_enabled}
+                            >
+                              <RefreshCw className="h-3 w-3 mr-1" />
+                              Bookings
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => manualSyncMutation.mutate({ 
+                                type: 'calendar', 
+                                hotelId: state.hotel_id 
+                              })}
+                              disabled={manualSyncMutation.isPending || !state.sync_enabled}
+                            >
+                              <RefreshCw className="h-3 w-3 mr-1" />
+                              Calendar
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => manualSyncMutation.mutate({ 
+                                type: 'both', 
+                                hotelId: state.hotel_id 
+                              })}
+                              disabled={manualSyncMutation.isPending || !state.sync_enabled}
+                            >
+                              <RefreshCw className="h-3 w-3 mr-1" />
+                              Both
+                            </Button>
+                          </div>
                         </TableCell>
                       </TableRow>
                     ))}

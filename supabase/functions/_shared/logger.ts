@@ -18,8 +18,11 @@ interface AuditFields {
 const REDACT_KEYS = (() => {
   try {
     const keys = Deno.env.get('LOG_REDACT_KEYS')
-    return keys ? JSON.parse(keys) : ['token', 'authorization', 'email', 'phone']
-  } catch {
+    const parsed = keys ? JSON.parse(keys) : ['token', 'authorization', 'email', 'phone']
+    console.log('LOG_REDACT_KEYS loaded:', JSON.stringify(parsed))
+    return parsed
+  } catch (error) {
+    console.log('LOG_REDACT_KEYS parse error, using defaults:', error)
     return ['token', 'authorization', 'email', 'phone']
   }
 })()
