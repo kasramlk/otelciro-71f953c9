@@ -25,7 +25,18 @@ class Beds24APIClient {
 
     while (attempt < maxAttempts) {
       try {
-        const token = await this.getAccessToken(hotelId, forWrite);
+        // Get long-lived token directly from database
+        const { data: connection } = await this.supabase
+          .from('beds24_connections')
+          .select('long_lived_token')
+          .eq('hotel_id', hotelId)
+          .single();
+
+        if (!connection?.long_lived_token) {
+          throw new Error('No long-lived token found for hotel');
+        }
+
+        const token = connection.long_lived_token;
         
         const response = await fetch(`${BEDS24_BASE_URL}${path}`, {
           method,
@@ -111,7 +122,18 @@ class Beds24APIClient {
   }
 
   async getProperty(hotelId: string, propertyId: number) {
-    return this.makeRequest(hotelId, 'GET', `/properties/${propertyId}`);
+    const queryParams = new URLSearchParams({
+      id: propertyId.toString(),
+      includeLanguages: 'all',
+      includeTexts: 'all',
+      includePictures: 'true',
+      includeOffers: 'true',
+      includePriceRules: 'true',
+      includeUpsellItems: 'true',
+      includeAllRooms: 'true',
+      includeUnitDetails: 'true'
+    });
+    return this.makeRequest(hotelId, 'GET', `/properties?${queryParams.toString()}`);
   }
 
   async getRoomTypes(hotelId: string, propertyId: number) {
@@ -156,19 +178,8 @@ serve(async (req) => {
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Token service function
-    const getAccessToken = async (hotelId: string, forWrite = false) => {
-      const response = await supabase.functions.invoke('beds24-token-service', {
-        body: { action: 'getAccessToken', hotelId, forWrite }
-      });
-      
-      if (response.error) {
-        throw new Error('Failed to get access token');
-      }
-      
-      return response.data.token;
-    };
-
+    // Simplified - no token service needed, using long-lived tokens directly
+    const getAccessToken = async () => { return ''; }; // Placeholder function
     const client = new Beds24APIClient(supabase, getAccessToken);
     const { action, hotelId, propertyId, params, data } = await req.json();
 
