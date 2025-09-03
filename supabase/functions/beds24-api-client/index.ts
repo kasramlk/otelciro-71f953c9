@@ -22,20 +22,30 @@ class Beds24APIClient {
     const startTime = Date.now();
     let attempt = 0;
     const maxAttempts = 3;
+    
+    console.log(`Making request to Beds24: ${method} ${path} for hotel ${hotelId}`);
 
     while (attempt < maxAttempts) {
       try {
         // Get long-lived token directly from database
-        const { data: connection } = await this.supabase
+        console.log(`Fetching token from database for hotel ${hotelId}`);
+        const { data: connection, error: tokenError } = await this.supabase
           .from('beds24_connections')
-          .select('long_lived_token')
+          .select('long_lived_token, beds24_property_id')
           .eq('hotel_id', hotelId)
           .single();
 
+        if (tokenError) {
+          console.error('Database error fetching token:', tokenError);
+          throw new Error(`Database error: ${tokenError.message}`);
+        }
+
         if (!connection?.long_lived_token) {
+          console.error('No long-lived token found for hotel:', hotelId);
           throw new Error('No long-lived token found for hotel');
         }
 
+        console.log('Token found, making API request to:', `${BEDS24_BASE_URL}${path}`);
         const token = connection.long_lived_token;
         
         const response = await fetch(`${BEDS24_BASE_URL}${path}`, {

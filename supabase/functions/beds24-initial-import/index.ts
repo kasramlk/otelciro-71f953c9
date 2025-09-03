@@ -67,8 +67,14 @@ serve(async (req) => {
         
         clearTimeout(stepTimeout);
         
+        // Better error handling for function invocation
         if (response.error) {
-          throw new Error(`API call ${action} failed: ${JSON.stringify(response.error)}`);
+          console.error(`Function invocation error for ${action}:`, response.error);
+          throw new Error(`Function invocation failed for ${action}: ${response.error.message || JSON.stringify(response.error)}`);
+        }
+
+        if (!response.data) {
+          throw new Error(`No data returned from ${action}`);
         }
         
         console.log(`Completed step: ${stepName || action}`);
