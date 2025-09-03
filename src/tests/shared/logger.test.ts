@@ -9,8 +9,8 @@ const mockLogger = {
 };
 
 const mockSupabase = {
-  from: vi.fn(() => ({
-    insert: vi.fn(() => ({ data: [], error: null }))
+  from: vi.fn((tableName: string) => ({
+    insert: vi.fn((data: any) => ({ data: [], error: null }))
   }))
 };
 
@@ -103,8 +103,9 @@ describe('Logger', () => {
 
   describe('logAudit', () => {
     it('should log audit entry with redacted sensitive data', async () => {
-      const insertMock = vi.fn(() => ({ data: [], error: null }));
-      mockSupabase.from = vi.fn(() => ({ insert: insertMock }));
+      const insertMock = vi.fn((data: any) => ({ data: [], error: null }));
+      const fromMock = vi.fn(() => ({ insert: insertMock }));
+      mockSupabase.from = fromMock;
 
       await logAudit('test_operation', {
         token: 'secret-123',
@@ -112,6 +113,7 @@ describe('Logger', () => {
         status: 'success'
       });
 
+      expect(fromMock).toHaveBeenCalledWith('ingestion_audit');
       expect(insertMock).toHaveBeenCalledWith(
         expect.objectContaining({
           operation: 'test_operation',
@@ -124,8 +126,9 @@ describe('Logger', () => {
     });
 
     it('should handle errors during audit logging', async () => {
-      const insertMock = vi.fn(() => ({ data: null, error: new Error('DB Error') }));
-      mockSupabase.from = vi.fn(() => ({ insert: insertMock }));
+      const insertMock = vi.fn((data: any) => ({ data: null, error: new Error('DB Error') }));
+      const fromMock = vi.fn(() => ({ insert: insertMock }));
+      mockSupabase.from = fromMock;
 
       // Should not throw error, just log it
       await expect(logAudit('test_operation', {})).resolves.not.toThrow();
