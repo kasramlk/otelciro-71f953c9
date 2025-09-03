@@ -401,10 +401,13 @@ export type Database = {
           hotel_id: string
           id: string
           last_token_use_at: string | null
+          long_lived_token: string | null
           org_id: string
           scopes: string[]
           secret_id: string | null
           status: string
+          token_expires_at: string | null
+          token_type: string
           updated_at: string
         }
         Insert: {
@@ -413,10 +416,13 @@ export type Database = {
           hotel_id: string
           id?: string
           last_token_use_at?: string | null
+          long_lived_token?: string | null
           org_id: string
           scopes?: string[]
           secret_id?: string | null
           status?: string
+          token_expires_at?: string | null
+          token_type?: string
           updated_at?: string
         }
         Update: {
@@ -425,10 +431,13 @@ export type Database = {
           hotel_id?: string
           id?: string
           last_token_use_at?: string | null
+          long_lived_token?: string | null
           org_id?: string
           scopes?: string[]
           secret_id?: string | null
           status?: string
+          token_expires_at?: string | null
+          token_type?: string
           updated_at?: string
         }
         Relationships: [

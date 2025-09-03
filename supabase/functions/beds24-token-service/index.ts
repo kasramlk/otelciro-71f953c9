@@ -27,12 +27,12 @@ class TokenService {
       return cached.token;
     }
 
-    // Get connection with secrets
+    // Get connection
     const { data: connection } = await this.supabase
       .from('beds24_connections')
       .select(`
         *,
-        beds24_connection_secrets!inner(
+        beds24_connection_secrets(
           refresh_token_read,
           refresh_token_write
         )
@@ -43,6 +43,52 @@ class TokenService {
 
     if (!connection) {
       throw new Error('No active Beds24 connection found for hotel');
+    }
+
+    // Handle long-lived tokens - simple and direct
+    if (connection.token_type === 'long_lived') {
+      if (!connection.long_lived_token) {
+        throw new Error('Long-lived token not found for connection');
+      }
+
+      // Check if token is expired
+      if (connection.token_expires_at) {
+        const expiresAt = new Date(connection.token_expires_at);
+        if (expiresAt <= new Date()) {
+          // Mark connection as error if token expired
+          await this.supabase
+            .from('beds24_connections')
+            .update({ status: 'error' })
+            .eq('id', connection.id);
+          
+          throw new Error('Long-lived token has expired');
+        }
+      }
+
+      console.log('Using long-lived token');
+      
+      // Update last use timestamp
+      await this.supabase
+        .from('beds24_connections')
+        .update({ last_token_use_at: new Date().toISOString() })
+        .eq('id', connection.id);
+
+      // Cache the token
+      const expiresAt = connection.token_expires_at ? 
+        new Date(connection.token_expires_at) : 
+        new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours default cache
+
+      this.tokenCache.set(cacheKey, {
+        token: connection.long_lived_token,
+        expires: expiresAt
+      });
+
+      return connection.long_lived_token;
+    }
+
+    // Handle OAuth tokens (existing logic)
+    if (!connection.beds24_connection_secrets) {
+      throw new Error('No connection secrets found for OAuth connection');
     }
 
     // Check if we have cached access token in DB
@@ -67,7 +113,7 @@ class TokenService {
       throw new Error(`No refresh token available for ${forWrite ? 'write' : 'read'} operations`);
     }
 
-    console.log('Using real refresh token for API call');
+    console.log('Using OAuth refresh token for API call');
 
     const tokenResponse = await fetch(`${BEDS24_BASE_URL}/authentication/token`, {
       method: 'POST',

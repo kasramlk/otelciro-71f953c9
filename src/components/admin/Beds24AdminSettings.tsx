@@ -29,6 +29,9 @@ interface Beds24Connection {
   last_token_use_at?: string;
   created_at: string;
   secret_id?: string; // Added optional secret_id field
+  token_type: 'oauth' | 'long_lived';
+  long_lived_token?: string;
+  token_expires_at?: string;
 }
 
 interface Hotel {
@@ -92,6 +95,9 @@ const Beds24AdminSettings: React.FC = () => {
     hotelId: '',
     beds24PropertyId: '',
     inviteCode: '',
+    tokenType: 'long_lived' as 'oauth' | 'long_lived',
+    longLivedToken: '',
+    tokenExpiresAt: '',
     scopes: ['bookings', 'inventory', 'properties', 'accounts', 'channels']
   });
   
@@ -130,7 +136,10 @@ const Beds24AdminSettings: React.FC = () => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setConnections(data || []);
+      setConnections((data || []).map(conn => ({
+        ...conn,
+        token_type: conn.token_type as 'oauth' | 'long_lived'
+      })));
     } catch (error) {
       console.error('Error fetching connections:', error);
       toast({
@@ -159,10 +168,21 @@ const Beds24AdminSettings: React.FC = () => {
   };
 
   const linkProperty = async () => {
-    if (!linkForm.orgId || !linkForm.hotelId || !linkForm.beds24PropertyId || !linkForm.inviteCode) {
+    const requiredFields = ['orgId', 'hotelId', 'beds24PropertyId'];
+    const isLongLivedTokenType = linkForm.tokenType === 'long_lived';
+    
+    if (isLongLivedTokenType) {
+      requiredFields.push('longLivedToken');
+    } else {
+      requiredFields.push('inviteCode');
+    }
+
+    const missingFields = requiredFields.filter(field => !linkForm[field as keyof typeof linkForm]);
+    
+    if (missingFields.length > 0) {
       toast({
         title: "Error",
-        description: "Please fill in all required fields",
+        description: `Please fill in all required fields: ${missingFields.join(', ')}`,
         variant: "destructive",
       });
       return;
@@ -170,24 +190,54 @@ const Beds24AdminSettings: React.FC = () => {
 
     setLoading(true);
     try {
-      const response = await supabase.functions.invoke('beds24-admin-link', {
-        body: {
-          orgId: linkForm.orgId,
-          hotelId: linkForm.hotelId,
-          beds24PropertyId: parseInt(linkForm.beds24PropertyId),
-          inviteCode: linkForm.inviteCode,
-          scopes: linkForm.scopes
+      if (isLongLivedTokenType) {
+        // Create long-lived token connection directly
+        const expiresAt = linkForm.tokenExpiresAt ? 
+          new Date(linkForm.tokenExpiresAt).toISOString() :
+          new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString(); // 90 days default
+
+        const { data, error } = await supabase
+          .from('beds24_connections')
+          .insert({
+            org_id: linkForm.orgId,
+            hotel_id: linkForm.hotelId,
+            beds24_property_id: linkForm.beds24PropertyId,
+            token_type: 'long_lived',
+            long_lived_token: linkForm.longLivedToken,
+            token_expires_at: expiresAt,
+            status: 'active',
+            scopes: linkForm.scopes
+          })
+          .select()
+          .single();
+
+        if (error) throw error;
+
+        toast({
+          title: "Success",
+          description: "Long-lived token connection created successfully!",
+        });
+      } else {
+        // Use existing OAuth invitation flow
+        const response = await supabase.functions.invoke('beds24-admin-link', {
+          body: {
+            orgId: linkForm.orgId,
+            hotelId: linkForm.hotelId,
+            beds24PropertyId: parseInt(linkForm.beds24PropertyId),
+            inviteCode: linkForm.inviteCode,
+            scopes: linkForm.scopes
+          }
+        });
+
+        if (response.error) {
+          throw new Error(response.error.message || 'Failed to link property');
         }
-      });
 
-      if (response.error) {
-        throw new Error(response.error.message || 'Failed to link property');
+        toast({
+          title: "Success",
+          description: "Property linked successfully! Initial import has started.",
+        });
       }
-
-      toast({
-        title: "Success",
-        description: "Property linked successfully! Initial import has started.",
-      });
 
       // Reset form and refresh data
       setLinkForm({
@@ -195,6 +245,9 @@ const Beds24AdminSettings: React.FC = () => {
         hotelId: '',
         beds24PropertyId: '',
         inviteCode: '',
+        tokenType: 'long_lived' as 'oauth' | 'long_lived',
+        longLivedToken: '',
+        tokenExpiresAt: '',
         scopes: ['bookings', 'inventory', 'properties', 'accounts', 'channels']
       });
       
@@ -379,20 +432,35 @@ const Beds24AdminSettings: React.FC = () => {
                     return (
                       <div key={connection.id} className="p-4 border rounded-lg space-y-3">
                         <div className="flex items-center justify-between">
-                          <div>
-                            <h4 className="font-medium">{getHotelName(connection.hotel_id)}</h4>
-                            <p className="text-sm text-muted-foreground">
-                              Beds24 Property ID: {connection.beds24_property_id}
-                            </p>
-                            <p className="text-xs text-muted-foreground">
-                              Scopes: {connection.scopes?.join(', ')}
-                            </p>
-                            {connection.last_token_use_at && (
-                              <p className="text-xs text-muted-foreground">
-                                Last activity: {new Date(connection.last_token_use_at).toLocaleString()}
-                              </p>
-                            )}
-                          </div>
+                           <div>
+                             <h4 className="font-medium">{getHotelName(connection.hotel_id)}</h4>
+                             <p className="text-sm text-muted-foreground">
+                               Beds24 Property ID: {connection.beds24_property_id}
+                             </p>
+                             <p className="text-xs text-muted-foreground">
+                               Token Type: {connection.token_type === 'long_lived' ? 'Long-lived Token' : 'OAuth'}
+                               {connection.token_type === 'long_lived' && connection.token_expires_at && (
+                                 <>
+                                   {' • Expires: '}
+                                   <span className={
+                                     new Date(connection.token_expires_at) <= new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
+                                       ? 'text-orange-500 font-medium'
+                                       : ''
+                                   }>
+                                     {new Date(connection.token_expires_at).toLocaleDateString()}
+                                   </span>
+                                 </>
+                               )}
+                             </p>
+                             <p className="text-xs text-muted-foreground">
+                               Scopes: {connection.scopes?.join(', ')}
+                             </p>
+                             {connection.last_token_use_at && (
+                               <p className="text-xs text-muted-foreground">
+                                 Last activity: {new Date(connection.last_token_use_at).toLocaleString()}
+                               </p>
+                             )}
+                           </div>
                           <div className="flex items-center gap-2">
                             {getStatusBadge(connection.status)}
                             <Button 
@@ -489,15 +557,39 @@ const Beds24AdminSettings: React.FC = () => {
         <TabsContent value="link" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>Link New Property via Invitation</CardTitle>
+              <CardTitle>Link New Property</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <Alert>
                 <AlertDescription>
-                  Get the invitation code from Beds24 for the specific property and scopes you want to access.
-                  This will establish a secure server-side connection with long-lived refresh tokens.
+                  Choose between long-lived tokens (simpler, 90-day expiry) or OAuth invitation codes (more secure, auto-refresh).
                 </AlertDescription>
               </Alert>
+
+              {/* Token Type Selector */}
+              <div className="space-y-2">
+                <Label>Token Type</Label>
+                <div className="flex gap-4">
+                  <label className="flex items-center space-x-2">
+                    <input
+                      type="radio"
+                      value="long_lived"
+                      checked={linkForm.tokenType === 'long_lived'}
+                      onChange={(e) => setLinkForm(prev => ({ ...prev, tokenType: e.target.value as 'oauth' | 'long_lived' }))}
+                    />
+                    <span>Long-lived Token (90 days)</span>
+                  </label>
+                  <label className="flex items-center space-x-2">
+                    <input
+                      type="radio"
+                      value="oauth"
+                      checked={linkForm.tokenType === 'oauth'}
+                      onChange={(e) => setLinkForm(prev => ({ ...prev, tokenType: e.target.value as 'oauth' | 'long_lived' }))}
+                    />
+                    <span>OAuth Invitation Code</span>
+                  </label>
+                </div>
+              </div>
 
               <div className="grid gap-4 md:grid-cols-2">
                 <div className="space-y-2">
@@ -538,15 +630,39 @@ const Beds24AdminSettings: React.FC = () => {
                   />
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="inviteCode">Invitation Code</Label>
-                  <Input
-                    id="inviteCode"
-                    placeholder="Enter invitation code from Beds24"
-                    value={linkForm.inviteCode}
-                    onChange={(e) => setLinkForm(prev => ({ ...prev, inviteCode: e.target.value }))}
-                  />
-                </div>
+                {linkForm.tokenType === 'long_lived' ? (
+                  <>
+                    <div className="space-y-2">
+                      <Label htmlFor="longLivedToken">Long-lived Token *</Label>
+                      <Input
+                        id="longLivedToken"
+                        placeholder="Paste your 90-day token here"
+                        value={linkForm.longLivedToken}
+                        onChange={(e) => setLinkForm(prev => ({ ...prev, longLivedToken: e.target.value }))}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="tokenExpiresAt">Token Expires At (optional)</Label>
+                      <Input
+                        id="tokenExpiresAt"
+                        type="datetime-local"
+                        value={linkForm.tokenExpiresAt}
+                        onChange={(e) => setLinkForm(prev => ({ ...prev, tokenExpiresAt: e.target.value }))}
+                      />
+                      <p className="text-xs text-muted-foreground">Leave empty for 90-day default expiry</p>
+                    </div>
+                  </>
+                ) : (
+                  <div className="space-y-2">
+                    <Label htmlFor="inviteCode">Invitation Code *</Label>
+                    <Input
+                      id="inviteCode"
+                      placeholder="Enter invitation code from Beds24"
+                      value={linkForm.inviteCode}
+                      onChange={(e) => setLinkForm(prev => ({ ...prev, inviteCode: e.target.value }))}
+                    />
+                  </div>
+                )}
               </div>
 
               <Button 
@@ -555,7 +671,7 @@ const Beds24AdminSettings: React.FC = () => {
                 className="w-full"
               >
                 {loading ? <Clock className="w-4 h-4 mr-2 animate-spin" /> : <LinkIcon className="w-4 h-4 mr-2" />}
-                Link Property
+                {linkForm.tokenType === 'long_lived' ? 'Create Connection' : 'Link Property'}
               </Button>
             </CardContent>
           </Card>
