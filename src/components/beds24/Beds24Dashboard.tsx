@@ -156,9 +156,34 @@ export const Beds24Dashboard: React.FC = () => {
     setLoading(true);
     
     try {
-      // For now, just show a success message since the new architecture 
-      // uses different edge functions that are admin-controlled
-      toast.success(`${operation.replace('_', ' ')} would be initiated here`);
+      // Get active connection to find hotel and property IDs
+      const { data: connections } = await supabase
+        .from('beds24_connections')
+        .select('*')
+        .eq('status', 'active')
+        .limit(1);
+      
+      const activeConnection = connections?.[0];
+      if (!activeConnection) {
+        throw new Error('No active Beds24 connection found');
+      }
+
+      toast.loading('Starting data import...');
+      
+      // Call the initial import function
+      const response = await supabase.functions.invoke('beds24-initial-import', {
+        body: {
+          hotelId: activeConnection.hotel_id,
+          beds24PropertyId: parseInt(activeConnection.beds24_property_id)
+        }
+      });
+
+      if (response.error) {
+        throw new Error(response.error.message || 'Import failed');
+      }
+
+      const stats = response.data?.statistics;
+      toast.success(`Import completed! Imported ${stats?.properties || 0} properties, ${stats?.roomTypes || 0} room types, ${stats?.bookings || 0} bookings.`);
       
       // Refresh data after sync
       setTimeout(() => {

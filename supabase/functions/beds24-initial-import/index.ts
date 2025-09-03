@@ -221,9 +221,47 @@ serve(async (req) => {
 
     console.log(`Initial import completed for hotel ${hotelId}`);
 
+    // Calculate import statistics
+    const { data: properties } = await supabase
+      .from('beds24_properties')
+      .select('*')
+      .eq('hotel_id', hotelId);
+    
+    const { data: roomTypesCount } = await supabase
+      .from('beds24_room_types')
+      .select('*')
+      .eq('hotel_id', hotelId);
+    
+    const { data: bookingsCount } = await supabase
+      .from('beds24_bookings')
+      .select('*')
+      .eq('hotel_id', hotelId);
+    
+    const { data: messagesCount } = await supabase
+      .from('beds24_messages')
+      .select('*')
+      .eq('hotel_id', hotelId);
+    
+    const { data: calendarCount } = await supabase
+      .from('beds24_calendar')
+      .select('*')
+      .eq('hotel_id', hotelId);
+
+    const statistics = {
+      properties: properties?.length || 0,
+      roomTypes: roomTypesCount?.length || 0,
+      bookings: bookingsCount?.length || 0,
+      messages: messagesCount?.length || 0,
+      calendarEntries: calendarCount?.length || 0
+    };
+
+    console.log(`Import statistics:`, statistics);
+
     return new Response(JSON.stringify({ 
       success: true, 
-      message: 'Initial import completed successfully'
+      message: 'Initial import completed successfully',
+      statistics,
+      importedAt: new Date().toISOString()
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });
