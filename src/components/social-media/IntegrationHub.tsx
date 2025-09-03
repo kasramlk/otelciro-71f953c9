@@ -53,16 +53,6 @@ interface Integration {
 
 const availableIntegrations: Integration[] = [
   {
-    id: 'airbnb',
-    name: 'Airbnb',
-    type: 'pms',
-    icon: <Home className="h-5 w-5 text-red-500" />,
-    description: 'Connect your Airbnb listings to sync rates, availability, and restrictions',
-    status: 'disconnected',
-    features: ['Rate Sync', 'Availability Sync', 'Booking Import', 'Restriction Sync', 'Analytics'],
-    permissions: ['read:listings', 'read:reservations', 'write:availability', 'write:pricing']
-  },
-  {
     id: 'instagram',
     name: 'Instagram',
     type: 'social',

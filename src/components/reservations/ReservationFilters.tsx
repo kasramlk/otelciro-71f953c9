@@ -201,12 +201,11 @@ export const ReservationFilters = ({ onBulkAction }: ReservationFiltersProps) =>
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Sources</SelectItem>
-                  <SelectItem value="direct">Direct</SelectItem>
-                  <SelectItem value="booking">Booking.com</SelectItem>
-                  <SelectItem value="expedia">Expedia</SelectItem>
-                  <SelectItem value="airbnb">Airbnb</SelectItem>
-                  <SelectItem value="corporate">Corporate</SelectItem>
-                  <SelectItem value="agency">Travel Agency</SelectItem>
+                   <SelectItem value="direct">Direct</SelectItem>
+                   <SelectItem value="booking">Booking.com</SelectItem>
+                   <SelectItem value="expedia">Expedia</SelectItem>
+                   <SelectItem value="corporate">Corporate</SelectItem>
+                   <SelectItem value="agency">Travel Agency</SelectItem>
                 </SelectContent>
               </Select>
             </div>

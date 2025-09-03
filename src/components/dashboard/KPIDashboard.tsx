@@ -107,8 +107,8 @@ export const KPIDashboard = ({ dateRange, hotelId }: KPIDashboardProps) => {
       unit: 'rooms'
     },
     {
-      id: 'channel_mix',
-      title: 'Direct Channel %',
+      id: 'direct_bookings',
+      title: 'Direct Bookings %',
       value: 35.8,
       change: 2.1,
       icon: Percent,

@@ -59,8 +59,8 @@ export const BusinessShowcase = () => {
       color: 'from-primary to-primary-light'
     },
     {
-      icon: Link,
-      title: t('landing.ecosystem.channelManager'),
+      icon: Globe,
+      title: t('landing.ecosystem.miniGDS'),
       color: 'from-secondary to-secondary-light'
     },
     {

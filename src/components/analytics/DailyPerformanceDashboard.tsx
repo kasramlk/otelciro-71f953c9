@@ -38,7 +38,7 @@ export const DailyPerformanceDashboard = ({ dateRange, selectedHotel }: DailyPer
             guests: { first_name: 'John', last_name: 'Smith' },
             check_in: new Date().toISOString(),
             check_out: new Date(Date.now() + 86400000 * 3).toISOString(),
-            channels: { channel_type: 'Direct' },
+            source: 'Direct',
             balance_due: 450
           },
           {
@@ -46,7 +46,7 @@ export const DailyPerformanceDashboard = ({ dateRange, selectedHotel }: DailyPer
             guests: { first_name: 'Sarah', last_name: 'Johnson' },
             check_in: new Date().toISOString(),
             check_out: new Date(Date.now() + 86400000 * 2).toISOString(),
-            channels: { channel_type: 'Booking.com' },
+            source: 'Booking.com',
             balance_due: 320
           },
           {
@@ -54,7 +54,7 @@ export const DailyPerformanceDashboard = ({ dateRange, selectedHotel }: DailyPer
             guests: { first_name: 'Michael', last_name: 'Brown' },
             check_in: new Date().toISOString(), 
             check_out: new Date(Date.now() + 86400000 * 4).toISOString(),
-            channels: { channel_type: 'Expedia' },
+            source: 'Expedia',
             balance_due: 380
           }
         ],
@@ -284,11 +284,11 @@ export const DailyPerformanceDashboard = ({ dateRange, selectedHotel }: DailyPer
                   <TableCell>
                     {format(new Date(reservation.check_out), 'MMM dd')}
                   </TableCell>
-                  <TableCell>
-                    <Badge variant="outline">
-                      {reservation.channels?.channel_type || 'Direct'}
-                    </Badge>
-                  </TableCell>
+                   <TableCell>
+                     <Badge variant="outline">
+                       {reservation.source || 'Direct'}
+                     </Badge>
+                   </TableCell>
                   <TableCell>Standard</TableCell>
                   <TableCell className="text-right font-medium">
                     ${reservation.balance_due?.toLocaleString()}

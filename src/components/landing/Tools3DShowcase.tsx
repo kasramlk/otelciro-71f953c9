@@ -27,12 +27,6 @@ export const Tools3DShowcase = () => {
       color: "#6366f1"
     },
     {
-      icon: Link,
-      titleKey: "tools.channelManager.title",
-      descriptionKey: "tools.channelManager.description",
-      color: "#8b5cf6"
-    },
-    {
       icon: Globe,
       titleKey: "tools.miniGds.title",
       descriptionKey: "tools.miniGds.description",

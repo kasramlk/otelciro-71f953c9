@@ -60,7 +60,7 @@ interface ReservationsListProps {
 // Mock data generator
 const generateMockReservations = (count: number) => {
   const statuses = ['Booked', 'Confirmed', 'CheckedIn', 'CheckedOut', 'Cancelled'];
-  const sources = ['Direct', 'Booking.com', 'Expedia', 'Airbnb', 'Corporate', 'Agency'];
+  const sources = ['Direct', 'Booking.com', 'Expedia', 'Corporate', 'Agency'];
   const roomTypes = ['Standard', 'Deluxe', 'Suite', 'Executive'];
   const companies = ['', 'ACME Corp', 'Tech Solutions', 'Global Enterprises'];
   

@@ -52,8 +52,7 @@ export const AIInsights = ({ dateRange, selectedHotel }: AIInsightsProps) => {
       let reservationsQuery = supabase
         .from("reservations")
         .select(`
-          *,
-          channels(name, channel_type, commission_rate)
+          *
         `);
 
       if (dateRange?.from && dateRange?.to) {
@@ -83,14 +82,14 @@ export const AIInsights = ({ dateRange, selectedHotel }: AIInsightsProps) => {
     const totalRevenue = reservations.reduce((sum: number, res: any) => sum + (res.total_amount || 0), 0);
     const avgDailyRate = reservations.length > 0 ? totalRevenue / reservations.length : 0;
     
-    // Channel analysis
-    const channelPerformance = reservations.reduce((acc: any, res: any) => {
-      const channel = res.channels?.channel_type || 'Direct';
-      if (!acc[channel]) {
-        acc[channel] = { count: 0, revenue: 0 };
+    // Source analysis
+    const sourcePerformance = reservations.reduce((acc: any, res: any) => {
+      const source = res.source || 'Direct';
+      if (!acc[source]) {
+        acc[source] = { count: 0, revenue: 0 };
       }
-      acc[channel].count++;
-      acc[channel].revenue += res.total_amount || 0;
+      acc[source].count++;
+      acc[source].revenue += res.total_amount || 0;
       return acc;
     }, {});
 
@@ -114,29 +113,29 @@ export const AIInsights = ({ dateRange, selectedHotel }: AIInsightsProps) => {
       actionable: true
     });
 
-    // Insight 2: Channel Performance
-    const topChannel = Object.entries(channelPerformance)
+    // Insight 2: Source Performance
+    const topSource = Object.entries(sourcePerformance)
       .sort(([,a], [,b]) => (b as any).revenue - (a as any).revenue)[0];
     
-    if (topChannel) {
-      const [channelName, data] = topChannel;
-      const channelData = data as { count: number; revenue: number };
+    if (topSource) {
+      const [sourceName, data] = topSource;
+      const sourceData = data as { count: number; revenue: number };
       
       insights.push({
         id: '2',
-        type: channelData.revenue > totalRevenue * 0.4 ? 'negative' : 'positive',
-        category: 'channels',
-        title: `${channelName} Channel Dependency`,
-        description: `${channelName} accounts for ${((channelData.revenue / totalRevenue) * 100).toFixed(1)}% of your revenue. ${channelData.revenue > totalRevenue * 0.4 ? 'High dependency risk detected' : 'Good channel diversification'}.`,
-        impact: channelData.revenue > totalRevenue * 0.4 ? 'high' : 'medium',
+        type: sourceData.revenue > totalRevenue * 0.4 ? 'negative' : 'positive',
+        category: 'revenue',
+        title: `${sourceName} Source Dependency`,
+        description: `${sourceName} accounts for ${((sourceData.revenue / totalRevenue) * 100).toFixed(1)}% of your revenue. ${sourceData.revenue > totalRevenue * 0.4 ? 'High dependency risk detected' : 'Good source diversification'}.`,
+        impact: sourceData.revenue > totalRevenue * 0.4 ? 'high' : 'medium',
         confidence: 92,
         metrics: {
-          current: `${((channelData.revenue / totalRevenue) * 100).toFixed(1)}%`,
-          change: channelData.revenue > totalRevenue * 0.4 ? '+15%' : '+5%'
+          current: `${((sourceData.revenue / totalRevenue) * 100).toFixed(1)}%`,
+          change: sourceData.revenue > totalRevenue * 0.4 ? '+15%' : '+5%'
         },
-        recommendation: channelData.revenue > totalRevenue * 0.4 
-          ? 'Diversify booking channels to reduce dependency risk. Focus on direct bookings.'
-          : 'Continue maintaining balanced channel mix while optimizing commission costs.',
+        recommendation: sourceData.revenue > totalRevenue * 0.4 
+          ? 'Diversify booking sources to reduce dependency risk. Focus on direct bookings.'
+          : 'Continue maintaining balanced source mix while optimizing commission costs.',
         actionable: true
       });
     }

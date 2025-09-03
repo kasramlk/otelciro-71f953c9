@@ -48,8 +48,7 @@ const dashboardFilters = [
     options: [
       { value: 'direct', label: 'Direct' },
       { value: 'booking.com', label: 'Booking.com' },
-      { value: 'expedia', label: 'Expedia' },
-      { value: 'airbnb', label: 'Airbnb' }
+      { value: 'expedia', label: 'Expedia' }
     ]
   },
   {
