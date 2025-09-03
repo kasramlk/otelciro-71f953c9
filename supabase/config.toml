@@ -1,4 +1,4 @@
-project_id = "zldcotumxouasgzdsvmh" 
+project_id = "zldcotumxouasgzdsvmh"
 
 [api]
 enabled = true
@@ -16,53 +16,32 @@ verify_jwt = true
 [functions.publish-social-content]
 verify_jwt = true
 
-[functions.airbnb-oauth-token]
-verify_jwt = true
-
-[functions.airbnb-sync]
-verify_jwt = true
-
-[functions.airbnb-reservations]
-verify_jwt = true
-
-[functions.beds24-auth]
-verify_jwt = true
-
-[functions.beds24-sync]
-verify_jwt = true
-
-[functions.beds24-inventory-push]
-verify_jwt = true
-
-[functions.beds24-reservations-pull]
-verify_jwt = true
-
-[functions.beds24-webhook]
-verify_jwt = false
-
-[functions.beds24-properties-sync]
+[functions.channel-sync]
 verify_jwt = true
 
 [functions.beds24-admin-link]
 verify_jwt = true
 
-[env]
-SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpsZGNvdHVteG91YXNnemRzdm1oIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU2NjY5NDEsImV4cCI6MjA3MTI0Mjk0MX0.tMMHzRMpmm4lLvRq27M1O7rcOsUnYr2bFEki3TdqFeQ"
-
-[functions.beds24-token-service] 
+[functions.beds24-api-client]
 verify_jwt = false
 
-[functions.beds24-api-client]
+[functions.beds24-connection-health]
 verify_jwt = false
 
 [functions.beds24-initial-import]
 verify_jwt = false
 
-[functions.beds24-connection-health]
-verify_jwt = true
-
 [functions.beds24-keep-alive]
 verify_jwt = false
 
+[functions.beds24-sync]
+verify_jwt = true
+
 [functions.beds24-token-helper]
 verify_jwt = false
+
+[functions.beds24-token-service]
+verify_jwt = false
+
+[env]
+SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpsZGNvdHVteG91YXNnemRzdm1oIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU2NjY5NDEsImV4cCI6MjA3MTI0Mjk0MX0.tMMHzRMpmm4lLvRq27M1O7rcOsUnYr2bFEki3TdqFeQ"
