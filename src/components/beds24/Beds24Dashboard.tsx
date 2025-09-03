@@ -363,6 +363,24 @@ export const Beds24Dashboard: React.FC = () => {
                   </AlertDescription>
                 </Alert>
               )}
+              
+              {config?.sync_enabled && (
+                <Alert className="mb-6">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>
+                    Data import may take up to 3 minutes. The system will import properties, room types, bookings (last 12 months), calendar data (next 365 days), and messages (last 30 days) from Beds24.
+                  </AlertDescription>
+                </Alert>
+              )}
+
+              {loading && (
+                <Alert className="mb-6">
+                  <RefreshCw className="h-4 w-4 animate-spin" />
+                  <AlertDescription>
+                    <strong>Import in progress...</strong> Please wait while we sync your data from Beds24. This process may take up to 3 minutes.
+                  </AlertDescription>
+                </Alert>
+              )}
 
               <div className="grid gap-4 md:grid-cols-2">
                 {syncOperations.map((operation) => {
