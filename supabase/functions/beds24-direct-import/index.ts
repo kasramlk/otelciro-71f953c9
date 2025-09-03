@@ -36,6 +36,11 @@ serve(async (req) => {
     const token = connection.long_lived_token;
     console.log('Token found, starting import...');
 
+    // Initialize data arrays at function scope
+    let roomsData: any[] = [];
+    let bookingsData: any[] = [];
+    let inventoryData: any[] = [];
+
     // 1. Import Property Details
     console.log('Step 1: Importing property details...');
     const propertyUrl = `${BEDS24_BASE_URL}/properties?id=${beds24PropertyId}&includeLanguages=all&includeTexts=all&includePictures=true&includeOffers=true&includePriceRules=true&includeUpsellItems=true&includeAllRooms=true&includeUnitDetails=true`;
@@ -84,7 +89,7 @@ serve(async (req) => {
     });
 
     if (roomsResponse.ok) {
-      const roomsData = await roomsResponse.json();
+      roomsData = await roomsResponse.json();
       console.log(`Found ${roomsData.length} room types`);
 
       for (const room of roomsData) {
@@ -112,7 +117,7 @@ serve(async (req) => {
     });
 
     if (bookingsResponse.ok) {
-      const bookingsData = await bookingsResponse.json();
+      bookingsData = await bookingsResponse.json();
       console.log(`Found ${bookingsData.length} bookings`);
 
       for (const booking of bookingsData) {
@@ -151,7 +156,7 @@ serve(async (req) => {
     });
 
     if (inventoryResponse.ok) {
-      const inventoryData = await inventoryResponse.json();
+      inventoryData = await inventoryResponse.json();
       console.log(`Found ${inventoryData.length} inventory records`);
 
       for (const inv of inventoryData) {
