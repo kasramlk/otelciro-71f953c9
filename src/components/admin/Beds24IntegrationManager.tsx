@@ -1328,7 +1328,7 @@ export default function Beds24IntegrationManager() {
                       Automatically diagnose and attempt to fix common issues
                     </p>
                     <Button
-                      onClick={() => autoRecoveryMutation.mutate()}
+                      onClick={() => autoRecoveryMutation.mutate(undefined)}
                       disabled={autoRecoveryMutation.isPending}
                       className="w-full"
                       variant="default"
