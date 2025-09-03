@@ -3690,7 +3690,7 @@ export type Database = {
       v_external_ids: {
         Row: {
           created_at: string | null
-          entity: string | null
+          entity_type: string | null
           external_id: string | null
           id: string | null
           metadata: Json | null
@@ -3700,7 +3700,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string | null
-          entity?: string | null
+          entity_type?: string | null
           external_id?: string | null
           id?: string | null
           metadata?: Json | null
@@ -3710,7 +3710,7 @@ export type Database = {
         }
         Update: {
           created_at?: string | null
-          entity?: string | null
+          entity_type?: string | null
           external_id?: string | null
           id?: string | null
           metadata?: Json | null
@@ -3722,52 +3722,64 @@ export type Database = {
       }
       v_ingestion_audit: {
         Row: {
+          action: string | null
           created_at: string | null
-          credit_limit_remaining: number | null
-          credit_limit_resets_in: number | null
           duration_ms: number | null
-          error_details: string | null
+          entity_type: string | null
+          error_message: string | null
           external_id: string | null
           hotel_id: string | null
           id: number | null
+          limit_remaining: number | null
+          limit_resets_in: number | null
           operation: string | null
           provider: string | null
+          records_processed: number | null
           request_cost: number | null
           request_payload: Json | null
           response_payload: Json | null
           status: string | null
+          trace_id: string | null
         }
         Insert: {
+          action?: string | null
           created_at?: string | null
-          credit_limit_remaining?: number | null
-          credit_limit_resets_in?: number | null
           duration_ms?: number | null
-          error_details?: string | null
+          entity_type?: string | null
+          error_message?: string | null
           external_id?: string | null
           hotel_id?: string | null
           id?: number | null
+          limit_remaining?: number | null
+          limit_resets_in?: number | null
           operation?: string | null
           provider?: string | null
+          records_processed?: number | null
           request_cost?: number | null
           request_payload?: Json | null
           response_payload?: Json | null
           status?: string | null
+          trace_id?: string | null
         }
         Update: {
+          action?: string | null
           created_at?: string | null
-          credit_limit_remaining?: number | null
-          credit_limit_resets_in?: number | null
           duration_ms?: number | null
-          error_details?: string | null
+          entity_type?: string | null
+          error_message?: string | null
           external_id?: string | null
           hotel_id?: string | null
           id?: number | null
+          limit_remaining?: number | null
+          limit_resets_in?: number | null
           operation?: string | null
           provider?: string | null
+          records_processed?: number | null
           request_cost?: number | null
           request_payload?: Json | null
           response_payload?: Json | null
           status?: string | null
+          trace_id?: string | null
         }
         Relationships: [
           {

@@ -2,6 +2,29 @@ import { getTokenForOperation } from './beds24-tokens.ts'
 import { parseCreditHeaders, shouldBackoff, RateLimitError } from './credit-limit.ts'
 import { logAudit, createOperationTimer } from './logger.ts'
 
+// Startup self-check for required secrets
+function validateEnvironment() {
+  const requiredSecrets = [
+    'BEDS24_BASE_URL',
+    'BEDS24_READ_TOKEN', 
+    'LOG_REDACT_KEYS'
+  ];
+  
+  const missing = requiredSecrets.filter(secret => !Deno.env.get(secret));
+  
+  if (missing.length > 0) {
+    throw new Error(`Missing required secrets: ${missing.join(', ')}. Please configure these in Supabase Edge Functions settings.`);
+  }
+  
+  // Validate BEDS24_BASE_URL format
+  const baseUrl = Deno.env.get('BEDS24_BASE_URL');
+  if (baseUrl && !baseUrl.startsWith('https://')) {
+    throw new Error('BEDS24_BASE_URL must be a valid HTTPS URL');
+  }
+  
+  console.log('Beds24Client: Environment validation passed', { secrets: requiredSecrets });
+}
+
 export interface Beds24RequestOptions {
   method?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE'
   headers?: Record<string, string>
@@ -23,6 +46,8 @@ class Beds24Client {
   private baseUrl: string
 
   constructor() {
+    // Validate environment on initialization
+    validateEnvironment();
     this.baseUrl = Deno.env.get('BEDS24_BASE_URL') || 'https://api.beds24.com/v2'
   }
 
