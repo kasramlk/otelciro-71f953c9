@@ -65,17 +65,12 @@ class Beds24APIClient {
         const fiveMinRemaining = parseFloat(response.headers.get('X-Five-Min-Remaining') || '0');
         const fiveMinResetsIn = parseInt(response.headers.get('X-Five-Min-Resets-In') || '0');
 
-        // Get beds24_property_id for logging
-        const { data: connection } = await this.supabase
-          .from('beds24_connections')
-          .select('beds24_property_id')
-          .eq('hotel_id', hotelId)
-          .single();
+        // Use the beds24_property_id from the connection already fetched above
 
         // Log API call
         await this.supabase.from('beds24_api_logs').insert({
           hotel_id: hotelId,
-          beds24_property_id: connection?.beds24_property_id,
+          beds24_property_id: parseInt(connection?.beds24_property_id || '0'),
           method,
           path,
           status: response.status,

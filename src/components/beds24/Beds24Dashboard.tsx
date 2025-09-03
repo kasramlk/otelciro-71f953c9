@@ -8,6 +8,7 @@ import { Progress } from '@/components/ui/progress';
 import { Separator } from '@/components/ui/separator';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { DirectImportButton } from './DirectImportButton';
 import { 
   Database, 
   Calendar, 
@@ -273,6 +274,24 @@ export const Beds24Dashboard: React.FC = () => {
             Refresh
           </Button>
         </div>
+      </div>
+
+      {/* Direct Import Section */}
+      <div className="mb-6">
+        <Card className="bg-gradient-to-r from-primary/10 to-secondary/10 border-primary/20">
+          <CardHeader>
+            <CardTitle className="text-lg">One-Time Direct Import</CardTitle>
+            <CardDescription>
+              Import all your property data directly from Beds24 API (Property ID: 291742)
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <DirectImportButton 
+              hotelId="6163aacb-81d7-4eb2-ab68-4d3e172bef3e" 
+              beds24PropertyId="291742" 
+            />
+          </CardContent>
+        </Card>
       </div>
 
       {/* Status Cards */}
