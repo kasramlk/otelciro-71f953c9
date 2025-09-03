@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Calendar, TrendingUp, TrendingDown, Users, Building, DollarSign, Clock, Bell, Settings, Zap } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -7,65 +7,142 @@ import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useHMSStore } from '@/stores/hms-store';
-import { HOTEL_CONFIG, ROOM_TYPES } from '@/lib/mock-data';
 import { format } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
 import { NotificationsModal } from './NotificationsModal';
 import { ReservationDetailModal } from '@/components/reservations/ReservationDetailModal';
+import { useHotel, useProductionData } from '@/hooks/use-production-data';
 
 export const HMSDashboard = () => {
-  const { occupancyData, selectedMonth, setSelectedMonth, refreshOccupancyData, applyAISuggestion, reservations } = useHMSStore();
+  const { selectedHotelId, selectedMonth, setSelectedMonth, applyAISuggestion } = useHMSStore();
   const [selectedRoomType, setSelectedRoomType] = useState<string>('all');
   const [selectedChannel, setSelectedChannel] = useState<string>('all');
   const [showNotifications, setShowNotifications] = useState(false);
   const [selectedReservationId, setSelectedReservationId] = useState<string | null>(null);
   const { toast } = useToast();
   const navigate = useNavigate();
+  
+  // Fetch hotel and production data
+  const { data: hotel } = useHotel(selectedHotelId || '');
+  const { 
+    reservations = [], 
+    rooms = [], 
+    hotels = [],
+    loading,
+    refreshData 
+  } = useProductionData(selectedHotelId || undefined);
 
-  // Calculate KPIs for selected month
+  // Generate mock occupancy data for display (can be replaced with real data later)
+  const occupancyData = useMemo(() => {
+    const daysInMonth = new Date(selectedMonth.getFullYear(), selectedMonth.getMonth() + 1, 0).getDate();
+    const data = [];
+    
+    for (let day = 1; day <= daysInMonth; day++) {
+      const date = new Date(selectedMonth.getFullYear(), selectedMonth.getMonth(), day);
+      const isWeekend = date.getDay() === 0 || date.getDay() === 6;
+      const baseOccupancy = isWeekend ? 0.75 : 0.6;
+      const occupancyRate = Math.min(0.95, baseOccupancy + Math.random() * 0.3);
+      const totalRooms = rooms.length || 50;
+      const occupiedRooms = Math.floor(totalRooms * occupancyRate);
+      const availableRooms = totalRooms - occupiedRooms;
+      const baseADR = isWeekend ? 120 : 100;
+      const adr = baseADR + (Math.random() * 40 - 20);
+      
+      data.push({
+        date,
+        day,
+        specialDay: isWeekend ? "Weekend" : "",
+        capacity: totalRooms,
+        availableRooms,
+        occupiedRooms,
+        occupancyRate,
+        adr: Math.round(adr * 100) / 100,
+        totalRevenue: Math.round(occupiedRooms * adr * 100) / 100,
+        arrivals: Math.floor(occupiedRooms * 0.3),
+        departures: Math.floor(occupiedRooms * 0.25)
+      });
+    }
+    
+    return data;
+  }, [selectedMonth, rooms]);
+
+  // Calculate KPIs based on real hotel and reservation data
   const kpis = useMemo(() => {
-    const monthData = occupancyData.filter(data => 
-      data.date.getMonth() === selectedMonth.getMonth() &&
-      data.date.getFullYear() === selectedMonth.getFullYear()
-    );
+    if (!hotel && reservations.length === 0) {
+      return {
+        totalRooms: rooms.length || 0,
+        avgOccupancy: 0,
+        avgADR: 0,
+        revPAR: 0,
+        totalRevenue: 0,
+        totalArrivals: 0,
+        totalDepartures: 0,
+        availableRooms: rooms.length || 0,
+        maintenanceIssues: 0,
+        trends: {
+          occupancy: 'up' as const,
+          adr: 'up' as const,
+          revenue: 'up' as const,
+          revpar: 'up' as const
+        }
+      };
+    }
 
-    if (monthData.length === 0) return null;
+    // Calculate metrics from real reservation data
+    const totalRooms = rooms.length || 50;
+    const currentDate = new Date();
+    const monthStart = new Date(selectedMonth.getFullYear(), selectedMonth.getMonth(), 1);
+    const monthEnd = new Date(selectedMonth.getFullYear(), selectedMonth.getMonth() + 1, 0);
 
-    const totalRevenue = monthData.reduce((sum, day) => sum + day.totalRevenue, 0);
-    const avgOccupancy = monthData.reduce((sum, day) => sum + day.occupancyRate, 0) / monthData.length;
-    const avgADR = monthData.reduce((sum, day) => sum + day.adr, 0) / monthData.length;
-    const revPAR = avgOccupancy * avgADR;
-    const totalArrivals = monthData.reduce((sum, day) => sum + day.arrivals, 0);
-    const totalDepartures = monthData.reduce((sum, day) => sum + day.departures, 0);
+    // Filter reservations for selected month
+    const monthReservations = reservations.filter(res => {
+      const checkIn = new Date(res.check_in);
+      const checkOut = new Date(res.check_out);
+      return (checkIn >= monthStart && checkIn <= monthEnd) || 
+             (checkOut >= monthStart && checkOut <= monthEnd) ||
+             (checkIn <= monthStart && checkOut >= monthEnd);
+    });
 
-    // Calculate trends (mock - compare with previous month)
-    const trends = {
-      occupancy: Math.random() > 0.5 ? 'up' as const : 'down' as const,
-      adr: Math.random() > 0.5 ? 'up' as const : 'down' as const,
-      revenue: Math.random() > 0.5 ? 'up' as const : 'down' as const,
-      revpar: Math.random() > 0.5 ? 'up' as const : 'down' as const
-    };
+    const totalRevenue = monthReservations.reduce((sum, res) => sum + (res.total_amount || 0), 0);
+    const totalArrivals = monthReservations.filter(res => {
+      const checkIn = new Date(res.check_in);
+      return checkIn >= monthStart && checkIn <= monthEnd;
+    }).length;
+    
+    const totalDepartures = monthReservations.filter(res => {
+      const checkOut = new Date(res.check_out);
+      return checkOut >= monthStart && checkOut <= monthEnd;
+    }).length;
+
+    // Simple occupancy calculation (can be improved)
+    const occupancyRate = totalRooms > 0 ? Math.min(monthReservations.length / totalRooms, 1) : 0;
+    const avgADR = monthReservations.length > 0 ? totalRevenue / monthReservations.length : 0;
+    const revPAR = occupancyRate * avgADR;
 
     return {
-      totalRooms: HOTEL_CONFIG.totalRooms,
-      avgOccupancy: avgOccupancy * 100,
-      avgADR: avgADR,
-      revPAR: revPAR,
+      totalRooms,
+      avgOccupancy: occupancyRate * 100,
+      avgADR,
+      revPAR,
       totalRevenue,
       totalArrivals,
       totalDepartures,
-      availableRooms: Math.floor(HOTEL_CONFIG.totalRooms * (1 - avgOccupancy)),
-      maintenanceIssues: Math.floor(Math.random() * 5),
-      trends
+      availableRooms: Math.floor(totalRooms * (1 - occupancyRate)),
+      maintenanceIssues: Math.floor(Math.random() * 5), // Mock for now
+      trends: {
+        occupancy: 'up' as const,
+        adr: 'up' as const, 
+        revenue: 'up' as const,
+        revpar: 'up' as const
+      }
     };
-  }, [occupancyData, selectedMonth]);
+  }, [hotel, reservations, rooms, selectedMonth]);
 
   const handleMonthChange = (monthOffset: number) => {
     const newMonth = new Date(selectedMonth);
     newMonth.setMonth(newMonth.getMonth() + monthOffset);
     setSelectedMonth(newMonth);
-    refreshOccupancyData(newMonth.getMonth() + 1, newMonth.getFullYear());
   };
 
   const getOccupancyColor = (rate: number) => {
@@ -76,12 +153,9 @@ export const HMSDashboard = () => {
 
   // AI Suggestion: Apply suggested ADR for a day
   const handleAISuggestion = (date: Date) => {
-    const currentDayData = occupancyData.find(d => d.date.toDateString() === date.toDateString());
-    if (!currentDayData) return;
-
     // Mock AI suggestion - increase ADR by 5-15% based on occupancy
-    const suggestionFactor = currentDayData.occupancyRate > 0.8 ? 1.15 : 1.08;
-    const suggestedADR = Math.round(currentDayData.adr * suggestionFactor * 100) / 100;
+    const suggestionFactor = kpis.avgOccupancy > 80 ? 1.15 : 1.08;
+    const suggestedADR = Math.round(kpis.avgADR * suggestionFactor * 100) / 100;
     
     applyAISuggestion(date, suggestedADR);
     toast({ 
@@ -95,7 +169,8 @@ export const HMSDashboard = () => {
       <TrendingUp className="h-4 w-4 text-green-500" /> : 
       <TrendingDown className="h-4 w-4 text-red-500" />;
 
-  if (!kpis) return <div>Loading...</div>;
+  if (loading) return <div>Loading...</div>;
+  if (!selectedHotelId) return <div className="flex items-center justify-center h-64 text-muted-foreground">Please select a hotel to view dashboard</div>;
 
   return (
     <motion.div
@@ -104,12 +179,10 @@ export const HMSDashboard = () => {
       className="space-y-6 p-6"
     >
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-3xl font-bold text-foreground">HMS Dashboard</h1>
-          <p className="text-muted-foreground">
-            {HOTEL_CONFIG.name} - {format(selectedMonth, 'MMMM yyyy')}
-          </p>
+          <h1 className="text-2xl font-bold text-foreground">Hotel Dashboard</h1>
+          <p className="text-muted-foreground">{hotel?.name || 'Hotel'} - {format(selectedMonth, 'MMMM yyyy')}</p>
         </div>
         
         <div className="flex items-center gap-4">
@@ -265,9 +338,9 @@ export const HMSDashboard = () => {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Room Types</SelectItem>
-                {ROOM_TYPES.map(type => (
-                  <SelectItem key={type.id} value={type.id}>{type.name}</SelectItem>
-                ))}
+                <SelectItem value="1">Standard Room</SelectItem>
+                <SelectItem value="2">Deluxe Room</SelectItem>
+                <SelectItem value="3">Suite</SelectItem>
               </SelectContent>
             </Select>
 
@@ -308,70 +381,65 @@ export const HMSDashboard = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {occupancyData
-                  .filter(data => 
-                    data.date.getMonth() === selectedMonth.getMonth() &&
-                    data.date.getFullYear() === selectedMonth.getFullYear()
-                  )
-                  .map((day) => (
-                    <TableRow key={day.date.toISOString()} className="hover:bg-muted/50">
-                      <TableCell className="font-medium">
-                        {format(day.date, 'MMM dd')}
-                      </TableCell>
-                      <TableCell>
-                        {day.specialDay && (
-                          <Badge variant="secondary">{day.specialDay}</Badge>
-                        )}
-                      </TableCell>
-                      <TableCell>{day.capacity}</TableCell>
-                      <TableCell>{day.availableRooms}</TableCell>
-                      <TableCell>{day.occupiedRooms}</TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <div className={`w-3 h-3 rounded-full ${getOccupancyColor(day.occupancyRate)}`} />
-                          {(day.occupancyRate * 100).toFixed(1)}%
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <span className="font-mono">€{day.adr.toFixed(0)}</span>
-                      </TableCell>
-                      <TableCell>
-                        <span className="font-mono">€{day.totalRevenue.toLocaleString()}</span>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <Button 
-                            variant="ghost" 
-                            size="sm"
-                            onClick={() => {
-                              // Find a reservation for this date to show details
-                              const reservation = reservations.find(res => 
-                                day.date >= res.checkIn && day.date < res.checkOut
-                              );
-                              if (reservation) {
-                                setSelectedReservationId(reservation.id);
-                              } else {
-                                toast({ 
-                                  title: "No reservations found",
-                                  description: `No active reservations for ${format(day.date, 'MMM dd')}`
-                                });
-                              }
-                            }}
-                          >
-                            View Details
-                          </Button>
-                          <Button 
-                            variant="outline" 
-                            size="sm"
-                            onClick={() => handleAISuggestion(day.date)}
-                          >
-                            <Zap className="h-4 w-4 mr-1" />
-                            AI Suggest
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                {occupancyData.map((day) => (
+                  <TableRow key={day.date.toISOString()} className="hover:bg-muted/50">
+                    <TableCell className="font-medium">
+                      {format(day.date, 'MMM dd')}
+                    </TableCell>
+                    <TableCell>
+                      {day.specialDay && (
+                        <Badge variant="secondary">{day.specialDay}</Badge>
+                      )}
+                    </TableCell>
+                    <TableCell>{day.capacity}</TableCell>
+                    <TableCell>{day.availableRooms}</TableCell>
+                    <TableCell>{day.occupiedRooms}</TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        <div className={`w-3 h-3 rounded-full ${getOccupancyColor(day.occupancyRate)}`} />
+                        {(day.occupancyRate * 100).toFixed(1)}%
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <span className="font-mono">€{day.adr.toFixed(0)}</span>
+                    </TableCell>
+                    <TableCell>
+                      <span className="font-mono">€{day.totalRevenue.toLocaleString()}</span>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          onClick={() => {
+                            // Find a reservation for this date to show details
+                            const reservation = reservations.find(res => 
+                              day.date >= new Date(res.check_in) && day.date < new Date(res.check_out)
+                            );
+                            if (reservation) {
+                              setSelectedReservationId(reservation.id);
+                            } else {
+                              toast({ 
+                                title: "No reservations found",
+                                description: `No active reservations for ${format(day.date, 'MMM dd')}`
+                              });
+                            }
+                          }}
+                        >
+                          View Details
+                        </Button>
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => handleAISuggestion(day.date)}
+                        >
+                          <Zap className="h-4 w-4 mr-1" />
+                          AI Suggest
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
               </TableBody>
             </Table>
           </div>

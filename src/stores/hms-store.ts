@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { devtools, persist, subscribeWithSelector } from 'zustand/middleware';
-import { mockData, USE_SUPABASE, generateMockOccupancyData } from '@/lib/mock-data';
+import { generateMockOccupancyData } from '@/lib/mock-data';
 
 // Types
 export interface Reservation {
@@ -113,6 +113,9 @@ interface HMSStore {
   occupancyData: OccupancyData[];
   ariData: ARIData[];
   
+  // Hotel Selection
+  selectedHotelId: string | null;
+  
   // UI State
   selectedMonth: Date;
   selectedReservation: string | null;
@@ -123,10 +126,11 @@ interface HMSStore {
   history: any[];
   historyIndex: number;
   
-  // Actions
+  // UI State Management
   setSelectedMonth: (month: Date) => void;
   setSelectedReservation: (reservationId: string | null) => void;
   setSelectedRoom: (roomId: string | null) => void;
+  setSelectedHotel: (hotelId: string) => void;
   
   // AI Revenue Optimization
   applyAISuggestion: (date: Date, suggestedADR: number) => void;
@@ -171,14 +175,17 @@ export const useHMSStore = create<HMSStore>()(
   devtools(
     persist(
       subscribeWithSelector((set, get) => ({
-        // Initial data
-        reservations: mockData.reservations,
-        rooms: mockData.rooms,
-        guests: mockData.guests,
-        housekeepingTasks: mockData.housekeepingTasks,
-        occupancyData: mockData.occupancyData,
-        ariData: mockData.ariData,
+        // Initial data - now empty, will be loaded from Supabase
+        reservations: [],
+        rooms: [],
+        guests: [],
+        housekeepingTasks: [],
+        occupancyData: [],
+        ariData: [],
         auditLog: [],
+        
+        // Hotel Selection
+        selectedHotelId: null,
         
         // UI State
         selectedMonth: new Date(),
@@ -194,6 +201,7 @@ export const useHMSStore = create<HMSStore>()(
         setSelectedMonth: (month) => set({ selectedMonth: month }),
         setSelectedReservation: (reservationId) => set({ selectedReservation: reservationId }),
         setSelectedRoom: (roomId) => set({ selectedRoom: roomId }),
+        setSelectedHotel: (hotelId) => set({ selectedHotelId: hotelId }),
         
         // Reservations
         addReservation: (reservation) => {

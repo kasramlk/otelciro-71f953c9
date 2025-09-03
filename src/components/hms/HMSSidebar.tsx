@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { NavLink, useNavigate } from "react-router-dom";
 import { 
@@ -40,9 +40,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useTheme } from "next-themes";
 import { supabase } from "@/integrations/supabase/client";
-import { HOTEL_CONFIG } from "@/lib/mock-data";
+import { useHotels } from "@/hooks/use-production-data";
+import { useHMSStore } from "@/stores/hms-store";
 
 interface SidebarItem {
   title: string;
@@ -101,6 +103,15 @@ export const HMSSidebar = () => {
   
   const { theme, setTheme } = useTheme();
   const navigate = useNavigate();
+  const { data: hotels, isLoading: hotelsLoading } = useHotels();
+  const { selectedHotelId, setSelectedHotel } = useHMSStore();
+
+  // Auto-select first hotel if none selected
+  useEffect(() => {
+    if (hotels && hotels.length > 0 && !selectedHotelId) {
+      setSelectedHotel(hotels[0].id);
+    }
+  }, [hotels, selectedHotelId, setSelectedHotel]);
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
@@ -207,9 +218,23 @@ export const HMSSidebar = () => {
                 <div className="w-10 h-10 bg-gradient-primary rounded-xl flex items-center justify-center">
                   <Hotel className="h-6 w-6 text-white" />
                 </div>
-                <div>
+                <div className="flex-1 min-w-0">
                   <h2 className="font-bold text-sidebar-foreground">HMS</h2>
-                  <p className="text-xs text-sidebar-foreground/70">{HOTEL_CONFIG.name}</p>
+                  <Select 
+                    value={selectedHotelId || ''} 
+                    onValueChange={setSelectedHotel}
+                  >
+                    <SelectTrigger className="h-6 text-xs bg-transparent border-none p-0 text-sidebar-foreground/70 hover:text-sidebar-foreground">
+                      <SelectValue placeholder={hotelsLoading ? "Loading..." : "Select Hotel"} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {hotels?.map((hotel) => (
+                        <SelectItem key={hotel.id} value={hotel.id}>
+                          {hotel.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
               </motion.div>
             )}
