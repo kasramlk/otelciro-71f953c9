@@ -27,10 +27,16 @@ class TokenService {
       return cached.token;
     }
 
-    // Get connection
+    // Get connection with secrets
     const { data: connection } = await this.supabase
       .from('beds24_connections')
-      .select('*')
+      .select(`
+        *,
+        beds24_connection_secrets!inner(
+          refresh_token_read,
+          refresh_token_write
+        )
+      `)
       .eq('hotel_id', hotelId)
       .eq('status', 'active')
       .single();
@@ -52,13 +58,16 @@ class TokenService {
       }
     }
 
-    // Mint new access token
-    const refreshTokenSecret = forWrite && connection.refresh_token_write_secret ? 
-      connection.refresh_token_write_secret : connection.refresh_token_read_secret;
+    // Get the actual refresh token
+    const secrets = connection.beds24_connection_secrets;
+    const refreshToken = forWrite && secrets.refresh_token_write ? 
+      secrets.refresh_token_write : secrets.refresh_token_read;
 
-    // In production, retrieve from Supabase Vault
-    // For now, simulate the refresh token
-    const simulatedRefreshToken = `refresh_${refreshTokenSecret}`;
+    if (!refreshToken) {
+      throw new Error(`No refresh token available for ${forWrite ? 'write' : 'read'} operations`);
+    }
+
+    console.log('Using real refresh token for API call');
 
     const tokenResponse = await fetch(`${BEDS24_BASE_URL}/authentication/token`, {
       method: 'POST',
@@ -67,14 +76,15 @@ class TokenService {
         'accept': 'application/json',
       },
       body: JSON.stringify({
-        refresh_token: simulatedRefreshToken,
+        refresh_token: refreshToken,
         grant_type: 'refresh_token'
       })
     });
 
     if (!tokenResponse.ok) {
-      console.error('Failed to mint access token:', await tokenResponse.text());
-      throw new Error('Failed to mint access token');
+      const errorText = await tokenResponse.text();
+      console.error('Failed to mint access token:', errorText);
+      throw new Error(`Failed to mint access token: ${errorText}`);
     }
 
     const tokenData = await tokenResponse.json();
@@ -96,7 +106,7 @@ class TokenService {
       expires: expiresAt
     });
 
-    console.log('Minted new access token');
+    console.log('Minted new access token successfully');
     return tokenData.access_token;
   }
 
