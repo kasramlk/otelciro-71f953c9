@@ -1132,7 +1132,6 @@ export default function NewReservation() {
                     <SelectItem value="booking.com">Booking.com</SelectItem>
                     <SelectItem value="expedia">Expedia</SelectItem>
                     <SelectItem value="agoda">Agoda</SelectItem>
-                    <SelectItem value="airbnb">Airbnb</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

@@ -2425,13 +2425,7 @@ export type Database = {
           api_source_id: string | null
           arrival_time: string | null
           balance_due: number | null
-          beds24_booking_id: number | null
-          beds24_last_sync: string | null
-          beds24_property_id: number | null
-          beds24_sync_status: string | null
           booking_reference: string | null
-          channel_id: string | null
-          channel_source: string | null
           check_in: string
           check_out: string
           children: number
@@ -2471,13 +2465,7 @@ export type Database = {
           api_source_id?: string | null
           arrival_time?: string | null
           balance_due?: number | null
-          beds24_booking_id?: number | null
-          beds24_last_sync?: string | null
-          beds24_property_id?: number | null
-          beds24_sync_status?: string | null
           booking_reference?: string | null
-          channel_id?: string | null
-          channel_source?: string | null
           check_in: string
           check_out: string
           children?: number
@@ -2517,13 +2505,7 @@ export type Database = {
           api_source_id?: string | null
           arrival_time?: string | null
           balance_due?: number | null
-          beds24_booking_id?: number | null
-          beds24_last_sync?: string | null
-          beds24_property_id?: number | null
-          beds24_sync_status?: string | null
           booking_reference?: string | null
-          channel_id?: string | null
-          channel_source?: string | null
           check_in?: string
           check_out?: string
           children?: number
@@ -2711,7 +2693,6 @@ export type Database = {
       }
       rooms: {
         Row: {
-          beds24_room_id: number | null
           beds24_sync_enabled: boolean | null
           created_at: string
           floor: number | null
@@ -2723,7 +2704,6 @@ export type Database = {
           status: string
         }
         Insert: {
-          beds24_room_id?: number | null
           beds24_sync_enabled?: boolean | null
           created_at?: string
           floor?: number | null
@@ -2735,7 +2715,6 @@ export type Database = {
           status?: string
         }
         Update: {
-          beds24_room_id?: number | null
           beds24_sync_enabled?: boolean | null
           created_at?: string
           floor?: number | null
