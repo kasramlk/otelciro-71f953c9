@@ -14,7 +14,9 @@ import {
   Clock, 
   Monitor,
   Link as LinkIcon,
-  Activity
+  Activity,
+  Download,
+  AlertCircle
 } from 'lucide-react';
 
 interface Beds24Connection {
@@ -60,6 +62,21 @@ interface ConnectionHealth {
   recentLogs: ApiLog[];
 }
 
+interface ImportResult {
+  connectionId: string;
+  loading: boolean;
+  success: boolean;
+  error?: string;
+  statistics?: {
+    properties: number;
+    roomTypes: number;
+    bookings: number;
+    messages: number;
+    calendarEntries: number;
+  };
+  importedAt?: string;
+}
+
 const Beds24AdminSettings: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [testing, setTesting] = useState(false);
@@ -67,6 +84,7 @@ const Beds24AdminSettings: React.FC = () => {
   const [hotels, setHotels] = useState<Hotel[]>([]);
   const [apiLogs, setApiLogs] = useState<ApiLog[]>([]);
   const [connectionHealth, setConnectionHealth] = useState<ConnectionHealth | null>(null);
+  const [importResults, setImportResults] = useState<ImportResult[]>([]);
   
   // Form state for new connection
   const [linkForm, setLinkForm] = useState({
@@ -239,6 +257,79 @@ const Beds24AdminSettings: React.FC = () => {
     return hotel?.name || 'Unknown Hotel';
   };
 
+  const triggerManualImport = async (connection: Beds24Connection) => {
+    // Set loading state for this connection
+    setImportResults(prev => [
+      ...prev.filter(r => r.connectionId !== connection.id),
+      { connectionId: connection.id, loading: true, success: false }
+    ]);
+
+    try {
+      const response = await supabase.functions.invoke('beds24-initial-import', {
+        body: {
+          hotelId: connection.hotel_id,
+          beds24PropertyId: parseInt(connection.beds24_property_id)
+        }
+      });
+
+      if (response.error) {
+        throw new Error(response.error.message || 'Import failed');
+      }
+
+      const result = response.data;
+      
+      // Update with success result
+      setImportResults(prev => [
+        ...prev.filter(r => r.connectionId !== connection.id),
+        {
+          connectionId: connection.id,
+          loading: false,
+          success: true,
+          statistics: result.statistics || {
+            properties: result.propertiesImported || 0,
+            roomTypes: result.roomTypesImported || 0,
+            bookings: result.bookingsImported || 0,
+            messages: result.messagesImported || 0,
+            calendarEntries: result.calendarEntriesImported || 0
+          },
+          importedAt: new Date().toISOString()
+        }
+      ]);
+
+      toast({
+        title: "Import Successful",
+        description: `Imported ${result.statistics?.properties || 0} properties, ${result.statistics?.roomTypes || 0} room types, ${result.statistics?.bookings || 0} bookings`,
+      });
+
+      // Refresh connections and API logs
+      fetchConnections();
+      fetchApiLogs();
+    } catch (error: any) {
+      console.error('Import failed:', error);
+      
+      // Update with error result
+      setImportResults(prev => [
+        ...prev.filter(r => r.connectionId !== connection.id),
+        {
+          connectionId: connection.id,
+          loading: false,
+          success: false,
+          error: error.message || 'Import failed'
+        }
+      ]);
+
+      toast({
+        title: "Import Failed",
+        description: error.message || "Failed to import data from Beds24",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const getImportResult = (connectionId: string) => {
+    return importResults.find(r => r.connectionId === connectionId);
+  };
+
   const getRecentStats = () => {
     const totalRequests = apiLogs.length;
     const errorRequests = apiLogs.filter(log => (log.status || 0) >= 400).length;
@@ -283,35 +374,94 @@ const Beds24AdminSettings: React.FC = () => {
             <CardContent>
               {connections.length > 0 ? (
                 <div className="space-y-4">
-                  {connections.map((connection) => (
-                    <div key={connection.id} className="flex items-center justify-between p-4 border rounded-lg">
-                      <div>
-                        <h4 className="font-medium">{getHotelName(connection.hotel_id)}</h4>
-                        <p className="text-sm text-muted-foreground">
-                          Beds24 Property ID: {connection.beds24_property_id}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          Scopes: {connection.scopes?.join(', ')}
-                        </p>
-                        {connection.last_token_use_at && (
-                          <p className="text-xs text-muted-foreground">
-                            Last activity: {new Date(connection.last_token_use_at).toLocaleString()}
-                          </p>
+                  {connections.map((connection) => {
+                    const importResult = getImportResult(connection.id);
+                    return (
+                      <div key={connection.id} className="p-4 border rounded-lg space-y-3">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <h4 className="font-medium">{getHotelName(connection.hotel_id)}</h4>
+                            <p className="text-sm text-muted-foreground">
+                              Beds24 Property ID: {connection.beds24_property_id}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              Scopes: {connection.scopes?.join(', ')}
+                            </p>
+                            {connection.last_token_use_at && (
+                              <p className="text-xs text-muted-foreground">
+                                Last activity: {new Date(connection.last_token_use_at).toLocaleString()}
+                              </p>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-2">
+                            {getStatusBadge(connection.status)}
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => checkConnectionHealth(connection.hotel_id)}
+                              disabled={testing}
+                            >
+                              {testing ? <Clock className="w-3 h-3 animate-spin" /> : <Monitor className="w-3 h-3" />}
+                            </Button>
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => triggerManualImport(connection)}
+                              disabled={importResult?.loading}
+                            >
+                              {importResult?.loading ? (
+                                <Clock className="w-3 h-3 animate-spin" />
+                              ) : (
+                                <Download className="w-3 h-3" />
+                              )}
+                              {importResult?.loading ? 'Importing...' : 'Import Data'}
+                            </Button>
+                          </div>
+                        </div>
+                        
+                        {/* Import Results */}
+                        {importResult && !importResult.loading && (
+                          <div className={`p-3 rounded border-l-4 ${
+                            importResult.success 
+                              ? 'bg-green-50 border-l-green-500 dark:bg-green-950' 
+                              : 'bg-red-50 border-l-red-500 dark:bg-red-950'
+                          }`}>
+                            <div className="flex items-start gap-2">
+                              {importResult.success ? (
+                                <CheckCircle className="w-4 h-4 text-green-500 mt-0.5" />
+                              ) : (
+                                <AlertCircle className="w-4 h-4 text-red-500 mt-0.5" />
+                              )}
+                              <div className="flex-1">
+                                <p className="text-sm font-medium">
+                                  {importResult.success ? 'Import Successful' : 'Import Failed'}
+                                </p>
+                                {importResult.success && importResult.statistics && (
+                                  <div className="mt-1 text-xs text-muted-foreground grid grid-cols-2 gap-1">
+                                    <span>Properties: {importResult.statistics.properties}</span>
+                                    <span>Room Types: {importResult.statistics.roomTypes}</span>
+                                    <span>Bookings: {importResult.statistics.bookings}</span>
+                                    <span>Messages: {importResult.statistics.messages}</span>
+                                    <span>Calendar: {importResult.statistics.calendarEntries}</span>
+                                    {importResult.importedAt && (
+                                      <span className="col-span-2">
+                                        Imported: {new Date(importResult.importedAt).toLocaleString()}
+                                      </span>
+                                    )}
+                                  </div>
+                                )}
+                                {importResult.error && (
+                                  <p className="mt-1 text-xs text-red-600 dark:text-red-400">
+                                    {importResult.error}
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                          </div>
                         )}
                       </div>
-                      <div className="flex items-center gap-2">
-                        {getStatusBadge(connection.status)}
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          onClick={() => checkConnectionHealth(connection.hotel_id)}
-                          disabled={testing}
-                        >
-                          {testing ? <Clock className="w-3 h-3 animate-spin" /> : <Monitor className="w-3 h-3" />}
-                        </Button>
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               ) : (
                 <p className="text-muted-foreground">No active connections. Use the Link New Property tab to get started.</p>
