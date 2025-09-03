@@ -58,6 +58,24 @@ export default function Beds24IntegrationManager() {
   const queryClient = useQueryClient();
   const [propertyId, setPropertyId] = useState('');
   const [selectedHotelId, setSelectedHotelId] = useState('');
+  
+  // Delta sync state
+  const [selectedSyncType, setSelectedSyncType] = useState('all');
+  const [selectedSyncHotelId, setSelectedSyncHotelId] = useState('');
+  
+  // Rate push state
+  const [selectedPushHotelId, setSelectedPushHotelId] = useState('');
+  const [selectedPushRoomTypeId, setSelectedPushRoomTypeId] = useState('');
+  const [pushDateRange, setPushDateRange] = useState({
+    startDate: '',
+    endDate: ''
+  });
+  const [pushUpdates, setPushUpdates] = useState({
+    rate: '',
+    availability: '',
+    stopSell: false,
+    closedArrival: false
+  });
 
   // Fetch token diagnostics
   const { data: tokenDiagnostics, isLoading: loadingTokens } = useQuery({
@@ -120,6 +138,52 @@ export default function Beds24IntegrationManager() {
     }
   });
 
+  // Fetch scheduled jobs
+  const { data: scheduledJobs, isLoading: loadingScheduledJobs } = useQuery({
+    queryKey: ['beds24-scheduled-jobs'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('scheduled_jobs')
+        .select('*')
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      return data;
+    }
+  });
+
+  // Fetch room types for selected hotel
+  const { data: roomTypes } = useQuery({
+    queryKey: ['room-types', selectedPushHotelId],
+    queryFn: async () => {
+      if (!selectedPushHotelId) return null;
+      const { data, error } = await supabase
+        .from('room_types')
+        .select('id, name, code')
+        .eq('hotel_id', selectedPushHotelId)
+        .order('name');
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!selectedPushHotelId
+  });
+
+  // Fetch rate push history
+  const { data: ratePushHistory, isLoading: loadingRatePushHistory } = useQuery({
+    queryKey: ['beds24-rate-push-history'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('rate_push_history')
+        .select(`
+          *,
+          hotels!rate_push_history_hotel_id_fkey(name)
+        `)
+        .order('created_at', { ascending: false })
+        .limit(20);
+      if (error) throw error;
+      return data;
+    }
+  });
+
   // Refresh token mutation
   const refreshTokenMutation = useMutation({
     mutationFn: async (tokenType: string) => {
@@ -164,6 +228,72 @@ export default function Beds24IntegrationManager() {
     onError: (error: any) => {
       toast({
         title: 'Bootstrap failed',
+        description: error.message,
+        variant: 'destructive'
+      });
+    }
+  });
+
+  // Manual sync mutation
+  const manualSyncMutation = useMutation({
+    mutationFn: async ({ syncType, hotelId }: { syncType: string; hotelId?: string }) => {
+      const { data, error } = await supabase.functions.invoke('beds24-scheduler', {
+        body: { 
+          action: 'manual_trigger',
+          syncType,
+          hotelId
+        }
+      });
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['beds24-sync-states'] });
+      queryClient.invalidateQueries({ queryKey: ['beds24-audit-logs'] });
+      toast({
+        title: 'Manual sync completed',
+        description: `Processed: ${data.results.bookings?.processed || 0} bookings, ${data.results.calendar?.processed || 0} calendar records`
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: 'Manual sync failed',
+        description: error.message,
+        variant: 'destructive'
+      });
+    }
+  });
+
+  // Rate push mutation
+  const ratePushMutation = useMutation({
+    mutationFn: async ({ hotelId, roomTypeId, dateRange, updates }: any) => {
+      const { data, error } = await supabase.functions.invoke('beds24-rate-push', {
+        body: {
+          hotelId,
+          roomTypeId,
+          dateRange,
+          updates
+        }
+      });
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['beds24-rate-push-history'] });
+      queryClient.invalidateQueries({ queryKey: ['beds24-audit-logs'] });
+      toast({
+        title: 'Rate push completed',
+        description: `${data.result.successful_batches}/${data.result.batches} batches successful`
+      });
+      // Reset form
+      setSelectedPushHotelId('');
+      setSelectedPushRoomTypeId('');
+      setPushDateRange({ startDate: '', endDate: '' });
+      setPushUpdates({ rate: '', availability: '', stopSell: false, closedArrival: false });
+    },
+    onError: (error: any) => {
+      toast({
+        title: 'Rate push failed',
         description: error.message,
         variant: 'destructive'
       });
@@ -222,6 +352,8 @@ export default function Beds24IntegrationManager() {
           <TabsTrigger value="diagnostics">Token Diagnostics</TabsTrigger>
           <TabsTrigger value="bootstrap">Bootstrap Hotels</TabsTrigger>
           <TabsTrigger value="sync-states">Sync States</TabsTrigger>
+          <TabsTrigger value="delta-sync">Delta Sync</TabsTrigger>
+          <TabsTrigger value="rate-push">Rate Push</TabsTrigger>
           <TabsTrigger value="audit-logs">Audit Logs</TabsTrigger>
         </TabsList>
 
@@ -501,6 +633,274 @@ export default function Beds24IntegrationManager() {
                   </TableBody>
                 </Table>
               )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Delta Sync Controls Tab */}
+        <TabsContent value="delta-sync">
+          <div className="grid gap-6 md:grid-cols-2">
+            <Card>
+              <CardHeader>
+                <CardTitle>Manual Sync</CardTitle>
+                <CardDescription>
+                  Trigger immediate synchronization for specific hotels
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div>
+                    <Label htmlFor="syncType">Sync Type</Label>
+                    <select
+                      id="syncType"
+                      value={selectedSyncType}
+                      onChange={(e) => setSelectedSyncType(e.target.value)}
+                      className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                    >
+                      <option value="all">All (Bookings + Calendar)</option>
+                      <option value="bookings">Bookings Only</option>
+                      <option value="calendar">Calendar Only</option>
+                    </select>
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="syncHotelId">Hotel (Optional)</Label>
+                    <select
+                      id="syncHotelId"
+                      value={selectedSyncHotelId}
+                      onChange={(e) => setSelectedSyncHotelId(e.target.value)}
+                      className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                    >
+                      <option value="">All Hotels</option>
+                      {hotels?.map((hotel) => (
+                        <option key={hotel.id} value={hotel.id}>
+                          {hotel.name} ({hotel.code})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <Button
+                    onClick={() => manualSyncMutation.mutate({ 
+                      syncType: selectedSyncType, 
+                      hotelId: selectedSyncHotelId || undefined 
+                    })}
+                    disabled={manualSyncMutation.isPending}
+                    className="w-full"
+                  >
+                    {manualSyncMutation.isPending ? (
+                      <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                    ) : (
+                      <Play className="h-4 w-4 mr-2" />
+                    )}
+                    Start Manual Sync
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Scheduled Jobs</CardTitle>
+                <CardDescription>
+                  Automated sync job status and controls
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {loadingScheduledJobs ? (
+                  <div className="flex items-center justify-center h-32">
+                    <RefreshCw className="h-6 w-6 animate-spin" />
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {scheduledJobs?.map((job) => (
+                      <div key={job.id} className="border rounded-lg p-3">
+                        <div className="flex items-center justify-between mb-2">
+                          <h4 className="font-medium">{job.job_name}</h4>
+                          <Badge variant={job.is_enabled ? "default" : "secondary"}>
+                            {job.is_enabled ? "Enabled" : "Disabled"}
+                          </Badge>
+                        </div>
+                        <div className="text-sm text-muted-foreground space-y-1">
+                          <div>Schedule: {job.schedule_cron}</div>
+                          <div>Last Run: {job.last_run_at 
+                            ? format(new Date(job.last_run_at), 'MMM dd, HH:mm') 
+                            : 'Never'}
+                          </div>
+                          <div>Status: {job.last_run_status || 'Not run'}</div>
+                          <div>Runs: {job.run_count} (Errors: {job.error_count})</div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+
+        {/* Rate Push Tab */}
+        <TabsContent value="rate-push">
+          <Card>
+            <CardHeader>
+              <CardTitle>Rate & Availability Push</CardTitle>
+              <CardDescription>
+                Push rate and availability changes from OtelCiro to Beds24
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid gap-6 md:grid-cols-2">
+                <div className="space-y-4">
+                  <div>
+                    <Label htmlFor="pushHotelId">Hotel</Label>
+                    <select
+                      id="pushHotelId"
+                      value={selectedPushHotelId}
+                      onChange={(e) => setSelectedPushHotelId(e.target.value)}
+                      className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                    >
+                      <option value="">Select hotel...</option>
+                      {hotels?.map((hotel) => (
+                        <option key={hotel.id} value={hotel.id}>
+                          {hotel.name} ({hotel.code})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <Label htmlFor="pushRoomTypeId">Room Type</Label>
+                    <select
+                      id="pushRoomTypeId"
+                      value={selectedPushRoomTypeId}
+                      onChange={(e) => setSelectedPushRoomTypeId(e.target.value)}
+                      className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                      disabled={!selectedPushHotelId}
+                    >
+                      <option value="">Select room type...</option>
+                      {roomTypes?.map((roomType) => (
+                        <option key={roomType.id} value={roomType.id}>
+                          {roomType.name} ({roomType.code})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="pushStartDate">Start Date</Label>
+                      <Input
+                        id="pushStartDate"
+                        type="date"
+                        value={pushDateRange.startDate}
+                        onChange={(e) => setPushDateRange(prev => ({ ...prev, startDate: e.target.value }))}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="pushEndDate">End Date</Label>
+                      <Input
+                        id="pushEndDate"
+                        type="date"
+                        value={pushDateRange.endDate}
+                        onChange={(e) => setPushDateRange(prev => ({ ...prev, endDate: e.target.value }))}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Updates to Push</Label>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="pushRate">Rate (per night)</Label>
+                        <Input
+                          id="pushRate"
+                          type="number"
+                          step="0.01"
+                          value={pushUpdates.rate}
+                          onChange={(e) => setPushUpdates(prev => ({ ...prev, rate: e.target.value }))}
+                          placeholder="Leave empty to skip"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="pushAvailability">Availability</Label>
+                        <Input
+                          id="pushAvailability"
+                          type="number"
+                          value={pushUpdates.availability}
+                          onChange={(e) => setPushUpdates(prev => ({ ...prev, availability: e.target.value }))}
+                          placeholder="Leave empty to skip"
+                        />
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-center space-x-4">
+                      <label className="flex items-center space-x-2">
+                        <input
+                          type="checkbox"
+                          checked={pushUpdates.stopSell}
+                          onChange={(e) => setPushUpdates(prev => ({ ...prev, stopSell: e.target.checked }))}
+                        />
+                        <span className="text-sm">Stop Sell</span>
+                      </label>
+                      <label className="flex items-center space-x-2">
+                        <input
+                          type="checkbox"
+                          checked={pushUpdates.closedArrival}
+                          onChange={(e) => setPushUpdates(prev => ({ ...prev, closedArrival: e.target.checked }))}
+                        />
+                        <span className="text-sm">Closed Arrival</span>
+                      </label>
+                    </div>
+                  </div>
+
+                  <Button
+                    onClick={() => ratePushMutation.mutate({
+                      hotelId: selectedPushHotelId,
+                      roomTypeId: selectedPushRoomTypeId,
+                      dateRange: pushDateRange,
+                      updates: Object.fromEntries(
+                        Object.entries(pushUpdates).filter(([_, value]) => 
+                          value !== '' && value !== null && value !== undefined
+                        )
+                      )
+                    })}
+                    disabled={!selectedPushHotelId || !selectedPushRoomTypeId || !pushDateRange.startDate || !pushDateRange.endDate || ratePushMutation.isPending}
+                    className="w-full"
+                  >
+                    {ratePushMutation.isPending ? (
+                      <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                    ) : (
+                      <Play className="h-4 w-4 mr-2" />
+                    )}
+                    Push to Beds24
+                  </Button>
+                </div>
+                
+                <div>
+                  <h4 className="font-medium mb-4">Recent Rate Pushes</h4>
+                  {loadingRatePushHistory ? (
+                    <div className="flex items-center justify-center h-32">
+                      <RefreshCw className="h-6 w-6 animate-spin" />
+                    </div>
+                  ) : (
+                    <div className="space-y-2 max-h-96 overflow-y-auto">
+                      {ratePushHistory?.map((push) => (
+                        <div key={push.id} className="border rounded p-3 text-sm">
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="font-medium">{push.hotels?.name}</span>
+                            {getStatusBadge(push.status)}
+                          </div>
+                          <div className="text-muted-foreground">
+                            <div>{push.date_range_start} to {push.date_range_end}</div>
+                            <div>{push.lines_successful}/{push.lines_total} lines successful</div>
+                            <div>{format(new Date(push.created_at), 'MMM dd, HH:mm')}</div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
