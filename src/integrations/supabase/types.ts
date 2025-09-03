@@ -2646,8 +2646,6 @@ export type Database = {
       }
       room_types: {
         Row: {
-          beds24_room_type_id: number | null
-          beds24_sync_enabled: boolean | null
           capacity_adults: number
           capacity_children: number
           code: string
@@ -2658,8 +2656,6 @@ export type Database = {
           name: string
         }
         Insert: {
-          beds24_room_type_id?: number | null
-          beds24_sync_enabled?: boolean | null
           capacity_adults?: number
           capacity_children?: number
           code: string
@@ -2670,8 +2666,6 @@ export type Database = {
           name: string
         }
         Update: {
-          beds24_room_type_id?: number | null
-          beds24_sync_enabled?: boolean | null
           capacity_adults?: number
           capacity_children?: number
           code?: string
@@ -2693,7 +2687,6 @@ export type Database = {
       }
       rooms: {
         Row: {
-          beds24_sync_enabled: boolean | null
           created_at: string
           floor: number | null
           hotel_id: string
@@ -2704,7 +2697,6 @@ export type Database = {
           status: string
         }
         Insert: {
-          beds24_sync_enabled?: boolean | null
           created_at?: string
           floor?: number | null
           hotel_id: string
@@ -2715,7 +2707,6 @@ export type Database = {
           status?: string
         }
         Update: {
-          beds24_sync_enabled?: boolean | null
           created_at?: string
           floor?: number | null
           hotel_id?: string
