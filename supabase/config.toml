@@ -16,5 +16,14 @@ verify_jwt = true
 [functions.publish-social-content]
 verify_jwt = true
 
+[functions.beds24-token-manager]
+verify_jwt = false
+
+[functions.beds24-api-client]
+verify_jwt = false
+
+[functions.beds24-bootstrap]
+verify_jwt = false
+
 [env]
 SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpsZGNvdHVteG91YXNnemRzdm1oIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU2NjY5NDEsImV4cCI6MjA3MTI0Mjk0MX0.tMMHzRMpmm4lLvRq27M1O7rcOsUnYr2bFEki3TdqFeQ"

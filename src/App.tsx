@@ -76,6 +76,7 @@ import SocialMediaAnalyticsPage from "./pages/SocialMediaAnalytics";
 import SocialMediaAdvanced from "./pages/SocialMediaAdvanced";
 import SocialMediaIntegration from "./pages/SocialMediaIntegration";
 import SocialMediaEnterprise from "./pages/SocialMediaEnterprise";
+import Beds24Integration from "./pages/admin/Beds24Integration";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -191,6 +192,13 @@ const AppContent = () => {
             userRole === 'admin' ? (
               <AdminLayout>
                 <HotelManagement />
+              </AdminLayout>
+            ) : <Navigate to="/dashboard" replace />
+          } />
+          <Route path="/admin/beds24-integration" element={
+            userRole === 'admin' ? (
+              <AdminLayout>
+                <Beds24Integration />
               </AdminLayout>
             ) : <Navigate to="/dashboard" replace />
           } />

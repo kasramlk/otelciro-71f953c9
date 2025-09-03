@@ -25,6 +25,7 @@ const adminMenuItems = [
   { title: "Hotel Onboarding", url: "/admin/onboarding", icon: Building },
   { title: "User Management", url: "/admin/users", icon: Users },
   { title: "Agency Management", url: "/admin/agencies", icon: Plane },
+  { title: "Beds24 Integration", url: "/admin/beds24-integration", icon: Database },
   { title: "Platform Settings", url: "/admin/settings", icon: Settings },
   { title: "Audit & Monitoring", url: "/admin/audit", icon: FileText },
   { title: "Data Management", url: "/admin/data", icon: Database },

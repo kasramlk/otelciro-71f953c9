@@ -196,6 +196,45 @@ export type Database = {
           },
         ]
       }
+      beds24_tokens: {
+        Row: {
+          created_at: string
+          diagnostics: Json | null
+          encrypted_token: string
+          expires_at: string | null
+          id: string
+          last_used_at: string | null
+          properties_access: string[] | null
+          scopes: string[]
+          token_type: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          diagnostics?: Json | null
+          encrypted_token: string
+          expires_at?: string | null
+          id?: string
+          last_used_at?: string | null
+          properties_access?: string[] | null
+          scopes: string[]
+          token_type: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          diagnostics?: Json | null
+          encrypted_token?: string
+          expires_at?: string | null
+          id?: string
+          last_used_at?: string | null
+          properties_access?: string[] | null
+          scopes?: string[]
+          token_type?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       booking_holds: {
         Row: {
           adults: number
@@ -1134,6 +1173,39 @@ export type Database = {
         }
         Relationships: []
       }
+      external_ids: {
+        Row: {
+          created_at: string
+          entity_type: string
+          external_id: string
+          id: string
+          metadata: Json | null
+          otelciro_id: string
+          provider: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          entity_type: string
+          external_id: string
+          id?: string
+          metadata?: Json | null
+          otelciro_id: string
+          provider?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          entity_type?: string
+          external_id?: string
+          id?: string
+          metadata?: Json | null
+          otelciro_id?: string
+          provider?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       guest_communications: {
         Row: {
           communication_type: string
@@ -1552,6 +1624,77 @@ export type Database = {
             columns: ["room_id"]
             isOneToOne: false
             referencedRelation: "rooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ingestion_audit: {
+        Row: {
+          action: string
+          created_at: string
+          duration_ms: number | null
+          entity_type: string
+          error_message: string | null
+          external_id: string | null
+          hotel_id: string | null
+          id: number
+          limit_remaining: number | null
+          limit_resets_in: number | null
+          operation: string
+          provider: string
+          records_processed: number | null
+          request_cost: number | null
+          request_payload: Json | null
+          response_payload: Json | null
+          status: string
+          trace_id: string | null
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          duration_ms?: number | null
+          entity_type: string
+          error_message?: string | null
+          external_id?: string | null
+          hotel_id?: string | null
+          id?: number
+          limit_remaining?: number | null
+          limit_resets_in?: number | null
+          operation: string
+          provider?: string
+          records_processed?: number | null
+          request_cost?: number | null
+          request_payload?: Json | null
+          response_payload?: Json | null
+          status: string
+          trace_id?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          duration_ms?: number | null
+          entity_type?: string
+          error_message?: string | null
+          external_id?: string | null
+          hotel_id?: string | null
+          id?: number
+          limit_remaining?: number | null
+          limit_resets_in?: number | null
+          operation?: string
+          provider?: string
+          records_processed?: number | null
+          request_cost?: number | null
+          request_payload?: Json | null
+          response_payload?: Json | null
+          status?: string
+          trace_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ingestion_audit_hotel_id_fkey"
+            columns: ["hotel_id"]
+            isOneToOne: false
+            referencedRelation: "hotels"
             referencedColumns: ["id"]
           },
         ]
@@ -3202,6 +3345,56 @@ export type Database = {
             columns: ["reservation_id"]
             isOneToOne: false
             referencedRelation: "reservations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sync_state: {
+        Row: {
+          bootstrap_completed: boolean | null
+          bootstrap_completed_at: string | null
+          created_at: string
+          hotel_id: string
+          last_bookings_modified_from: string | null
+          last_calendar_end: string | null
+          last_calendar_start: string | null
+          provider: string
+          settings: Json | null
+          sync_enabled: boolean | null
+          updated_at: string
+        }
+        Insert: {
+          bootstrap_completed?: boolean | null
+          bootstrap_completed_at?: string | null
+          created_at?: string
+          hotel_id: string
+          last_bookings_modified_from?: string | null
+          last_calendar_end?: string | null
+          last_calendar_start?: string | null
+          provider?: string
+          settings?: Json | null
+          sync_enabled?: boolean | null
+          updated_at?: string
+        }
+        Update: {
+          bootstrap_completed?: boolean | null
+          bootstrap_completed_at?: string | null
+          created_at?: string
+          hotel_id?: string
+          last_bookings_modified_from?: string | null
+          last_calendar_end?: string | null
+          last_calendar_start?: string | null
+          provider?: string
+          settings?: Json | null
+          sync_enabled?: boolean | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sync_state_hotel_id_fkey"
+            columns: ["hotel_id"]
+            isOneToOne: false
+            referencedRelation: "hotels"
             referencedColumns: ["id"]
           },
         ]
