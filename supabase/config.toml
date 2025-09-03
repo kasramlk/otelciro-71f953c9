@@ -25,6 +25,9 @@ verify_jwt = false
 [functions.beds24-bootstrap]
 verify_jwt = false
 
+[functions.beds24-sync]
+verify_jwt = false
+
 [functions.beds24-delta-sync]
 verify_jwt = false
 
