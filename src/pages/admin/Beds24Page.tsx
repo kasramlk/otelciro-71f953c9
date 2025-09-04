@@ -197,7 +197,7 @@ export default function Beds24Page() {
       console.log('Calling beds24-bootstrap with payload:', payload);
 
       const { data, error } = await supabase.functions.invoke("beds24-bootstrap", {
-        body: payload,
+        body: JSON.stringify(payload),
         headers: { "Content-Type": "application/json" },
       });
 

@@ -137,11 +137,15 @@ serve(async (req) => {
     console.log('Admin check passed for user:', user.id);
 
     let body: any = {};
-    try { 
+    try {
       const rawBody = await req.text();
       console.log('Raw request body:', rawBody);
-      body = JSON.parse(rawBody); 
-      console.log('Parsed body:', body);
+      if (rawBody && rawBody.trim() !== '') {
+        body = JSON.parse(rawBody);
+        console.log('Parsed body:', body);
+      } else {
+        console.log('Empty body received');
+      }
     } catch (e) {
       console.log('Body parsing error:', e);
     }
