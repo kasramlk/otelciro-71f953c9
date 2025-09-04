@@ -82,7 +82,7 @@ async function runSync(
     // Get hotels that need syncing
     let syncQuery = supabase
       .from('sync_state')
-      .select('hotel_id, metadata, last_bookings_modified_from, last_calendar_start, last_calendar_end')
+      .select('hotel_id, settings, last_bookings_modified_from, last_calendar_start, last_calendar_end')
       .eq('provider', 'beds24')
       .eq('sync_enabled', true)
       .not('bootstrap_completed_at', 'is', null);

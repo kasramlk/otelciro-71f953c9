@@ -161,7 +161,7 @@ async function getSyncStatus(supabase: any) {
       last_bookings_sync,
       last_calendar_sync,
       bootstrap_completed_at,
-      metadata,
+      settings,
       hotels!sync_state_hotel_id_fkey(name, code)
     `)
     .eq('provider', 'beds24');
