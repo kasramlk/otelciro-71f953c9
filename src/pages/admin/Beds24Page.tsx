@@ -29,6 +29,7 @@ import {
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { asArray } from "@/lib/asArray";
+import { toast } from "sonner";
 
 interface TokenDiagnostics {
   type: string;
@@ -65,12 +66,13 @@ interface AuditLog {
 }
 
 export default function Beds24Page() {
-  const { toast } = useToast();
+  const { toast: hookToast } = useToast();
   const queryClient = useQueryClient();
   
   const [selectedHotelId, setSelectedHotelId] = useState<string>('');
   const [propertyId, setPropertyId] = useState<string>('');
   const [auditFilter, setAuditFilter] = useState<string>('');
+  const [isBootstrapping, setIsBootstrapping] = useState(false);
   const [pushConfig, setPushConfig] = useState({
     hotelId: '',
     roomTypeId: '',
@@ -173,33 +175,45 @@ export default function Beds24Page() {
     enabled: !!pushConfig.hotelId
   });
 
-  // Bootstrap mutation
-  const bootstrapMutation = useMutation({
-    mutationFn: async ({ propertyId, hotelId }: { propertyId: string; hotelId: string }) => {
-      const { data, error } = await supabase.functions.invoke('beds24-bootstrap', {
-        body: { propertyId, hotelId }
+  // Bootstrap function with proper error handling
+  async function runBootstrap() {
+    try {
+      setIsBootstrapping(true);
+      const payload = {
+        hotelId: selectedHotelId,
+        propertyId: propertyId?.trim(),
+      };
+
+      console.log('Calling beds24-bootstrap with payload:', payload);
+
+      const { data, error } = await supabase.functions.invoke("beds24-bootstrap", {
+        body: payload,
+        headers: { "Content-Type": "application/json" },
       });
-      if (error) throw error;
-      return data;
-    },
-    onSuccess: (data) => {
+
+      if (error) {
+        console.error("bootstrap invoke error:", error);
+        toast.error(`Bootstrap failed: ${error.message ?? "Unknown error"}`);
+        return;
+      }
+
+      console.log("bootstrap result:", data);
+      toast.success("Bootstrap started successfully");
+      
+      // Refresh data
       queryClient.invalidateQueries({ queryKey: ['beds24-sync-status'] });
       queryClient.invalidateQueries({ queryKey: ['beds24-audit-logs'] });
-      toast({
-        title: 'Bootstrap completed successfully',
-        description: `Imported data successfully`
-      });
+      
+      // Clear form
       setPropertyId('');
       setSelectedHotelId('');
-    },
-    onError: (error: any) => {
-      toast({
-        title: 'Bootstrap failed',
-        description: error.message,
-        variant: 'destructive'
-      });
+    } catch (e: any) {
+      console.error("bootstrap network error:", e);
+      toast.error(`Bootstrap failed: ${e?.message ?? e}`);
+    } finally {
+      setIsBootstrapping(false);
     }
-  });
+  }
 
   // Toggle sync mutation
   const toggleSyncMutation = useMutation({
@@ -220,17 +234,10 @@ export default function Beds24Page() {
     },
     onSuccess: ({ hotelId, enabled }) => {
       queryClient.invalidateQueries({ queryKey: ['beds24-sync-status'] });
-      toast({
-        title: `Sync ${enabled ? 'enabled' : 'disabled'}`,
-        description: `Hotel sync has been ${enabled ? 'enabled' : 'disabled'}`
-      });
+      toast.success(`Sync ${enabled ? 'enabled' : 'disabled'} - Hotel sync has been ${enabled ? 'enabled' : 'disabled'}`);
     },
     onError: (error: any) => {
-      toast({
-        title: 'Failed to toggle sync',
-        description: error.message,
-        variant: 'destructive'
-      });
+      toast.error(`Failed to toggle sync - ${error.message}`);
     }
   });
 
@@ -246,17 +253,10 @@ export default function Beds24Page() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['beds24-sync-status'] });
       queryClient.invalidateQueries({ queryKey: ['beds24-audit-logs'] });
-      toast({
-        title: 'Manual sync completed',
-        description: 'Sync operation completed successfully'
-      });
+      toast.success('Manual sync completed - Sync operation completed successfully');
     },
     onError: (error: any) => {
-      toast({
-        title: 'Manual sync failed',
-        description: error.message,
-        variant: 'destructive'
-      });
+      toast.error(`Manual sync failed - ${error.message}`);
     }
   });
 
@@ -284,10 +284,7 @@ export default function Beds24Page() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['beds24-audit-logs'] });
-      toast({
-        title: 'Rate push completed',
-        description: 'Rates updated successfully'
-      });
+      toast.success('Rate push completed - Rates updated successfully');
       setPushConfig({
         hotelId: '',
         roomTypeId: '',
@@ -302,11 +299,7 @@ export default function Beds24Page() {
       });
     },
     onError: (error: any) => {
-      toast({
-        title: 'Rate push failed',
-        description: error.message,
-        variant: 'destructive'
-      });
+      toast.error(`Rate push failed - ${error.message}`);
     }
   });
 
@@ -493,11 +486,11 @@ export default function Beds24Page() {
                 </div>
 
                 <Button
-                  onClick={() => bootstrapMutation.mutate({ propertyId, hotelId: selectedHotelId })}
-                  disabled={!propertyId || !selectedHotelId || bootstrapMutation.isPending}
+                  onClick={runBootstrap}
+                  disabled={!propertyId?.trim() || !selectedHotelId || isBootstrapping}
                   className="w-full"
                 >
-                  {bootstrapMutation.isPending ? (
+                  {isBootstrapping ? (
                     <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
                   ) : (
                     <Play className="h-4 w-4 mr-2" />
@@ -506,7 +499,7 @@ export default function Beds24Page() {
                 </Button>
               </div>
 
-              {bootstrapMutation.isPending && (
+              {isBootstrapping && (
                 <Alert className="mt-4">
                   <Clock className="h-4 w-4" />
                   <AlertDescription>
