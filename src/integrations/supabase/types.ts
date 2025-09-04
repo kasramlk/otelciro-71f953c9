@@ -3800,6 +3800,12 @@ export type Database = {
         }
         Returns: boolean
       }
+      trigger_bootstrap_test: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          result: Json
+        }[]
+      }
     }
     Enums: {
       app_role: "owner" | "admin" | "manager" | "staff" | "guest"
