@@ -5,6 +5,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, useLocation, Navigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/use-auth";
 import { ErrorBoundary } from "@/components/ui/error-boundary";
 import { setupGlobalErrorHandling } from "@/lib/error-handler";
 import { ProtectedSocialMediaRoute } from "@/components/auth/ProtectedSocialMediaRoute";
@@ -110,6 +111,7 @@ const AppContent = () => {
   const [session, setSession] = useState(null);
   const [loading, setLoading] = useState(true);
   const [userRole, setUserRole] = useState<string | null>(null);
+  const { isAdmin } = useAuth();
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -182,21 +184,21 @@ const AppContent = () => {
           
           {/* Admin Routes */}
           <Route path="/admin" element={
-            userRole === 'admin' ? (
+            isAdmin() ? (
               <AdminLayout>
                 <AdminDashboard />
               </AdminLayout>
             ) : <Navigate to="/dashboard" replace />
           } />
           <Route path="/admin/hotels" element={
-            userRole === 'admin' ? (
+            isAdmin() ? (
               <AdminLayout>
                 <HotelManagement />
               </AdminLayout>
             ) : <Navigate to="/dashboard" replace />
           } />
           <Route path="/admin/beds24-integration" element={
-            userRole === 'admin' ? (
+            isAdmin() ? (
               <AdminLayout>
                 <Beds24Integration />
               </AdminLayout>
