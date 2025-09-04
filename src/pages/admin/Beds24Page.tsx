@@ -198,6 +198,10 @@ export default function Beds24Page() {
 
       const { data, error } = await supabase.functions.invoke("beds24-bootstrap", {
         body: JSON.stringify(payload),
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
         headers: { "Content-Type": "application/json" },
       });
 
