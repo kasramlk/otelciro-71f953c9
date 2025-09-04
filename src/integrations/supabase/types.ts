@@ -3803,7 +3803,7 @@ export type Database = {
       trigger_bootstrap_test: {
         Args: Record<PropertyKey, never>
         Returns: {
-          result: Json
+          request_id: number
         }[]
       }
     }
