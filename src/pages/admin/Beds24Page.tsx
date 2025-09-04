@@ -221,7 +221,7 @@ export default function Beds24Page() {
       // Get auth session for proper authorization
       const { data: { session } } = await supabase.auth.getSession();
       
-      const res = await fetch('/functions/v1/beds24-bootstrap', {
+      const res = await fetch('https://zldcotumxouasgzdsvmh.supabase.co/functions/v1/beds24-bootstrap', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -311,7 +311,7 @@ export default function Beds24Page() {
         };
       }
       
-      const res = await fetch('/functions/v1/beds24-exec', {
+      const res = await fetch('https://zldcotumxouasgzdsvmh.supabase.co/functions/v1/beds24-exec', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
