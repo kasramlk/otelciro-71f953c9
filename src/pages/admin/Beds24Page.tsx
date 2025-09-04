@@ -30,6 +30,7 @@ import {
 import { format } from 'date-fns';
 import { asArray } from "@/lib/asArray";
 import { toast } from "sonner";
+import PropertiesTest from '@/components/admin/PropertiesTest';
 
 
 interface TokenDiagnostics {
@@ -492,8 +493,9 @@ export default function Beds24Page() {
         </div>
       </div>
 
-      <Tabs defaultValue="diagnostics" className="space-y-6">
+      <Tabs defaultValue="properties-test" className="space-y-6">
         <TabsList>
+          <TabsTrigger value="properties-test">Properties Test</TabsTrigger>
           <TabsTrigger value="diagnostics">Token Diagnostics</TabsTrigger>
           <TabsTrigger value="bootstrap">Bootstrap Hotels</TabsTrigger>
           <TabsTrigger value="explorer">Explorer (POST)</TabsTrigger>
@@ -501,6 +503,11 @@ export default function Beds24Page() {
           <TabsTrigger value="rate-push">Rate Push</TabsTrigger>
           <TabsTrigger value="audit-logs">Audit Logs</TabsTrigger>
         </TabsList>
+
+        {/* Properties Test Tab */}
+        <TabsContent value="properties-test">
+          <PropertiesTest />
+        </TabsContent>
 
         {/* Token Diagnostics Tab */}
         <TabsContent value="diagnostics">

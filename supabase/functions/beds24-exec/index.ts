@@ -9,9 +9,21 @@ const corsHeaders = {
 const BEDS24_BASE_URL = Deno.env.get('BEDS24_BASE_URL') || 'https://api.beds24.com/v2';
 
 interface ExecBody {
-  operation: 'property' | 'bookings' | 'calendar';
-  propertyId: string;
-  params?: Record<string, any>;
+  operation: 'properties' | 'property' | 'bookings' | 'calendar';
+  propertyId?: string | string[];
+  params?: {
+    id?: number[];
+    includeLanguages?: string[];
+    includeTexts?: string[];
+    includePictures?: boolean;
+    includeOffers?: boolean;
+    includePriceRules?: boolean;
+    includeUpsellItems?: boolean;
+    includeAllRooms?: boolean;
+    includeUnitDetails?: boolean;
+    roomId?: number[];
+    [key: string]: any;
+  };
   method?: string;
 }
 
@@ -36,7 +48,12 @@ async function makeBeds24Request(endpoint: string, params: Record<string, any> =
   // Add query parameters
   Object.entries(params).forEach(([key, value]) => {
     if (value !== undefined && value !== null) {
-      url.searchParams.append(key, String(value));
+      if (Array.isArray(value)) {
+        // Handle array parameters (like id[], includeLanguages[], etc.)
+        value.forEach(item => url.searchParams.append(key, String(item)));
+      } else {
+        url.searchParams.append(key, String(value));
+      }
     }
   });
 
@@ -146,25 +163,54 @@ Deno.serve(async (req) => {
     const body: ExecBody = await req.json();
     const { operation, propertyId, params = {} } = body;
 
-    if (!operation || !propertyId) {
+    if (!operation) {
       return new Response(
-        JSON.stringify({ error: 'Missing required parameters: operation and propertyId' }),
+        JSON.stringify({ error: 'Missing required parameter: operation' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
     let endpoint: string;
-    let queryParams = { ...params };
+    let queryParams: Record<string, any> = { ...params };
 
     // Build endpoint based on operation
     switch (operation) {
+      case 'properties':
+        endpoint = '/properties';
+        // Handle multiple property IDs
+        if (propertyId) {
+          if (Array.isArray(propertyId)) {
+            queryParams.id = propertyId.map(id => parseInt(String(id)));
+          } else {
+            queryParams.id = [parseInt(String(propertyId))];
+          }
+        }
+        break;
       case 'property':
+        if (!propertyId || Array.isArray(propertyId)) {
+          return new Response(
+            JSON.stringify({ error: 'Single propertyId required for property operation' }),
+            { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
         endpoint = `/properties/${propertyId}`;
         break;
       case 'bookings':
+        if (!propertyId || Array.isArray(propertyId)) {
+          return new Response(
+            JSON.stringify({ error: 'Single propertyId required for bookings operation' }),
+            { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
         endpoint = `/properties/${propertyId}/bookings`;
         break;
       case 'calendar':
+        if (!propertyId || Array.isArray(propertyId)) {
+          return new Response(
+            JSON.stringify({ error: 'Single propertyId required for calendar operation' }),
+            { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
         endpoint = `/properties/${propertyId}/rooms/calendar`;
         break;
       default:

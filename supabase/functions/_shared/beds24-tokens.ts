@@ -15,26 +15,35 @@ const supabase = createClient(
 );
 
 export async function getReadToken(): Promise<string> {
-  // First try to get from environment (direct token)
-  const directToken = Deno.env.get('BEDS24_READ_TOKEN')
+  // Try multiple token sources in order of preference
+  const directToken = Deno.env.get('BEDS24_READ_TOKEN');
+  const apiToken = Deno.env.get('BEDS24_API_TOKEN');
+  
   if (directToken) {
-    return directToken
+    console.log('Using BEDS24_READ_TOKEN');
+    return directToken;
   }
   
-  // Try to get from token manager
+  if (apiToken) {
+    console.log('Using BEDS24_API_TOKEN as read token');
+    return apiToken;
+  }
+
+  // Fallback to token manager function
   try {
     const response = await supabase.functions.invoke('beds24-token-manager', {
       body: { action: 'get_token', tokenType: 'read' }
     });
     
     if (response.data && response.data.token) {
+      console.log('Using token from manager');
       return response.data.token;
     }
   } catch (error) {
     console.warn('Failed to get token from token manager:', error);
   }
   
-  throw new Error('BEDS24_READ_TOKEN not available - check environment variables or token manager')
+  throw new Error('No read token available - please configure BEDS24_API_TOKEN or BEDS24_READ_TOKEN');
 }
 
 export async function getWriteAccessToken(): Promise<string> {
