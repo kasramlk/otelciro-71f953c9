@@ -202,8 +202,6 @@ export default function Beds24Page() {
           'Content-Type': 'application/json'
         }
       });
-        headers: { "Content-Type": "application/json" },
-      });
 
       console.log('Bootstrap response:', { data, error });
 
