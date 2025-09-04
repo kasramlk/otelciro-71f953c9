@@ -35,7 +35,8 @@ async function getBeds24Token(): Promise<string> {
 // Make Beds24 API call
 async function makeBeds24Request(endpoint: string, params: Record<string, any> = {}) {
   const token = await getBeds24Token();
-  const url = new URL(endpoint, BEDS24_BASE_URL);
+  // Ensure proper URL construction by joining base URL with endpoint
+  const url = new URL(BEDS24_BASE_URL + endpoint);
   
   console.log('Making Beds24 request:', {
     baseUrl: BEDS24_BASE_URL,
