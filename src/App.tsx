@@ -111,7 +111,7 @@ const AppContent = () => {
   const [session, setSession] = useState(null);
   const [loading, setLoading] = useState(true);
   const [userRole, setUserRole] = useState<string | null>(null);
-  const { isAdmin } = useAuth();
+  const { isAdmin, loading: authLoading } = useAuth();
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -131,7 +131,7 @@ const AppContent = () => {
     return () => subscription.unsubscribe();
   }, []);
 
-  if (loading) {
+  if (loading || authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
@@ -184,21 +184,33 @@ const AppContent = () => {
           
           {/* Admin Routes */}
           <Route path="/admin" element={
-            isAdmin() ? (
+            loading || authLoading ? (
+              <div className="min-h-screen flex items-center justify-center">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+              </div>
+            ) : isAdmin() ? (
               <AdminLayout>
                 <AdminDashboard />
               </AdminLayout>
             ) : <Navigate to="/dashboard" replace />
           } />
           <Route path="/admin/hotels" element={
-            isAdmin() ? (
+            loading || authLoading ? (
+              <div className="min-h-screen flex items-center justify-center">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+              </div>
+            ) : isAdmin() ? (
               <AdminLayout>
                 <HotelManagement />
               </AdminLayout>
             ) : <Navigate to="/dashboard" replace />
           } />
           <Route path="/admin/beds24-integration" element={
-            isAdmin() ? (
+            loading ? (
+              <div className="min-h-screen flex items-center justify-center">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+              </div>
+            ) : isAdmin() ? (
               <AdminLayout>
                 <Beds24Integration />
               </AdminLayout>
