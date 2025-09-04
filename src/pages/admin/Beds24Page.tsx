@@ -213,7 +213,7 @@ export default function Beds24Page() {
         let errorDetails = "";
         
         try { 
-          bodyText = await resp?.clone()?.text?.(); 
+          bodyText = await resp?.clone()?.text(); 
           if (bodyText) {
             try {
               const errorJson = JSON.parse(bodyText);
