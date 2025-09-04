@@ -39,7 +39,7 @@ async function bootstrapHotel(hotelId: string, propertyId: string) {
         hotel_id: hotelId,
         bootstrap_completed_at: new Date().toISOString(),
         sync_enabled: true,
-        metadata: {
+        settings: {
           beds24_property_id: propertyId,
           bootstrap_initiated: new Date().toISOString()
         }

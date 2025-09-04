@@ -169,9 +169,9 @@ async function syncHotel(supabase: any, syncState: any, type: string): Promise<a
     errors: [] as string[]
   };
 
-  const propertyId = syncState.metadata?.propertyId;
+  const propertyId = syncState.settings?.beds24_property_id;
   if (!propertyId) {
-    throw new Error('Property ID not found in sync state metadata');
+    throw new Error('Property ID not found in sync state settings');
   }
 
   try {
