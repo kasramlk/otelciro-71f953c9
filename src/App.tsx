@@ -184,7 +184,7 @@ const AppContent = () => {
           
           {/* Admin Routes */}
           <Route path="/admin" element={
-            loading || authLoading ? (
+            authLoading ? (
               <div className="min-h-screen flex items-center justify-center">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
               </div>
@@ -195,7 +195,7 @@ const AppContent = () => {
             ) : <Navigate to="/dashboard" replace />
           } />
           <Route path="/admin/hotels" element={
-            loading || authLoading ? (
+            authLoading ? (
               <div className="min-h-screen flex items-center justify-center">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
               </div>
@@ -206,7 +206,7 @@ const AppContent = () => {
             ) : <Navigate to="/dashboard" replace />
           } />
           <Route path="/admin/beds24-integration" element={
-            loading ? (
+            authLoading ? (
               <div className="min-h-screen flex items-center justify-center">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
               </div>

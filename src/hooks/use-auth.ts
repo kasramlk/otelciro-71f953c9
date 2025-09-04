@@ -45,8 +45,9 @@ export function useAuth() {
         .eq('id', user.id)
         .single();
       
-      if (error) throw error;
-      return data as UserProfile;
+      // Handle "no profile found" gracefully - don't throw error
+      if (error && error.code !== 'PGRST116') throw error;
+      return data as UserProfile || null;
     },
     enabled: !!user?.id,
     staleTime: 5 * 60 * 1000 // 5 minutes
