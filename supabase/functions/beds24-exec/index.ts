@@ -1,35 +1,23 @@
-import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.55.0';
+import { getTokenForOperation } from '../_shared/beds24-tokens.ts';
 
-const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
-const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-const CRON_SECRET = Deno.env.get("CRON_SECRET") || "staging-cron-secret-123";
-const BEDS24_BASE_URL = Deno.env.get("BEDS24_BASE_URL") || "https://api.beds24.com/v2";
-
-// CORS headers for frontend calls
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
-  'Access-Control-Allow-Headers': 'content-type, authorization, x-cron-secret',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-function json(body: unknown, status = 200) {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { 
-      "Content-Type": "application/json",
-      ...corsHeaders
-    },
-  });
+const BEDS24_BASE_URL = Deno.env.get('BEDS24_BASE_URL') || 'https://api.beds24.com/v2';
+
+interface ExecBody {
+  operation: 'property' | 'bookings' | 'calendar';
+  propertyId: string;
+  params?: Record<string, any>;
+  method?: string;
 }
 
-// Get Beds24 token (simplified version)
+// Get Beds24 token
 async function getBeds24Token(): Promise<string> {
-  const token = Deno.env.get('BEDS24_READ_TOKEN');
-  if (!token) {
-    throw new Error('BEDS24_READ_TOKEN not configured');
-  }
-  return token;
+  return await getTokenForOperation('read');
 }
 
 // Make Beds24 API call
@@ -40,227 +28,227 @@ async function makeBeds24Request(endpoint: string, params: Record<string, any> =
   
   console.log('Making Beds24 request:', {
     baseUrl: BEDS24_BASE_URL,
-    endpoint,
+    endpoint: endpoint,
     fullUrl: url.toString(),
-    params
+    params: params
   });
   
   // Add query parameters
   Object.entries(params).forEach(([key, value]) => {
     if (value !== undefined && value !== null) {
-      url.searchParams.set(key, String(value));
+      url.searchParams.append(key, String(value));
     }
   });
 
-  const startTime = Date.now();
-  
   console.log('Final URL:', url.toString());
-  
+
   const response = await fetch(url.toString(), {
+    method: 'GET',
     headers: {
       'Authorization': `Bearer ${token}`,
-      'Accept': 'application/json',
-    },
+      'Content-Type': 'application/json',
+      'User-Agent': 'OtelCiro-PMS/1.0'
+    }
   });
 
   console.log('Response status:', response.status, response.statusText);
   console.log('Response headers:', Object.fromEntries(response.headers.entries()));
 
-  const durationMs = Date.now() - startTime;
-  
-  // Check if response is JSON before parsing
-  const contentType = response.headers.get('content-type') || '';
-  let responseData;
-  
-  if (contentType.includes('application/json')) {
-    try {
-      responseData = await response.json();
-    } catch (parseError) {
-      console.error('Failed to parse JSON response:', parseError);
-      const textResponse = await response.text();
-      throw new Error(`Invalid JSON response from Beds24 API: ${textResponse.substring(0, 200)}...`);
-    }
-  } else {
-    // If not JSON, read as text and provide better error message
-    const textResponse = await response.text();
-    
-    if (!response.ok) {
-      throw new Error(`Beds24 API error (${response.status}): ${textResponse.substring(0, 200)}...`);
-    }
-    
-    // Even if OK but not JSON, that's unexpected
-    throw new Error(`Expected JSON response but got ${contentType}: ${textResponse.substring(0, 200)}...`);
+  // Extract rate limit info
+  const creditInfo = {
+    remaining: parseInt(response.headers.get('X-FiveMinCreditLimit-Remaining') || '0'),
+    resetsIn: parseInt(response.headers.get('X-FiveMinCreditLimit-ResetsIn') || '0'),
+    requestCost: parseInt(response.headers.get('X-RequestCost') || '1')
+  };
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`Beds24 API error: ${response.status} ${response.statusText} - ${errorText}`);
   }
 
-  // Extract credit information from headers
-  const requestCost = parseInt(response.headers.get('X-RequestCost') || '0', 10);
-  const remaining = parseInt(response.headers.get('X-RemainingCredits') || '0', 10);
-  const resetsIn = parseInt(response.headers.get('X-ResetsIn') || '0', 10);
-
-  return {
-    ok: response.ok,
-    status: response.status,
-    durationMs,
-    credits: {
-      requestCost,
-      remaining,
-      resetsIn,
-    },
-    data: responseData,
-  };
+  const data = await response.json();
+  return { data, creditInfo };
 }
 
-// Type definitions for request body
-type ExecBody =
-  | { op: 'property'; propertyId: string; includeAllRooms?: boolean; includePriceRules?: boolean; includeOffers?: boolean; includeTexts?: boolean }
-  | { op: 'bookings'; propertyId: string; modifiedFrom?: string; status?: 'all'|'confirmed'|'cancelled'|'request'; includeGuests?: boolean; includeInvoiceItems?: boolean; limit?: number; offset?: number }
-  | { op: 'calendar'; propertyId: string; start: string; end: string; includePrices?: boolean; includeMinStay?: boolean; includeMaxStay?: boolean; includeNumAvail?: boolean };
 
-serve(async (req: Request) => {
-  // Handle CORS preflight
+Deno.serve(async (req) => {
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
-  // Accept POST only
+  // Only allow POST requests
   if (req.method !== 'POST') {
-    return json({ error: 'Method not allowed. Use POST.' }, 405);
+    return new Response(
+      JSON.stringify({ error: 'Method not allowed' }),
+      { status: 405, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
   }
 
   try {
-    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+    // Create authenticated client from the request
+    const supabaseClient = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+      {
+        global: {
+          headers: { Authorization: req.headers.get('Authorization') ?? '' },
+        },
+      }
+    );
 
-    // Check admin authorization (Bearer token or cron secret)
-    const authHeader = req.headers.get('Authorization');
+    // Check for cron secret (for automated calls)
     const cronSecret = req.headers.get('x-cron-secret');
-    
-    let isAuthorized = false;
-    let user: any = null;
+    const expectedCronSecret = Deno.env.get('CRON_SECRET');
 
-    // Check cron secret first
-    if (cronSecret === CRON_SECRET) {
-      console.log('Admin check passed via cron secret');
+    let isAuthorized = false;
+
+    if (cronSecret && expectedCronSecret && cronSecret === expectedCronSecret) {
+      console.log('Authorized via cron secret');
       isAuthorized = true;
-    } else if (authHeader?.startsWith('Bearer ')) {
-      // Check user authentication and admin role
-      const token = authHeader.split(' ')[1];
-      const { data: { user: authUser }, error: authError } = await supabase.auth.getUser(token);
+    } else {
+      // Check if user is authenticated and has admin role
+      const { data: { user }, error: authError } = await supabaseClient.auth.getUser();
       
-      if (authError || !authUser) {
-        console.log('Authentication failed:', authError);
-        return json({ error: 'Unauthorized' }, 401);
+      if (authError || !user) {
+        return new Response(
+          JSON.stringify({ error: 'Unauthorized' }),
+          { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
       }
 
-      user = authUser;
-      console.log('Checking admin role for user:', user.id);
-
-      // Check admin role via RPC
-      const { data: rpcResult, error: rpcError } = await supabase.rpc('has_role', { 
-        _user_id: user.id, 
-        _role: 'admin' 
+      console.log(`Checking admin role for user: ${user.id}`);
+      
+      const { data: hasAdminRole, error: rpcError } = await supabaseClient.rpc('has_role', {
+        _user_id: user.id,
+        _role: 'admin'
       });
 
-      if (rpcResult === true) {
-        console.log('User is admin via RPC');
-        isAuthorized = true;
+      if (rpcError || !hasAdminRole) {
+        return new Response(
+          JSON.stringify({ error: 'Admin role required' }),
+          { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
       }
+
+      console.log('User is admin via RPC');
+      isAuthorized = true;
     }
 
     if (!isAuthorized) {
-      console.log('Access denied for user:', user?.id);
-      return json({ error: 'Admin access required' }, 403);
+      return new Response(
+        JSON.stringify({ error: 'Not authorized' }),
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
-    // Parse JSON body
-    const body: ExecBody = await req.json().catch(() => ({}));
-    
-    if (!body || !body.op) {
-      return json({ error: 'Invalid request body. Must include "op" field.' }, 400);
+    // Parse request body
+    const body: ExecBody = await req.json();
+    const { operation, propertyId, params = {} } = body;
+
+    if (!operation || !propertyId) {
+      return new Response(
+        JSON.stringify({ error: 'Missing required parameters: operation and propertyId' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
-    let result;
+    let endpoint: string;
+    let queryParams = { ...params };
 
-    switch (body.op) {
-      case 'property': {
-        if (!body.propertyId) {
-          return json({ error: 'propertyId is required for property operation' }, 400);
-        }
-        
-        const params: Record<string, any> = {};
-        if (body.includeAllRooms) params.includeAllRooms = '1';
-        if (body.includePriceRules) params.includePriceRules = '1';
-        if (body.includeOffers) params.includeOffers = '1';
-        if (body.includeTexts) params.includeTexts = '1';
-        
-        result = await makeBeds24Request(`/properties/${body.propertyId}`, params);
+    // Build endpoint based on operation
+    switch (operation) {
+      case 'property':
+        endpoint = `/properties/${propertyId}`;
         break;
-      }
-      
-      case 'bookings': {
-        if (!body.propertyId) {
-          return json({ error: 'propertyId is required for bookings operation' }, 400);
-        }
-        
-        const params: Record<string, any> = {};
-        if (body.modifiedFrom) params.modifiedFrom = body.modifiedFrom;
-        if (body.status) params.status = body.status;
-        if (body.includeGuests) params.includeGuests = 'true';
-        if (body.includeInvoiceItems) params.includeInvoiceItems = 'true';
-        if (body.limit) params.limit = body.limit;
-        if (body.offset) params.offset = body.offset;
-        
-        result = await makeBeds24Request(`/properties/${body.propertyId}/bookings`, params);
+      case 'bookings':
+        endpoint = `/properties/${propertyId}/bookings`;
         break;
-      }
-      
-      case 'calendar': {
-        if (!body.propertyId || !body.start || !body.end) {
-          return json({ error: 'propertyId, start, and end are required for calendar operation' }, 400);
-        }
-        
-        const params: Record<string, any> = {
-          startDate: body.start,
-          endDate: body.end,
-        };
-        if (body.includePrices) params.includePrices = 'true';
-        if (body.includeMinStay) params.includeMinStay = 'true';
-        if (body.includeMaxStay) params.includeMaxStay = 'true';
-        if (body.includeNumAvail) params.includeNumAvail = 'true';
-        
-        result = await makeBeds24Request(`/properties/${body.propertyId}/rooms/calendar`, params);
+      case 'calendar':
+        endpoint = `/properties/${propertyId}/rooms/calendar`;
         break;
-      }
-      
       default:
-        return json({ error: `Unknown operation: ${(body as any).op}` }, 400);
+        return new Response(
+          JSON.stringify({ error: `Unknown operation: ${operation}` }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
     }
 
-    // Log audit entry (without sensitive data)
-    try {
-      await supabase.from('ingestion_audit').insert({
+    // Make the API call
+    const result = await makeBeds24Request(endpoint, queryParams);
+    
+    // Create audit log entry
+    const supabaseService = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    );
+
+    await supabaseService
+      .from('ingestion_audit')
+      .insert({
         provider: 'beds24',
-        entity_type: 'api_explorer',
-        operation: body.op,
+        entity_type: operation,
+        external_id: propertyId,
         action: 'api_call',
-        status: result.ok ? 'success' : 'error',
-        duration_ms: result.durationMs,
-        request_cost: result.credits.requestCost,
-        limit_remaining: result.credits.remaining,
-        limit_resets_in: result.credits.resetsIn,
+        operation: `GET ${endpoint}`,
+        status: 'success',
+        request_cost: result.creditInfo.requestCost,
+        limit_remaining: result.creditInfo.remaining,
+        limit_resets_in: result.creditInfo.resetsIn,
         records_processed: Array.isArray(result.data) ? result.data.length : 1,
+        request_payload: { operation, propertyId, params },
+        response_payload: result.data,
+        trace_id: crypto.randomUUID()
       });
+
+    return new Response(
+      JSON.stringify({
+        success: true,
+        operation,
+        propertyId,
+        data: result.data,
+        creditInfo: result.creditInfo
+      }),
+      { 
+        status: 200,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      }
+    );
+
+  } catch (error) {
+    console.error('Beds24 exec error:', error);
+    
+    // Create error audit log entry
+    try {
+      const supabaseService = createClient(
+        Deno.env.get('SUPABASE_URL') ?? '',
+        Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+      );
+
+      await supabaseService
+        .from('ingestion_audit')
+        .insert({
+          provider: 'beds24',
+          entity_type: 'api_call',
+          action: 'api_call',
+          operation: 'beds24_exec',
+          status: 'error',
+          error_message: error.message,
+          trace_id: crypto.randomUUID()
+        });
     } catch (auditError) {
-      console.error('Failed to log audit entry:', auditError);
+      console.error('Failed to create audit log:', auditError);
     }
 
-    return json(result);
-
-  } catch (error: any) {
-    console.error('Exec error:', error);
-    return json({
-      ok: false,
-      message: error.message,
-      code: 'EXEC_FAILED',
-    }, 500);
+    return new Response(
+      JSON.stringify({ 
+        error: error.message,
+        traceId: crypto.randomUUID()
+      }),
+      { 
+        status: 500, 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      }
+    );
   }
 });

@@ -159,12 +159,12 @@ export default function Beds24Page() {
     refetchInterval: 30000,
   });
 
-  // Query for audit logs - fallback to ingestion_audit if v_ingestion_audit doesn't exist
+  // Query for audit logs using the view
   const { data: auditLogs = [], isLoading: auditLoading } = useQuery({
     queryKey: ['beds24-audit-logs', auditFilter],
     queryFn: async () => {
       let query = supabase
-        .from('ingestion_audit')
+        .from('v_ingestion_audit')
         .select('*')
         .eq('provider', 'beds24')
         .order('created_at', { ascending: false })
@@ -275,41 +275,38 @@ export default function Beds24Page() {
       // Get auth session for proper authorization
       const { data: { session } } = await supabase.auth.getSession();
       
-      let payload: any = {
-        op: explorerConfig.op,
-        propertyId: explorerConfig.propertyId,
-      };
+        let payload: any = {
+          operation: explorerConfig.op,
+          propertyId: explorerConfig.propertyId,
+        };
 
-      // Add operation-specific parameters
-      if (explorerConfig.op === 'property') {
-        payload = {
-          ...payload,
-          includeAllRooms: explorerConfig.includeAllRooms,
-          includePriceRules: explorerConfig.includePriceRules,
-          includeOffers: explorerConfig.includeOffers,
-          includeTexts: explorerConfig.includeTexts,
-        };
-      } else if (explorerConfig.op === 'bookings') {
-        payload = {
-          ...payload,
-          modifiedFrom: explorerConfig.modifiedFrom || undefined,
-          status: explorerConfig.status,
-          includeGuests: explorerConfig.includeGuests,
-          includeInvoiceItems: explorerConfig.includeInvoiceItems,
-          limit: explorerConfig.limit,
-          offset: explorerConfig.offset,
-        };
-      } else if (explorerConfig.op === 'calendar') {
-        payload = {
-          ...payload,
-          start: explorerConfig.start,
-          end: explorerConfig.end,
-          includePrices: explorerConfig.includePrices,
-          includeMinStay: explorerConfig.includeMinStay,
-          includeMaxStay: explorerConfig.includeMaxStay,
-          includeNumAvail: explorerConfig.includeNumAvail,
-        };
-      }
+        // Add operation-specific parameters
+        if (explorerConfig.op === 'property') {
+          payload.params = {
+            includeAllRooms: explorerConfig.includeAllRooms ? '1' : undefined,
+            includePriceRules: explorerConfig.includePriceRules ? '1' : undefined,
+            includeOffers: explorerConfig.includeOffers ? '1' : undefined,
+            includeTexts: explorerConfig.includeTexts ? '1' : undefined,
+          };
+        } else if (explorerConfig.op === 'bookings') {
+          payload.params = {
+            modifiedFrom: explorerConfig.modifiedFrom || undefined,
+            status: explorerConfig.status,
+            includeGuests: explorerConfig.includeGuests ? 'true' : undefined,
+            includeInvoiceItems: explorerConfig.includeInvoiceItems ? 'true' : undefined,
+            limit: explorerConfig.limit,
+            offset: explorerConfig.offset,
+          };
+        } else if (explorerConfig.op === 'calendar') {
+          payload.params = {
+            startDate: explorerConfig.start,
+            endDate: explorerConfig.end,
+            includePrices: explorerConfig.includePrices ? 'true' : undefined,
+            includeMinStay: explorerConfig.includeMinStay ? 'true' : undefined,
+            includeMaxStay: explorerConfig.includeMaxStay ? 'true' : undefined,
+            includeNumAvail: explorerConfig.includeNumAvail ? 'true' : undefined,
+          };
+        }
       
       const res = await fetch('https://zldcotumxouasgzdsvmh.supabase.co/functions/v1/beds24-exec', {
         method: 'POST',

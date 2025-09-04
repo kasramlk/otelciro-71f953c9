@@ -205,7 +205,9 @@ export type Database = {
           id: string
           last_used_at: string | null
           properties_access: string[] | null
+          refresh_token: string | null
           scopes: string[]
+          token_metadata: Json | null
           token_type: string
           updated_at: string
         }
@@ -217,7 +219,9 @@ export type Database = {
           id?: string
           last_used_at?: string | null
           properties_access?: string[] | null
+          refresh_token?: string | null
           scopes: string[]
+          token_metadata?: Json | null
           token_type: string
           updated_at?: string
         }
@@ -229,7 +233,9 @@ export type Database = {
           id?: string
           last_used_at?: string | null
           properties_access?: string[] | null
+          refresh_token?: string | null
           scopes?: string[]
+          token_metadata?: Json | null
           token_type?: string
           updated_at?: string
         }
@@ -3762,6 +3768,10 @@ export type Database = {
       get_current_user_role: {
         Args: Record<PropertyKey, never>
         Returns: string
+      }
+      get_hotel_beds24_settings: {
+        Args: { hotel_uuid: string }
+        Returns: Json
       }
       get_user_org_id: {
         Args: Record<PropertyKey, never>

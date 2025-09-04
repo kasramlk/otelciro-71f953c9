@@ -1,181 +1,266 @@
-import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.55.0';
+import { beds24Client } from '../_shared/beds24-client.ts';
+import { upsertHotelFromBeds24, upsertRoomTypesFromBeds24, upsertCalendar } from '../_shared/upsert.ts';
 
-const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
-const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
-const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-const CRON_SECRET = Deno.env.get("CRON_SECRET") || "staging-cron-secret-123";
-
-// CORS headers for frontend calls
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
-  'Access-Control-Allow-Headers': 'content-type, authorization, x-cron-secret',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
 function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
     status,
-    headers: { 
-      "Content-Type": "application/json",
-      ...corsHeaders
-    },
+    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
   });
 }
 
-// Basic bootstrap implementation
 async function bootstrapHotel(hotelId: string, propertyId: string) {
   console.log(`Starting bootstrap for hotel ${hotelId} with property ${propertyId}`);
   
-  // Create service client
-  const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
-  
-  try {
-    // Update or create sync state for this hotel
-    const { error: syncError } = await supabase
-      .from('sync_state')
-      .upsert({
-        provider: 'beds24',
-        hotel_id: hotelId,
-        bootstrap_completed_at: new Date().toISOString(),
-        sync_enabled: true,
-        settings: {
-          beds24_property_id: propertyId,
-          bootstrap_initiated: new Date().toISOString()
-        }
-      }, {
-        onConflict: 'provider,hotel_id'
-      });
+  const supabaseService = createClient(
+    Deno.env.get('SUPABASE_URL') ?? '',
+    Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+  );
 
-    if (syncError) {
-      throw new Error(`Failed to update sync state: ${syncError.message}`);
+  let importedData = {
+    hotel: { created: 0, updated: 0, errors: [] },
+    roomTypes: { created: 0, updated: 0, errors: [] },
+    calendar: { created: 0, updated: 0, errors: [] },
+    totalImported: 0
+  };
+
+  try {
+    // 1. Fetch and import hotel/property data
+    console.log('Fetching property data from Beds24...');
+    const propertyResponse = await beds24Client.getProperty(propertyId, {
+      includeAllRooms: true,
+      includePriceRules: true,
+      includeTexts: true
+    });
+    
+    if (propertyResponse.data) {
+      console.log('Upserting hotel data...');
+      const hotelResult = await upsertHotelFromBeds24(propertyResponse.data);
+      importedData.hotel = hotelResult;
+      importedData.totalImported += hotelResult.created + hotelResult.updated;
     }
 
-    console.log(`Bootstrap completed successfully for hotel ${hotelId}`);
+    // 2. Import room types if available
+    if (propertyResponse.data?.rooms && Array.isArray(propertyResponse.data.rooms)) {
+      console.log(`Upserting ${propertyResponse.data.rooms.length} room types...`);
+      const roomTypesResult = await upsertRoomTypesFromBeds24(hotelId, propertyResponse.data.rooms);
+      importedData.roomTypes = roomTypesResult;
+      importedData.totalImported += roomTypesResult.created + roomTypesResult.updated;
+    }
+
+    // 3. Import initial calendar data (next 90 days)
+    const startDate = new Date().toISOString().split('T')[0];
+    const endDate = new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
     
-    return {
-      roomTypes: 0, // Would be populated by actual sync logic
-      bookings: 0,  // Would be populated by actual sync logic
-      success: true
-    };
+    console.log(`Fetching calendar data from ${startDate} to ${endDate}...`);
+    const calendarResponse = await beds24Client.getRoomsCalendar(propertyId, {
+      startDate,
+      endDate,
+      includePrices: true,
+      includeNumAvail: true
+    });
+
+    if (calendarResponse.data && Array.isArray(calendarResponse.data)) {
+      console.log(`Processing ${calendarResponse.data.length} calendar entries...`);
+      
+      // Group calendar data by room ID
+      const roomGroups = calendarResponse.data.reduce((acc: any, item: any) => {
+        const roomId = item.roomId || 'default';
+        if (!acc[roomId]) acc[roomId] = [];
+        acc[roomId].push(item);
+        return acc;
+      }, {});
+
+      // Process each room's calendar data
+      for (const [roomId, days] of Object.entries(roomGroups)) {
+        try {
+          // Map Beds24 room ID to internal room type ID
+          const { data: roomMapping } = await supabaseService
+            .from('external_ids')
+            .select('otelciro_id')
+            .eq('provider', 'beds24')
+            .eq('entity_type', 'room_type')
+            .eq('external_id', roomId)
+            .maybeSingle();
+
+          if (roomMapping) {
+            const calendarResult = await upsertCalendar(hotelId, roomMapping.otelciro_id, days as any[]);
+            importedData.calendar.created += calendarResult.created;
+            importedData.calendar.updated += calendarResult.updated;
+            importedData.calendar.errors.push(...calendarResult.errors);
+            importedData.totalImported += calendarResult.created + calendarResult.updated;
+          } else {
+            console.warn(`No mapping found for Beds24 room ID: ${roomId}`);
+          }
+        } catch (error) {
+          console.error(`Error processing calendar for room ${roomId}:`, error);
+          importedData.calendar.errors.push(`Room ${roomId}: ${error.message}`);
+        }
+      }
+    }
+
+    // 4. Update sync state to mark bootstrap as completed
+    console.log('Updating sync state...');
+    await supabaseService
+      .from('sync_state')
+      .upsert({
+        hotel_id: hotelId,
+        provider: 'beds24',
+        sync_enabled: true,
+        bootstrap_completed_at: new Date().toISOString(),
+        last_calendar_start: startDate,
+        last_calendar_end: endDate,
+        settings: {
+          property_id: propertyId,
+          bootstrap_date: new Date().toISOString(),
+          initial_sync_range: { start: startDate, end: endDate }
+        }
+      }, {
+        onConflict: 'hotel_id,provider'
+      });
+
+    console.log('Bootstrap completed successfully for hotel', hotelId);
+    return importedData;
 
   } catch (error) {
-    console.error(`Bootstrap failed for hotel ${hotelId}:`, error);
+    console.error('Bootstrap error:', error);
+    
+    // Log the error in audit table
+    await supabaseService
+      .from('ingestion_audit')
+      .insert({
+        provider: 'beds24',
+        entity_type: 'hotel',
+        external_id: propertyId,
+        action: 'bootstrap',
+        operation: 'hotel_bootstrap',
+        status: 'error',
+        hotel_id: hotelId,
+        error_message: error.message,
+        request_payload: { hotelId, propertyId },
+        trace_id: crypto.randomUUID()
+      });
+
     throw error;
   }
 }
 
-serve(async (req: Request) => {
-  // Handle CORS preflight
+Deno.serve(async (req) => {
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
-  // Accept POST only
+  // Only allow POST requests
   if (req.method !== 'POST') {
-    return json({ error: 'Method not allowed. Use POST.' }, 405);
+    return json({ error: 'Method not allowed' }, 405);
   }
 
   try {
-    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+    // Create authenticated client from the request
+    const supabaseClient = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+      {
+        global: {
+          headers: { Authorization: req.headers.get('Authorization') ?? '' },
+        },
+      }
+    );
 
-    // Check admin authorization (Bearer token or cron secret)
-    const authHeader = req.headers.get('Authorization');
+    // Check for cron secret (for automated calls)
     const cronSecret = req.headers.get('x-cron-secret');
-    
+    const expectedCronSecret = Deno.env.get('CRON_SECRET');
+
     let isAuthorized = false;
     let user: any = null;
 
-    // Check cron secret first
-    if (cronSecret === CRON_SECRET) {
-      console.log('Admin check passed via cron secret');
+    if (cronSecret && expectedCronSecret && cronSecret === expectedCronSecret) {
+      console.log('Authorized via cron secret');
       isAuthorized = true;
-    } else if (authHeader?.startsWith('Bearer ')) {
-      // Check user authentication and admin role
-      const token = authHeader.split(' ')[1];
-      const { data: { user: authUser }, error: authError } = await supabase.auth.getUser(token);
+    } else {
+      // Check if user is authenticated and has admin role
+      const { data: { user: authUser }, error: authError } = await supabaseClient.auth.getUser();
       
       if (authError || !authUser) {
-        console.log('Authentication failed:', authError);
-        return json({ error: 'Unauthorized' }, 401);
+        return json({ error: 'Unauthorized - no valid user' }, 401);
       }
 
       user = authUser;
-      console.log('Checking admin role for user:', user.id);
-
-      // Check admin role via RPC
-      const { data: rpcResult, error: rpcError } = await supabase.rpc('has_role', { 
-        _user_id: user.id, 
-        _role: 'admin' 
-      });
+      console.log(`Checking admin role for user: ${user.id}`);
       
-      console.log('RPC has_role result:', { rpcOK: rpcResult, rpcError });
+      const { data: hasAdminRole, error: rpcError } = await supabaseClient.rpc('has_role', {
+        _user_id: user.id,
+        _role: 'admin'
+      });
 
-      if (rpcResult === true) {
-        console.log('User is admin via RPC');
-        isAuthorized = true;
-      } else {
-        console.log('User is admin via RPC: false');
-        isAuthorized = false;
+      console.log('RPC has_role result:', { rpcOK: !rpcError, rpcError: rpcError });
+
+      if (rpcError || !hasAdminRole) {
+        return json({ error: 'Admin role required' }, 403);
       }
+
+      console.log('User is admin via RPC');
+      isAuthorized = true;
     }
 
     if (!isAuthorized) {
-      console.log('Access denied for user:', user?.id);
-      return json({ error: 'Admin access required' }, 403);
+      return json({ error: 'Not authorized' }, 403);
     }
 
-    console.log('Admin check passed for user:', user?.id);
-
-    // Parse JSON body
-    const { hotelId, propertyId } = await req.json().catch(() => ({}));
-    
+    // Parse request body
+    const { hotelId, propertyId } = await req.json();
     console.log('Extracted parameters:', { hotelId, propertyId });
 
     if (!hotelId || !propertyId) {
-      console.log('Missing required parameters:', { hotelId, propertyId });
-      return json({ error: 'hotelId and propertyId are required' }, 400);
+      return json({ error: 'Missing required parameters: hotelId and propertyId' }, 400);
     }
 
-    // Run bootstrap
+    console.log(`Admin check passed for user: ${user?.id || 'cron'}`);
+    
+    // Execute bootstrap
     const result = await bootstrapHotel(hotelId, propertyId);
     
     return json({
-      ok: true,
-      hotelId,
-      propertyId,
-      imported: {
-        properties: 1,
-        roomTypes: result.roomTypes || 0,
-        bookings: result.bookings || 0,
-        calendarDays: 365
-      }
-    }, 200);
+      success: true,
+      message: 'Bootstrap completed successfully',
+      data: result
+    });
 
-  } catch (error: any) {
-    console.error('Bootstrap error:', error);
+  } catch (error) {
+    console.error('Bootstrap endpoint error:', error);
+    
     const traceId = crypto.randomUUID();
     
-    // Log error for audit (redacted)
+    // Try to log error to audit table
     try {
-      const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
-      await supabase.from('ingestion_audit').insert({
-        provider: 'beds24',
-        entity_type: 'bootstrap',
-        operation: 'bootstrap_hotel',
-        action: 'bootstrap',
-        status: 'error',
-        error_message: error.message,
-        trace_id: traceId
-      });
+      const supabaseService = createClient(
+        Deno.env.get('SUPABASE_URL') ?? '',
+        Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+      );
+      
+      await supabaseService
+        .from('ingestion_audit')
+        .insert({
+          provider: 'beds24',
+          entity_type: 'system',
+          action: 'bootstrap',
+          operation: 'bootstrap_endpoint',
+          status: 'error',
+          error_message: error.message,
+          trace_id: traceId
+        });
     } catch (auditError) {
-      console.error('Failed to log audit entry:', auditError);
+      console.error('Failed to log error to audit table:', auditError);
     }
 
     return json({
-      ok: false,
-      message: error.message,
-      code: 'BOOTSTRAP_FAILED',
+      error: error.message,
       traceId
     }, 500);
   }

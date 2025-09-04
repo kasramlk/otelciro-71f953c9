@@ -1,3 +1,5 @@
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.55.0';
+
 interface TokenCache {
   token: string
   expiresAt: number
@@ -6,12 +8,33 @@ interface TokenCache {
 // In-memory cache for the current isolate
 const tokenCache = new Map<string, TokenCache>()
 
+// Create supabase client for internal operations
+const supabase = createClient(
+  Deno.env.get('SUPABASE_URL') ?? '',
+  Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+);
+
 export async function getReadToken(): Promise<string> {
-  const token = Deno.env.get('BEDS24_READ_TOKEN')
-  if (!token) {
-    throw new Error('BEDS24_READ_TOKEN not configured')
+  // First try to get from environment (direct token)
+  const directToken = Deno.env.get('BEDS24_READ_TOKEN')
+  if (directToken) {
+    return directToken
   }
-  return token
+  
+  // Try to get from token manager
+  try {
+    const response = await supabase.functions.invoke('beds24-token-manager', {
+      body: { action: 'get_token', tokenType: 'read' }
+    });
+    
+    if (response.data && response.data.token) {
+      return response.data.token;
+    }
+  } catch (error) {
+    console.warn('Failed to get token from token manager:', error);
+  }
+  
+  throw new Error('BEDS24_READ_TOKEN not available - check environment variables or token manager')
 }
 
 export async function getWriteAccessToken(): Promise<string> {
@@ -23,9 +46,29 @@ export async function getWriteAccessToken(): Promise<string> {
     return cached.token
   }
 
+  // Try to get from token manager first
+  try {
+    const response = await supabase.functions.invoke('beds24-token-manager', {
+      body: { action: 'get_token', tokenType: 'write' }
+    });
+    
+    if (response.data && response.data.token) {
+      // Cache the token (assuming 1 hour expiry if not specified)
+      const expiresAt = Date.now() + (60 * 60 * 1000);
+      tokenCache.set(cacheKey, {
+        token: response.data.token,
+        expiresAt
+      });
+      return response.data.token;
+    }
+  } catch (error) {
+    console.warn('Failed to get write token from token manager:', error);
+  }
+
+  // Fallback to refresh token approach
   const refreshToken = Deno.env.get('BEDS24_WRITE_REFRESH_TOKEN')
   if (!refreshToken) {
-    throw new Error('BEDS24_WRITE_REFRESH_TOKEN not configured')
+    throw new Error('BEDS24_WRITE_REFRESH_TOKEN not configured and no valid token in token manager')
   }
 
   const baseUrl = Deno.env.get('BEDS24_BASE_URL') || 'https://api.beds24.com/v2'
@@ -52,12 +95,30 @@ export async function getWriteAccessToken(): Promise<string> {
       throw new Error('Invalid token response from Beds24')
     }
 
-    // Cache the token
+    // Cache the token and store in token manager
     const expiresAt = Date.now() + (data.expires_in * 1000)
     tokenCache.set(cacheKey, {
       token: data.access_token,
       expiresAt
     })
+
+    // Try to store in token manager for future use
+    try {
+      await supabase.functions.invoke('beds24-token-manager', {
+        body: { 
+          action: 'store_token', 
+          tokenType: 'write',
+          tokenData: {
+            token: data.access_token,
+            expires_at: new Date(expiresAt).toISOString(),
+            scopes: ['write:inventory', 'write:bookings-messages', 'write:channels'],
+            properties_access: []
+          }
+        }
+      });
+    } catch (storeError) {
+      console.warn('Failed to store token in token manager:', storeError);
+    }
 
     return data.access_token
   } catch (error) {
