@@ -234,8 +234,15 @@ export default function Beds24Page() {
       });
 
       if (!res.ok) {
-        const err = await res.json().catch(() => ({ message: res.text() }));
-        const errorMessage = err.message || err.error || `HTTP ${res.status}`;
+        let errorMessage = `HTTP ${res.status}`;
+        try {
+          const errorText = await res.text();
+          const err = JSON.parse(errorText);
+          errorMessage = err.message || err.error || errorText;
+        } catch {
+          // If we can't parse as JSON, use the status code
+          errorMessage = `HTTP ${res.status}`;
+        }
         toast.error(`Bootstrap failed: ${errorMessage}`);
         return;
       }
@@ -314,8 +321,15 @@ export default function Beds24Page() {
       });
 
       if (!res.ok) {
-        const err = await res.json().catch(() => ({ message: res.text() }));
-        const errorMessage = err.message || err.error || `HTTP ${res.status}`;
+        let errorMessage = `HTTP ${res.status}`;
+        try {
+          const errorText = await res.text();
+          const err = JSON.parse(errorText);
+          errorMessage = err.message || err.error || errorText;
+        } catch {
+          // If we can't parse as JSON, use the text directly or fallback
+          errorMessage = `HTTP ${res.status}`;
+        }
         toast.error(`Explorer request failed: ${errorMessage}`);
         return;
       }
