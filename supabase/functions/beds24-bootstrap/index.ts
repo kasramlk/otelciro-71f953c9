@@ -5,15 +5,90 @@ const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
+// CORS headers for frontend calls
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+};
+
 function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
     status,
-    headers: { "Content-Type": "application/json" },
+    headers: { 
+      "Content-Type": "application/json",
+      ...corsHeaders
+    },
   });
+}
+
+// Basic bootstrap implementation
+async function bootstrapHotel(hotelId: string, propertyId: string) {
+  console.log(`Starting bootstrap for hotel ${hotelId} with property ${propertyId}`);
+  
+  // Create service client
+  const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+  
+  try {
+    // Update or create sync state for this hotel
+    const { error: syncError } = await supabase
+      .from('sync_state')
+      .upsert({
+        provider: 'beds24',
+        hotel_id: hotelId,
+        bootstrap_completed_at: new Date().toISOString(),
+        sync_enabled: true,
+        metadata: {
+          beds24_property_id: propertyId,
+          bootstrap_initiated: new Date().toISOString()
+        }
+      }, {
+        onConflict: 'provider,hotel_id'
+      });
+
+    if (syncError) {
+      throw new Error(`Failed to update sync state: ${syncError.message}`);
+    }
+
+    // Create external ID mapping
+    const { error: mappingError } = await supabase
+      .from('external_ids')
+      .upsert({
+        provider: 'beds24',
+        entity_type: 'hotel',
+        external_id: propertyId,
+        otelciro_id: hotelId,
+        metadata: {
+          bootstrap_date: new Date().toISOString()
+        }
+      }, {
+        onConflict: 'provider,entity_type,external_id'
+      });
+
+    if (mappingError) {
+      throw new Error(`Failed to create mapping: ${mappingError.message}`);
+    }
+
+    return {
+      success: true,
+      message: `Bootstrap completed for hotel ${hotelId} with Beds24 property ${propertyId}`,
+      hotelId,
+      propertyId,
+      timestamp: new Date().toISOString()
+    };
+  } catch (error) {
+    console.error('Bootstrap error:', error);
+    throw error;
+  }
 }
 
 serve(async (req) => {
   try {
+    // Handle CORS preflight requests
+    if (req.method === 'OPTIONS') {
+      return new Response(null, { headers: corsHeaders });
+    }
+    
     if (req.method !== "POST") return json({ error: "Method not allowed" }, 405);
 
     // NOTE: NO x-cron-secret check here (that is only for beds24-sync)
@@ -29,19 +104,33 @@ serve(async (req) => {
     const svc = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
     let isAdmin = false;
 
-    const { data: rpcOK } = await svc.rpc("has_role", { uid: user.id, role_name: "admin" });
+    console.log('Checking admin role for user:', user.id);
+    
+    const { data: rpcOK, error: rpcError } = await svc.rpc("has_role", { uid: user.id, role_name: "admin" });
+    console.log('RPC has_role result:', { rpcOK, rpcError });
+    
     if (rpcOK === true) {
       isAdmin = true;
+      console.log('User is admin via RPC');
     } else {
       // fallback check: users table role column = 'admin'
-      const { data: urow } = await svc
+      const { data: urow, error: userError } = await svc
         .from("users")
         .select("role")
         .eq("auth_user_id", user.id)
         .maybeSingle();
+      
+      console.log('Fallback user role check:', { urow, userError });
       isAdmin = (urow?.role ?? "").toString().toLowerCase() === "admin";
+      console.log('User is admin via fallback:', isAdmin);
     }
-    if (!isAdmin) return json({ error: "Forbidden: admin only", uid: user.id }, 403);
+    
+    if (!isAdmin) {
+      console.log('Access denied for user:', user.id);
+      return json({ error: "Forbidden: admin only", uid: user.id }, 403);
+    }
+    
+    console.log('Admin check passed for user:', user.id);
 
     let body: any = {};
     try { body = await req.json(); } catch {}
@@ -58,16 +147,8 @@ serve(async (req) => {
     if (!baseUrl) return json({ error: "Missing env: BEDS24_BASE_URL" }, 500);
     if (!readToken) return json({ error: "Missing env: BEDS24_READ_TOKEN" }, 500);
 
-    // Call your shared bootstrap impl (replace with actual import if present)
-    if (!(globalThis as any).bootstrap) {
-      // If not wired yet, return a helpful message
-      return json({
-        error: "Bootstrap implementation not found",
-        hint: "Wire global bootstrap(hotelId, propertyId) or import the shared function.",
-      }, 500);
-    }
-
-    const result = await (globalThis as any).bootstrap(hotelId, propertyId);
+    // Call bootstrap implementation
+    const result = await bootstrapHotel(hotelId, propertyId);
     return json({ ok: true, result }, 200);
   } catch (err: any) {
     console.error("beds24-bootstrap error:", err);

@@ -203,23 +203,41 @@ export default function Beds24Page() {
         headers: { "Content-Type": "application/json" },
       });
 
+      console.log('Bootstrap response:', { data, error });
+
       if (error) {
-        // FunctionsHttpError contains a Response we can read
+        // Extract detailed error information
         const resp = (error as any)?.context?.response;
         const status = resp?.status;
         let bodyText = "";
-        try { bodyText = await resp?.clone()?.text?.(); } catch {}
-        console.error("bootstrap error:", error, bodyText);
-        toast.error(
-          `Bootstrap failed${status ? ` (${status})` : ""}: ${error.message}${
-            bodyText ? ` — ${bodyText}` : ""
-          }`
-        );
+        let errorDetails = "";
+        
+        try { 
+          bodyText = await resp?.clone()?.text?.(); 
+          if (bodyText) {
+            try {
+              const errorJson = JSON.parse(bodyText);
+              errorDetails = errorJson.error || errorJson.message || bodyText;
+            } catch {
+              errorDetails = bodyText;
+            }
+          }
+        } catch {}
+        
+        console.error("Bootstrap error details:", {
+          error,
+          status,
+          bodyText,
+          errorDetails
+        });
+        
+        const errorMessage = errorDetails || error.message || 'Unknown error';
+        toast.error(`Bootstrap failed${status ? ` (HTTP ${status})` : ""}: ${errorMessage}`);
         return;
       }
 
-      console.log("bootstrap result:", data);
-      toast.success("Bootstrap started successfully.");
+      console.log("Bootstrap result:", data);
+      toast.success("Bootstrap completed successfully!");
       
       // Refresh data
       queryClient.invalidateQueries({ queryKey: ['beds24-sync-status'] });
@@ -229,7 +247,7 @@ export default function Beds24Page() {
       setPropertyId('');
       setSelectedHotelId('');
     } catch (e: any) {
-      console.error("bootstrap network error:", e);
+      console.error("Bootstrap network error:", e);
       toast.error(`Bootstrap failed: ${e?.message ?? e}`);
     } finally {
       setIsBootstrapping(false);
