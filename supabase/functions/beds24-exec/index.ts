@@ -200,15 +200,15 @@ serve(async (req: Request) => {
           return json({ error: 'propertyId is required for bookings operation' }, 400);
         }
         
-        const params: Record<string, any> = { propertyId: body.propertyId };
+        const params: Record<string, any> = {};
         if (body.modifiedFrom) params.modifiedFrom = body.modifiedFrom;
         if (body.status) params.status = body.status;
-        if (body.includeGuests) params.includeGuests = '1';
-        if (body.includeInvoiceItems) params.includeInvoiceItems = '1';
+        if (body.includeGuests) params.includeGuests = 'true';
+        if (body.includeInvoiceItems) params.includeInvoiceItems = 'true';
         if (body.limit) params.limit = body.limit;
         if (body.offset) params.offset = body.offset;
         
-        result = await makeBeds24Request('/bookings', params);
+        result = await makeBeds24Request(`/properties/${body.propertyId}/bookings`, params);
         break;
       }
       
@@ -218,16 +218,15 @@ serve(async (req: Request) => {
         }
         
         const params: Record<string, any> = {
-          propertyId: body.propertyId,
-          start: body.start,
-          end: body.end,
+          startDate: body.start,
+          endDate: body.end,
         };
-        if (body.includePrices) params.includePrices = '1';
-        if (body.includeMinStay) params.includeMinStay = '1';
-        if (body.includeMaxStay) params.includeMaxStay = '1';
-        if (body.includeNumAvail) params.includeNumAvail = '1';
+        if (body.includePrices) params.includePrices = 'true';
+        if (body.includeMinStay) params.includeMinStay = 'true';
+        if (body.includeMaxStay) params.includeMaxStay = 'true';
+        if (body.includeNumAvail) params.includeNumAvail = 'true';
         
-        result = await makeBeds24Request('/calendar', params);
+        result = await makeBeds24Request(`/properties/${body.propertyId}/rooms/calendar`, params);
         break;
       }
       
