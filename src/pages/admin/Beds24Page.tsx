@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { createClient } from "@supabase/supabase-js";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -30,6 +31,11 @@ import {
 import { format } from 'date-fns';
 import { asArray } from "@/lib/asArray";
 import { toast } from "sonner";
+
+const supabaseClient = createClient(
+  import.meta.env.VITE_SUPABASE_URL!,
+  import.meta.env.VITE_SUPABASE_ANON_KEY!
+);
 
 interface TokenDiagnostics {
   type: string;
@@ -181,8 +187,8 @@ export default function Beds24Page() {
       setIsBootstrapping(true);
 
       const payload = {
-        hotelId: selectedHotelId,           // UUID from the dropdown
-        propertyId: (propertyId || "").trim() // e.g. "291742"
+        hotelId: selectedHotelId,
+        propertyId: (propertyId || "").trim(),
       };
 
       if (!payload.hotelId || !payload.propertyId) {
@@ -192,20 +198,18 @@ export default function Beds24Page() {
 
       console.log('Calling beds24-bootstrap with payload:', payload);
 
-      const { data, error } = await supabase.functions.invoke("beds24-bootstrap", {
+      const { data, error } = await supabaseClient.functions.invoke("beds24-bootstrap", {
         body: payload,
-        headers: { "Content-Type": "application/json" }
+        headers: { "Content-Type": "application/json" },
       });
 
       if (error) {
-        // Extract status + body from the Edge Function error (FunctionsHttpError)
-        const anyErr = error as any;
-        const status = anyErr?.context?.response?.status;
+        // FunctionsHttpError contains a Response we can read
+        const resp = (error as any)?.context?.response;
+        const status = resp?.status;
         let bodyText = "";
-        try {
-          bodyText = await anyErr?.context?.response?.clone()?.text?.();
-        } catch {}
-        console.error("bootstrap invoke error:", error, bodyText);
+        try { bodyText = await resp?.clone()?.text?.(); } catch {}
+        console.error("bootstrap error:", error, bodyText);
         toast.error(
           `Bootstrap failed${status ? ` (${status})` : ""}: ${error.message}${
             bodyText ? ` — ${bodyText}` : ""
