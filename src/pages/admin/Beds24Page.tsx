@@ -74,6 +74,28 @@ export default function Beds24Page() {
   const [propertyId, setPropertyId] = useState<string>('');
   const [auditFilter, setAuditFilter] = useState<string>('');
   const [isBootstrapping, setIsBootstrapping] = useState(false);
+  const [explorerConfig, setExplorerConfig] = useState({
+    op: 'property' as 'property' | 'bookings' | 'calendar',
+    propertyId: '291742',
+    includeAllRooms: true,
+    includePriceRules: false,
+    includeOffers: false,
+    includeTexts: false,
+    modifiedFrom: '',
+    status: 'all' as 'all' | 'confirmed' | 'cancelled' | 'request',
+    includeGuests: true,
+    includeInvoiceItems: true,
+    limit: 5,
+    offset: 0,
+    start: new Date().toISOString().split('T')[0],
+    end: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+    includePrices: true,
+    includeMinStay: false,
+    includeMaxStay: false,
+    includeNumAvail: true
+  });
+  const [explorerResult, setExplorerResult] = useState<any>(null);
+  const [isExplorerLoading, setIsExplorerLoading] = useState(false);
   const [pushConfig, setPushConfig] = useState({
     hotelId: '',
     roomTypeId: '',
@@ -196,46 +218,29 @@ export default function Beds24Page() {
 
       console.log('Calling beds24-bootstrap with payload:', payload);
 
-      const { data, error } = await supabase.functions.invoke("beds24-bootstrap", {
-        body: JSON.stringify(payload),
+      // Get auth session for proper authorization
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      const res = await fetch('/functions/v1/beds24-bootstrap', {
+        method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
-        }
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${session?.access_token ?? ''}`,
+        },
+        body: JSON.stringify({
+          hotelId: selectedHotelId,
+          propertyId: (propertyId || "").trim(),
+        }),
       });
 
-      console.log('Bootstrap response:', { data, error });
-
-      if (error) {
-        // Extract detailed error information
-        const resp = (error as any)?.context?.response;
-        const status = resp?.status;
-        let bodyText = "";
-        let errorDetails = "";
-        
-        try { 
-          bodyText = await resp?.clone()?.text(); 
-          if (bodyText) {
-            try {
-              const errorJson = JSON.parse(bodyText);
-              errorDetails = errorJson.error || errorJson.message || bodyText;
-            } catch {
-              errorDetails = bodyText;
-            }
-          }
-        } catch {}
-        
-        console.error("Bootstrap error details:", {
-          error,
-          status,
-          bodyText,
-          errorDetails
-        });
-        
-        const errorMessage = errorDetails || error.message || 'Unknown error';
-        toast.error(`Bootstrap failed${status ? ` (HTTP ${status})` : ""}: ${errorMessage}`);
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ message: res.text() }));
+        const errorMessage = err.message || err.error || `HTTP ${res.status}`;
+        toast.error(`Bootstrap failed: ${errorMessage}`);
         return;
       }
 
+      const data = await res.json();
       console.log("Bootstrap result:", data);
       toast.success("Bootstrap completed successfully!");
       
@@ -248,9 +253,81 @@ export default function Beds24Page() {
       setSelectedHotelId('');
     } catch (e: any) {
       console.error("Bootstrap network error:", e);
-      toast.error(`Bootstrap failed: ${e?.message ?? e}`);
+      toast.error(`Network error: ${e.message}`);
     } finally {
       setIsBootstrapping(false);
+    }
+  }
+
+  // Explorer function for POST-only API testing
+  async function runExplorer() {
+    try {
+      setIsExplorerLoading(true);
+      setExplorerResult(null);
+
+      // Get auth session for proper authorization
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      let payload: any = {
+        op: explorerConfig.op,
+        propertyId: explorerConfig.propertyId,
+      };
+
+      // Add operation-specific parameters
+      if (explorerConfig.op === 'property') {
+        payload = {
+          ...payload,
+          includeAllRooms: explorerConfig.includeAllRooms,
+          includePriceRules: explorerConfig.includePriceRules,
+          includeOffers: explorerConfig.includeOffers,
+          includeTexts: explorerConfig.includeTexts,
+        };
+      } else if (explorerConfig.op === 'bookings') {
+        payload = {
+          ...payload,
+          modifiedFrom: explorerConfig.modifiedFrom || undefined,
+          status: explorerConfig.status,
+          includeGuests: explorerConfig.includeGuests,
+          includeInvoiceItems: explorerConfig.includeInvoiceItems,
+          limit: explorerConfig.limit,
+          offset: explorerConfig.offset,
+        };
+      } else if (explorerConfig.op === 'calendar') {
+        payload = {
+          ...payload,
+          start: explorerConfig.start,
+          end: explorerConfig.end,
+          includePrices: explorerConfig.includePrices,
+          includeMinStay: explorerConfig.includeMinStay,
+          includeMaxStay: explorerConfig.includeMaxStay,
+          includeNumAvail: explorerConfig.includeNumAvail,
+        };
+      }
+      
+      const res = await fetch('/functions/v1/beds24-exec', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${session?.access_token ?? ''}`,
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ message: res.text() }));
+        const errorMessage = err.message || err.error || `HTTP ${res.status}`;
+        toast.error(`Explorer request failed: ${errorMessage}`);
+        return;
+      }
+
+      const data = await res.json();
+      setExplorerResult(data);
+      console.log("Explorer result:", data);
+    } catch (e: any) {
+      console.error("Explorer network error:", e);
+      toast.error(`Network error: ${e.message}`);
+    } finally {
+      setIsExplorerLoading(false);
     }
   }
 
@@ -408,6 +485,7 @@ export default function Beds24Page() {
         <TabsList>
           <TabsTrigger value="diagnostics">Token Diagnostics</TabsTrigger>
           <TabsTrigger value="bootstrap">Bootstrap Hotels</TabsTrigger>
+          <TabsTrigger value="explorer">Explorer (POST)</TabsTrigger>
           <TabsTrigger value="sync-status">Sync Status</TabsTrigger>
           <TabsTrigger value="rate-push">Rate Push</TabsTrigger>
           <TabsTrigger value="audit-logs">Audit Logs</TabsTrigger>
@@ -546,6 +624,259 @@ export default function Beds24Page() {
                   </AlertDescription>
                 </Alert>
               )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Explorer Tab */}
+        <TabsContent value="explorer">
+          <Card>
+            <CardHeader>
+              <CardTitle>Beds24 API Explorer</CardTitle>
+              <CardDescription>
+                Test Beds24 API endpoints with POST requests (admin only)
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid gap-6 max-w-4xl">
+                {/* Operation Selection */}
+                <div className="space-y-4">
+                  <div>
+                    <Label>Operation</Label>
+                    <Select 
+                      value={explorerConfig.op} 
+                      onValueChange={(value: 'property' | 'bookings' | 'calendar') => 
+                        setExplorerConfig(prev => ({ ...prev, op: value }))
+                      }
+                    >
+                      <SelectTrigger className="max-w-xs">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="property">Property</SelectItem>
+                        <SelectItem value="bookings">Bookings</SelectItem>
+                        <SelectItem value="calendar">Calendar</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div>
+                    <Label>Property ID</Label>
+                    <Input
+                      value={explorerConfig.propertyId}
+                      onChange={(e) => setExplorerConfig(prev => ({ ...prev, propertyId: e.target.value }))}
+                      placeholder="e.g. 291742"
+                      className="max-w-xs"
+                    />
+                  </div>
+                </div>
+
+                {/* Operation-specific parameters */}
+                {explorerConfig.op === 'property' && (
+                  <div className="space-y-4 border rounded-lg p-4">
+                    <h4 className="font-medium">Property Options</h4>
+                    <div className="grid grid-cols-2 gap-4">
+                      <label className="flex items-center space-x-2">
+                        <input
+                          type="checkbox"
+                          checked={explorerConfig.includeAllRooms}
+                          onChange={(e) => setExplorerConfig(prev => ({ ...prev, includeAllRooms: e.target.checked }))}
+                        />
+                        <span className="text-sm">Include All Rooms</span>
+                      </label>
+                      <label className="flex items-center space-x-2">
+                        <input
+                          type="checkbox"
+                          checked={explorerConfig.includePriceRules}
+                          onChange={(e) => setExplorerConfig(prev => ({ ...prev, includePriceRules: e.target.checked }))}
+                        />
+                        <span className="text-sm">Include Price Rules</span>
+                      </label>
+                      <label className="flex items-center space-x-2">
+                        <input
+                          type="checkbox"
+                          checked={explorerConfig.includeOffers}
+                          onChange={(e) => setExplorerConfig(prev => ({ ...prev, includeOffers: e.target.checked }))}
+                        />
+                        <span className="text-sm">Include Offers</span>
+                      </label>
+                      <label className="flex items-center space-x-2">
+                        <input
+                          type="checkbox"
+                          checked={explorerConfig.includeTexts}
+                          onChange={(e) => setExplorerConfig(prev => ({ ...prev, includeTexts: e.target.checked }))}
+                        />
+                        <span className="text-sm">Include Texts</span>
+                      </label>
+                    </div>
+                  </div>
+                )}
+
+                {explorerConfig.op === 'bookings' && (
+                  <div className="space-y-4 border rounded-lg p-4">
+                    <h4 className="font-medium">Booking Options</h4>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label>Modified From</Label>
+                        <Input
+                          type="datetime-local"
+                          value={explorerConfig.modifiedFrom}
+                          onChange={(e) => setExplorerConfig(prev => ({ ...prev, modifiedFrom: e.target.value }))}
+                        />
+                      </div>
+                      <div>
+                        <Label>Status</Label>
+                        <Select 
+                          value={explorerConfig.status} 
+                          onValueChange={(value: 'all' | 'confirmed' | 'cancelled' | 'request') => 
+                            setExplorerConfig(prev => ({ ...prev, status: value }))
+                          }
+                        >
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="all">All</SelectItem>
+                            <SelectItem value="confirmed">Confirmed</SelectItem>
+                            <SelectItem value="cancelled">Cancelled</SelectItem>
+                            <SelectItem value="request">Request</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label>Limit</Label>
+                        <Input
+                          type="number"
+                          value={explorerConfig.limit}
+                          onChange={(e) => setExplorerConfig(prev => ({ ...prev, limit: parseInt(e.target.value) || 5 }))}
+                          min="1"
+                          max="100"
+                        />
+                      </div>
+                      <div>
+                        <Label>Offset</Label>
+                        <Input
+                          type="number"
+                          value={explorerConfig.offset}
+                          onChange={(e) => setExplorerConfig(prev => ({ ...prev, offset: parseInt(e.target.value) || 0 }))}
+                          min="0"
+                        />
+                      </div>
+                    </div>
+                    <div className="flex space-x-4">
+                      <label className="flex items-center space-x-2">
+                        <input
+                          type="checkbox"
+                          checked={explorerConfig.includeGuests}
+                          onChange={(e) => setExplorerConfig(prev => ({ ...prev, includeGuests: e.target.checked }))}
+                        />
+                        <span className="text-sm">Include Guests</span>
+                      </label>
+                      <label className="flex items-center space-x-2">
+                        <input
+                          type="checkbox"
+                          checked={explorerConfig.includeInvoiceItems}
+                          onChange={(e) => setExplorerConfig(prev => ({ ...prev, includeInvoiceItems: e.target.checked }))}
+                        />
+                        <span className="text-sm">Include Invoice Items</span>
+                      </label>
+                    </div>
+                  </div>
+                )}
+
+                {explorerConfig.op === 'calendar' && (
+                  <div className="space-y-4 border rounded-lg p-4">
+                    <h4 className="font-medium">Calendar Options</h4>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label>Start Date</Label>
+                        <Input
+                          type="date"
+                          value={explorerConfig.start}
+                          onChange={(e) => setExplorerConfig(prev => ({ ...prev, start: e.target.value }))}
+                        />
+                      </div>
+                      <div>
+                        <Label>End Date</Label>
+                        <Input
+                          type="date"
+                          value={explorerConfig.end}
+                          onChange={(e) => setExplorerConfig(prev => ({ ...prev, end: e.target.value }))}
+                        />
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <label className="flex items-center space-x-2">
+                        <input
+                          type="checkbox"
+                          checked={explorerConfig.includePrices}
+                          onChange={(e) => setExplorerConfig(prev => ({ ...prev, includePrices: e.target.checked }))}
+                        />
+                        <span className="text-sm">Include Prices</span>
+                      </label>
+                      <label className="flex items-center space-x-2">
+                        <input
+                          type="checkbox"
+                          checked={explorerConfig.includeMinStay}
+                          onChange={(e) => setExplorerConfig(prev => ({ ...prev, includeMinStay: e.target.checked }))}
+                        />
+                        <span className="text-sm">Include Min Stay</span>
+                      </label>
+                      <label className="flex items-center space-x-2">
+                        <input
+                          type="checkbox"
+                          checked={explorerConfig.includeMaxStay}
+                          onChange={(e) => setExplorerConfig(prev => ({ ...prev, includeMaxStay: e.target.checked }))}
+                        />
+                        <span className="text-sm">Include Max Stay</span>
+                      </label>
+                      <label className="flex items-center space-x-2">
+                        <input
+                          type="checkbox"
+                          checked={explorerConfig.includeNumAvail}
+                          onChange={(e) => setExplorerConfig(prev => ({ ...prev, includeNumAvail: e.target.checked }))}
+                        />
+                        <span className="text-sm">Include Availability</span>
+                      </label>
+                    </div>
+                  </div>
+                )}
+
+                <Button
+                  onClick={runExplorer}
+                  disabled={!explorerConfig.propertyId?.trim() || isExplorerLoading}
+                  className="w-full max-w-xs"
+                >
+                  {isExplorerLoading ? (
+                    <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                  ) : (
+                    <Play className="h-4 w-4 mr-2" />
+                  )}
+                  Execute API Call
+                </Button>
+
+                {/* Results Display */}
+                {explorerResult && (
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-4 text-sm">
+                      <Badge variant={explorerResult.ok ? "default" : "destructive"}>
+                        {explorerResult.ok ? "Success" : "Error"}
+                      </Badge>
+                      <span>Status: {explorerResult.status}</span>
+                      <span>Duration: {explorerResult.durationMs}ms</span>
+                      {explorerResult.credits && (
+                        <span>Credits: {explorerResult.credits.remaining} remaining (cost: {explorerResult.credits.requestCost})</span>
+                      )}
+                    </div>
+                    
+                    <div className="border rounded-lg p-4 bg-muted max-h-96 overflow-auto">
+                      <pre className="text-xs whitespace-pre-wrap">
+                        {JSON.stringify(explorerResult, null, 2)}
+                      </pre>
+                    </div>
+                  </div>
+                )}
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
