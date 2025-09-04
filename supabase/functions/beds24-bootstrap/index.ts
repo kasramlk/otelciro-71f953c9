@@ -100,13 +100,17 @@ serve(async (req) => {
     const user = userInfo?.user;
     if (!user) return json({ error: "Unauthorized" }, 401);
 
-    // Admin check via RPC has_role(uid, 'admin'); fallback to users.role
+    // Admin check via RPC has_role(_user_id, _role); fallback to users.role
     const svc = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
     let isAdmin = false;
 
     console.log('Checking admin role for user:', user.id);
     
-    const { data: rpcOK, error: rpcError } = await svc.rpc("has_role", { uid: user.id, role_name: "admin" });
+    // Fix parameter order: has_role(_user_id, _role)
+    const { data: rpcOK, error: rpcError } = await svc.rpc("has_role", { 
+      _user_id: user.id, 
+      _role: "admin" 
+    });
     console.log('RPC has_role result:', { rpcOK, rpcError });
     
     if (rpcOK === true) {
