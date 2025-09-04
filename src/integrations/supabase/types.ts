@@ -3722,52 +3722,26 @@ export type Database = {
       }
       v_ingestion_audit: {
         Row: {
+          action: string | null
           created_at: string | null
-          credit_limit_remaining: number | null
-          credit_limit_resets_in: number | null
           duration_ms: number | null
-          error_details: string | null
+          entity_type: string | null
+          error_message: string | null
           external_id: string | null
+          hotel_code: string | null
           hotel_id: string | null
+          hotel_name: string | null
           id: number | null
+          limit_remaining: number | null
+          limit_resets_in: number | null
           operation: string | null
           provider: string | null
+          records_processed: number | null
           request_cost: number | null
           request_payload: Json | null
           response_payload: Json | null
           status: string | null
-        }
-        Insert: {
-          created_at?: string | null
-          credit_limit_remaining?: number | null
-          credit_limit_resets_in?: number | null
-          duration_ms?: number | null
-          error_details?: string | null
-          external_id?: string | null
-          hotel_id?: string | null
-          id?: number | null
-          operation?: string | null
-          provider?: string | null
-          request_cost?: number | null
-          request_payload?: Json | null
-          response_payload?: Json | null
-          status?: string | null
-        }
-        Update: {
-          created_at?: string | null
-          credit_limit_remaining?: number | null
-          credit_limit_resets_in?: number | null
-          duration_ms?: number | null
-          error_details?: string | null
-          external_id?: string | null
-          hotel_id?: string | null
-          id?: number | null
-          operation?: string | null
-          provider?: string | null
-          request_cost?: number | null
-          request_payload?: Json | null
-          response_payload?: Json | null
-          status?: string | null
+          trace_id: string | null
         }
         Relationships: [
           {
