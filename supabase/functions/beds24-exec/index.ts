@@ -37,6 +37,13 @@ async function makeBeds24Request(endpoint: string, params: Record<string, any> =
   const token = await getBeds24Token();
   const url = new URL(endpoint, BEDS24_BASE_URL);
   
+  console.log('Making Beds24 request:', {
+    baseUrl: BEDS24_BASE_URL,
+    endpoint,
+    fullUrl: url.toString(),
+    params
+  });
+  
   // Add query parameters
   Object.entries(params).forEach(([key, value]) => {
     if (value !== undefined && value !== null) {
@@ -46,12 +53,17 @@ async function makeBeds24Request(endpoint: string, params: Record<string, any> =
 
   const startTime = Date.now();
   
+  console.log('Final URL:', url.toString());
+  
   const response = await fetch(url.toString(), {
     headers: {
       'Authorization': `Bearer ${token}`,
       'Accept': 'application/json',
     },
   });
+
+  console.log('Response status:', response.status, response.statusText);
+  console.log('Response headers:', Object.fromEntries(response.headers.entries()));
 
   const durationMs = Date.now() - startTime;
   

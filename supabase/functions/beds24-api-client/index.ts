@@ -6,7 +6,7 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const BEDS24_BASE_URL = "https://beds24.com/api/v2";
+const BEDS24_BASE_URL = Deno.env.get("BEDS24_BASE_URL") || "https://api.beds24.com/v2";
 
 interface ApiCallOptions {
   endpoint: string;
