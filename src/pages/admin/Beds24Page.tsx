@@ -28,6 +28,7 @@ import {
   XCircle
 } from 'lucide-react';
 import { format } from 'date-fns';
+import { asArray } from "@/lib/asArray";
 
 interface TokenDiagnostics {
   type: string;
@@ -83,8 +84,13 @@ export default function Beds24Page() {
     closedArrival: false
   });
 
+  // Runtime assertions for debugging
+  function assertArray(name: string, v: any) {
+    if (!Array.isArray(v)) console.warn(`[Beds24Page] Expected array for ${name}, got`, v);
+  }
+
   // Query for hotels
-  const { data: hotels } = useQuery({
+  const { data: hotels = [] } = useQuery({
     queryKey: ['hotels'],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -93,25 +99,25 @@ export default function Beds24Page() {
         .order('name');
       
       if (error) throw error;
-      return data;
+      return data ?? [];
     }
   });
 
   // Query for token diagnostics  
-  const { data: tokenDiagnostics, isLoading: loadingTokens } = useQuery({
+  const { data: tokenDiagnostics = [], isLoading: loadingTokens } = useQuery({
     queryKey: ['beds24-token-diagnostics'],
     queryFn: async () => {
       const { data, error } = await supabase.functions.invoke('beds24-token-manager', {
         body: { action: 'diagnostics' }
       });
       if (error) throw error;
-      return data as TokenDiagnostics[];
+      return asArray<TokenDiagnostics>(data);
     },
     refetchInterval: 30000,
   });
 
   // Query for sync status
-  const { data: syncStatus, isLoading: syncLoading } = useQuery({
+  const { data: syncStatus = [], isLoading: syncLoading } = useQuery({
     queryKey: ['beds24-sync-status'],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -123,13 +129,13 @@ export default function Beds24Page() {
         .eq('provider', 'beds24');
       
       if (error) throw error;
-      return data;
+      return data ?? [];
     },
     refetchInterval: 30000,
   });
 
   // Query for audit logs
-  const { data: auditLogs, isLoading: auditLoading } = useQuery({
+  const { data: auditLogs = [], isLoading: auditLoading } = useQuery({
     queryKey: ['beds24-audit-logs', auditFilter],
     queryFn: async () => {
       let query = supabase
@@ -146,23 +152,23 @@ export default function Beds24Page() {
       const { data, error } = await query;
       
       if (error) throw error;
-      return data as AuditLog[];
+      return (data ?? []) as AuditLog[];
     },
     refetchInterval: 10000,
   });
 
   // Query for room types
-  const { data: roomTypes } = useQuery({
+  const { data: roomTypes = [] } = useQuery({
     queryKey: ['room-types', pushConfig.hotelId],
     queryFn: async () => {
-      if (!pushConfig.hotelId) return null;
+      if (!pushConfig.hotelId) return [];
       const { data, error } = await supabase
         .from('room_types')
         .select('id, name, code')
         .eq('hotel_id', pushConfig.hotelId)
         .order('name');
       if (error) throw error;
-      return data;
+      return data ?? [];
     },
     enabled: !!pushConfig.hotelId
   });
@@ -306,9 +312,10 @@ export default function Beds24Page() {
 
   // Export audit logs to CSV
   const exportAuditLogs = () => {
-    if (!auditLogs) return;
+    const safeAuditLogs = asArray(auditLogs);
+    if (safeAuditLogs.length === 0) return;
 
-    const csvData = auditLogs.map(log => ({
+    const csvData = safeAuditLogs.map(log => ({
       'Timestamp': format(new Date(log.created_at), 'yyyy-MM-dd HH:mm:ss'),
       'Operation': log.operation,
       'Status': log.status,
@@ -346,6 +353,16 @@ export default function Beds24Page() {
 
   return (
     <div className="container mx-auto py-8">
+      {/* Runtime assertions for debugging */}
+      {(() => {
+        assertArray("hotels", hotels);
+        assertArray("tokenDiagnostics", tokenDiagnostics);
+        assertArray("syncStatus", syncStatus);
+        assertArray("auditLogs", auditLogs);
+        assertArray("roomTypes", roomTypes);
+        return null;
+      })()}
+      
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-3xl font-bold">Beds24 Integration</h1>
@@ -378,9 +395,9 @@ export default function Beds24Page() {
                 <div className="flex items-center justify-center h-32">
                   <RefreshCw className="h-6 w-6 animate-spin" />
                 </div>
-              ) : (
+                ) : (
                 <div className="space-y-4">
-                  {tokenDiagnostics?.map((token) => (
+                  {asArray(tokenDiagnostics).map((token) => (
                     <div key={token.type} className="border rounded-lg p-4">
                       <div className="flex items-center justify-between mb-2">
                         <h3 className="font-medium flex items-center gap-2">
@@ -466,7 +483,7 @@ export default function Beds24Page() {
                       <SelectValue placeholder="Select hotel..." />
                     </SelectTrigger>
                     <SelectContent>
-                      {hotels?.map((hotel) => (
+                      {asArray(hotels).map((hotel) => (
                         <SelectItem key={hotel.id} value={hotel.id}>
                           {hotel.name} ({hotel.code})
                         </SelectItem>
@@ -528,7 +545,7 @@ export default function Beds24Page() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {syncStatus?.map((state: any) => (
+                    {asArray(syncStatus).map((state: any) => (
                       <TableRow key={state.hotel_id}>
                         <TableCell className="font-medium">
                           {state.hotels?.name || state.hotel_id}
@@ -653,7 +670,7 @@ export default function Beds24Page() {
                         <SelectValue placeholder="Select hotel..." />
                       </SelectTrigger>
                       <SelectContent>
-                        {hotels?.map((hotel) => (
+                        {asArray(hotels).map((hotel) => (
                           <SelectItem key={hotel.id} value={hotel.id}>
                             {hotel.name} ({hotel.code})
                           </SelectItem>
@@ -673,7 +690,7 @@ export default function Beds24Page() {
                         <SelectValue placeholder="Select room type..." />
                       </SelectTrigger>
                       <SelectContent>
-                        {roomTypes?.map((roomType) => (
+                        {asArray(roomTypes).map((roomType) => (
                           <SelectItem key={roomType.id} value={roomType.id}>
                             {roomType.name} ({roomType.code})
                           </SelectItem>
@@ -809,7 +826,7 @@ export default function Beds24Page() {
                     variant="outline"
                     size="sm"
                     onClick={exportAuditLogs}
-                    disabled={!auditLogs || auditLogs.length === 0}
+                    disabled={asArray(auditLogs).length === 0}
                   >
                     <Download className="h-4 w-4 mr-2" />
                     Export CSV
@@ -824,7 +841,7 @@ export default function Beds24Page() {
                 </div>
               ) : (
                 <div className="space-y-2 max-h-96 overflow-y-auto">
-                  {auditLogs?.map((log) => (
+                  {asArray(auditLogs).map((log) => (
                     <div key={log.id} className="border rounded-lg p-3">
                       <div className="flex items-center justify-between mb-2">
                         <div className="flex items-center gap-2">
