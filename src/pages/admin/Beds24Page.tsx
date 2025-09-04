@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { createClient } from "@supabase/supabase-js";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -32,10 +31,6 @@ import { format } from 'date-fns';
 import { asArray } from "@/lib/asArray";
 import { toast } from "sonner";
 
-const supabaseClient = createClient(
-  import.meta.env.VITE_SUPABASE_URL!,
-  import.meta.env.VITE_SUPABASE_ANON_KEY!
-);
 
 interface TokenDiagnostics {
   type: string;
@@ -198,7 +193,7 @@ export default function Beds24Page() {
 
       console.log('Calling beds24-bootstrap with payload:', payload);
 
-      const { data, error } = await supabaseClient.functions.invoke("beds24-bootstrap", {
+      const { data, error } = await supabase.functions.invoke("beds24-bootstrap", {
         body: payload,
         headers: { "Content-Type": "application/json" },
       });
