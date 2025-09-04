@@ -137,12 +137,12 @@ export default function Beds24Page() {
     refetchInterval: 30000,
   });
 
-  // Query for audit logs
+  // Query for audit logs - fallback to ingestion_audit if v_ingestion_audit doesn't exist
   const { data: auditLogs = [], isLoading: auditLoading } = useQuery({
     queryKey: ['beds24-audit-logs', auditFilter],
     queryFn: async () => {
       let query = supabase
-        .from('v_ingestion_audit')
+        .from('ingestion_audit')
         .select('*')
         .eq('provider', 'beds24')
         .order('created_at', { ascending: false })
@@ -154,7 +154,10 @@ export default function Beds24Page() {
       
       const { data, error } = await query;
       
-      if (error) throw error;
+      if (error) {
+        console.error('Audit logs query error:', error);
+        return [];
+      }
       return (data ?? []) as AuditLog[];
     },
     refetchInterval: 10000,

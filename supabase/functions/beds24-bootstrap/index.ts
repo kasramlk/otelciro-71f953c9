@@ -137,12 +137,23 @@ serve(async (req) => {
     console.log('Admin check passed for user:', user.id);
 
     let body: any = {};
-    try { body = await req.json(); } catch {}
+    try { 
+      const rawBody = await req.text();
+      console.log('Raw request body:', rawBody);
+      body = JSON.parse(rawBody); 
+      console.log('Parsed body:', body);
+    } catch (e) {
+      console.log('Body parsing error:', e);
+    }
+    
     const hotelId = body?.hotelId;
     const propertyId = body?.propertyId?.toString()?.trim();
+    
+    console.log('Extracted parameters:', { hotelId, propertyId });
 
     if (!hotelId || !propertyId) {
-      return json({ error: "hotelId and propertyId are required" }, 400);
+      console.log('Missing required parameters:', { hotelId, propertyId });
+      return json({ error: "hotelId and propertyId are required", received: { hotelId, propertyId } }, 400);
     }
 
     // Environment diagnostics (clear messages if something is missing)
