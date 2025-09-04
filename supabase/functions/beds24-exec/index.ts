@@ -54,7 +54,30 @@ async function makeBeds24Request(endpoint: string, params: Record<string, any> =
   });
 
   const durationMs = Date.now() - startTime;
-  const responseData = await response.json();
+  
+  // Check if response is JSON before parsing
+  const contentType = response.headers.get('content-type') || '';
+  let responseData;
+  
+  if (contentType.includes('application/json')) {
+    try {
+      responseData = await response.json();
+    } catch (parseError) {
+      console.error('Failed to parse JSON response:', parseError);
+      const textResponse = await response.text();
+      throw new Error(`Invalid JSON response from Beds24 API: ${textResponse.substring(0, 200)}...`);
+    }
+  } else {
+    // If not JSON, read as text and provide better error message
+    const textResponse = await response.text();
+    
+    if (!response.ok) {
+      throw new Error(`Beds24 API error (${response.status}): ${textResponse.substring(0, 200)}...`);
+    }
+    
+    // Even if OK but not JSON, that's unexpected
+    throw new Error(`Expected JSON response but got ${contentType}: ${textResponse.substring(0, 200)}...`);
+  }
 
   // Extract credit information from headers
   const requestCost = parseInt(response.headers.get('X-RequestCost') || '0', 10);
