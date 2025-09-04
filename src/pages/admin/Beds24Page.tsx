@@ -179,26 +179,43 @@ export default function Beds24Page() {
   async function runBootstrap() {
     try {
       setIsBootstrapping(true);
+
       const payload = {
-        hotelId: selectedHotelId,
-        propertyId: propertyId?.trim(),
+        hotelId: selectedHotelId,           // UUID from the dropdown
+        propertyId: (propertyId || "").trim() // e.g. "291742"
       };
+
+      if (!payload.hotelId || !payload.propertyId) {
+        toast.error("Please select a hotel and enter a Beds24 Property ID.");
+        return;
+      }
 
       console.log('Calling beds24-bootstrap with payload:', payload);
 
       const { data, error } = await supabase.functions.invoke("beds24-bootstrap", {
         body: payload,
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json" }
       });
 
       if (error) {
-        console.error("bootstrap invoke error:", error);
-        toast.error(`Bootstrap failed: ${error.message ?? "Unknown error"}`);
+        // Extract status + body from the Edge Function error (FunctionsHttpError)
+        const anyErr = error as any;
+        const status = anyErr?.context?.response?.status;
+        let bodyText = "";
+        try {
+          bodyText = await anyErr?.context?.response?.clone()?.text?.();
+        } catch {}
+        console.error("bootstrap invoke error:", error, bodyText);
+        toast.error(
+          `Bootstrap failed${status ? ` (${status})` : ""}: ${error.message}${
+            bodyText ? ` — ${bodyText}` : ""
+          }`
+        );
         return;
       }
 
       console.log("bootstrap result:", data);
-      toast.success("Bootstrap started successfully");
+      toast.success("Bootstrap started successfully.");
       
       // Refresh data
       queryClient.invalidateQueries({ queryKey: ['beds24-sync-status'] });

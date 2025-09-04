@@ -1,10 +1,14 @@
-import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
+
+const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
+const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
+const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
 interface BootstrapRequest {
   propertyId: string;
@@ -25,14 +29,12 @@ serve(async (req) => {
       });
     }
 
-    // Auth: get user from the incoming Authorization: Bearer <user-jwt>
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const supabaseAnon = Deno.env.get("SUPABASE_ANON_KEY")!;
-    const client = createClient(supabaseUrl, supabaseAnon, {
+    // Auth: validate user from the incoming Authorization header
+    const authClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
       global: { headers: { Authorization: req.headers.get("Authorization") ?? "" } },
     });
-
-    const { data: userData, error: authError } = await client.auth.getUser();
+    
+    const { data: userData, error: authError } = await authClient.auth.getUser();
     if (authError || !userData?.user) {
       console.log('Auth error:', authError);
       return new Response(JSON.stringify({ error: "Unauthorized - Please log in" }), { 
@@ -44,7 +46,7 @@ serve(async (req) => {
     console.log('Authenticated user:', userData.user.id);
 
     // Check if user has admin role
-    const { data: roles, error: roleError } = await client
+    const { data: roles, error: roleError } = await authClient
       .from('user_roles')
       .select('role')
       .eq('user_id', userData.user.id)
@@ -68,7 +70,7 @@ serve(async (req) => {
 
     console.log('Admin access confirmed for user:', userData.user.id);
 
-    const { propertyId, hotelId, traceId = crypto.randomUUID() }: BootstrapRequest = await req.json().catch(() => ({}));
+    const { hotelId, propertyId, traceId = crypto.randomUUID() }: BootstrapRequest = await req.json().catch(() => ({}));
     
     if (!propertyId || !hotelId) {
       return new Response(JSON.stringify({ 
@@ -80,13 +82,20 @@ serve(async (req) => {
       });
     }
 
+    // OPTIONAL: quick secret sanity check so missing config returns a clear error
+    const baseUrl = Deno.env.get("BEDS24_BASE_URL");
+    const readToken = Deno.env.get("BEDS24_READ_TOKEN");
+    if (!baseUrl || !readToken) {
+      return new Response(JSON.stringify({ error: "Missing BEDS24_BASE_URL or BEDS24_READ_TOKEN" }), { 
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" }
+      });
+    }
+
     console.log(`Starting bootstrap for hotel ${hotelId} with property ${propertyId}`);
 
     // Create a service client for database operations
-    const supabase = createClient(
-      Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
-    );
+    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
     // Check if bootstrap already completed
     const { data: syncState } = await supabase
