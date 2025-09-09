@@ -54,18 +54,23 @@ export function useAdvancedGuests(hotelId: string, filters?: {
       if (error) throw error;
       
       // Transform data to include computed fields
-      return data?.map(guest => ({
-        ...guest,
-        fullName: `${guest.first_name} ${guest.last_name}`,
-        vipStatus: guest.guest_profiles?.[0]?.vip_status || false,
-        loyaltyTier: guest.guest_profiles?.[0]?.loyalty_tier || 'Standard', 
-        loyaltyPoints: guest.guest_profiles?.[0]?.loyalty_points || 0,
-        blacklisted: guest.guest_profiles?.[0]?.blacklist_flag || false,
-        totalStays: guest.reservations?.length || 0,
-        totalSpent: guest.reservations?.reduce((sum, res) => sum + (res.total_amount || 0), 0) || 0,
-        lastStay: guest.reservations?.[0]?.check_out ? new Date(guest.reservations[0].check_out) : null,
-        preferences: guest.guest_profiles?.[0]?.preferences || {}
-      }));
+      return data?.map(guest => {
+        const profile = Array.isArray(guest.guest_profiles) ? guest.guest_profiles[0] : null;
+        const reservations = Array.isArray(guest.reservations) ? guest.reservations : [];
+        
+        return {
+          ...guest,
+          fullName: `${guest.first_name} ${guest.last_name}`,
+          vipStatus: profile?.vip_status || false,
+          loyaltyTier: profile?.loyalty_tier || 'Standard',
+          loyaltyPoints: profile?.loyalty_points || 0,
+          blacklisted: profile?.blacklist_flag || false,
+          totalStays: reservations.length || 0,
+          totalSpent: reservations.reduce((sum, res) => sum + (res.total_amount || 0), 0) || 0,
+          lastStay: reservations[0]?.check_out ? new Date(reservations[0].check_out) : null,
+          preferences: profile?.preferences || {}
+        };
+      });
     },
     enabled: !!hotelId,
     staleTime: 2 * 60 * 1000

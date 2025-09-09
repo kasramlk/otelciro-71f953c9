@@ -163,8 +163,6 @@ export function useCheckInGuest() {
       // Log check-in
       console.log('Guest checked in:', reservationId);
 
-      if (logError) console.warn('Failed to log check-in:', logError);
-
       return reservation;
     },
     onSuccess: (data, variables) => {
