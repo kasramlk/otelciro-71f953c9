@@ -1,6 +1,5 @@
 import { create } from 'zustand';
 import { devtools, persist, subscribeWithSelector } from 'zustand/middleware';
-import { generateMockOccupancyData } from '@/lib/mock-data';
 
 // Types
 export interface Reservation {
@@ -328,10 +327,10 @@ export const useHMSStore = create<HMSStore>()(
           });
         },
         
-        // Data refresh
+        // Data refresh - now empty as real data comes from hooks
         refreshOccupancyData: (month, year) => {
-          const newData = generateMockOccupancyData(month, year);
-          set({ occupancyData: newData });
+          // Real occupancy data is now handled by useOccupancyData hook
+          // This method kept for backward compatibility
         },
         
         // Undo/Redo

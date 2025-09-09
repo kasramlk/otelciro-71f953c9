@@ -13,9 +13,13 @@ import { useNavigate } from 'react-router-dom';
 import { NotificationsModal } from './NotificationsModal';
 import { ReservationDetailModal } from '@/components/reservations/ReservationDetailModal';
 import { useHotel, useProductionData } from '@/hooks/use-production-data';
+import { useOccupancyData } from '@/hooks/use-occupancy-data';
+import { useRealtimeSubscriptions } from '@/hooks/use-real-time-subscriptions';
+import { useHotelContext } from '@/hooks/use-hotel-context';
 
 export const HMSDashboard = () => {
-  const { selectedHotelId, selectedMonth, setSelectedMonth, applyAISuggestion } = useHMSStore();
+  const { selectedMonth, setSelectedMonth, applyAISuggestion } = useHMSStore();
+  const { selectedHotelId, selectedHotel } = useHotelContext();
   const [selectedRoomType, setSelectedRoomType] = useState<string>('all');
   const [selectedChannel, setSelectedChannel] = useState<string>('all');
   const [showNotifications, setShowNotifications] = useState(false);
@@ -24,52 +28,27 @@ export const HMSDashboard = () => {
   const navigate = useNavigate();
   
   // Fetch hotel and production data
-  const { data: hotel } = useHotel(selectedHotelId || '');
   const { 
     reservations = [], 
     rooms = [], 
-    hotels = [],
     loading,
     refreshData 
   } = useProductionData(selectedHotelId || undefined);
+  
+  // Fetch real occupancy data
+  const { data: occupancyData = [], isLoading: occupancyLoading } = useOccupancyData(
+    selectedHotelId || '', 
+    selectedMonth
+  );
+  
+  // Set up real-time subscriptions
+  useRealtimeSubscriptions(selectedHotelId || '');
 
-  // Generate mock occupancy data for display (can be replaced with real data later)
-  const occupancyData = useMemo(() => {
-    const daysInMonth = new Date(selectedMonth.getFullYear(), selectedMonth.getMonth() + 1, 0).getDate();
-    const data = [];
-    
-    for (let day = 1; day <= daysInMonth; day++) {
-      const date = new Date(selectedMonth.getFullYear(), selectedMonth.getMonth(), day);
-      const isWeekend = date.getDay() === 0 || date.getDay() === 6;
-      const baseOccupancy = isWeekend ? 0.75 : 0.6;
-      const occupancyRate = Math.min(0.95, baseOccupancy + Math.random() * 0.3);
-      const totalRooms = rooms.length || 50;
-      const occupiedRooms = Math.floor(totalRooms * occupancyRate);
-      const availableRooms = totalRooms - occupiedRooms;
-      const baseADR = isWeekend ? 120 : 100;
-      const adr = baseADR + (Math.random() * 40 - 20);
-      
-      data.push({
-        date,
-        day,
-        specialDay: isWeekend ? "Weekend" : "",
-        capacity: totalRooms,
-        availableRooms,
-        occupiedRooms,
-        occupancyRate,
-        adr: Math.round(adr * 100) / 100,
-        totalRevenue: Math.round(occupiedRooms * adr * 100) / 100,
-        arrivals: Math.floor(occupiedRooms * 0.3),
-        departures: Math.floor(occupiedRooms * 0.25)
-      });
-    }
-    
-    return data;
-  }, [selectedMonth, rooms]);
+  // Real occupancy data is now fetched from useOccupancyData hook
 
   // Calculate KPIs based on real hotel and reservation data
   const kpis = useMemo(() => {
-    if (!hotel && reservations.length === 0) {
+    if (!selectedHotel && reservations.length === 0) {
       return {
         totalRooms: rooms.length || 0,
         avgOccupancy: 0,
@@ -137,7 +116,7 @@ export const HMSDashboard = () => {
         revpar: 'up' as const
       }
     };
-  }, [hotel, reservations, rooms, selectedMonth]);
+  }, [selectedHotel, reservations, rooms, selectedMonth]);
 
   const handleMonthChange = (monthOffset: number) => {
     const newMonth = new Date(selectedMonth);
@@ -169,7 +148,7 @@ export const HMSDashboard = () => {
       <TrendingUp className="h-4 w-4 text-green-500" /> : 
       <TrendingDown className="h-4 w-4 text-red-500" />;
 
-  if (loading) return <div>Loading...</div>;
+  if (loading || occupancyLoading) return <div>Loading...</div>;
   if (!selectedHotelId) return <div className="flex items-center justify-center h-64 text-muted-foreground">Please select a hotel to view dashboard</div>;
 
   return (
@@ -182,7 +161,7 @@ export const HMSDashboard = () => {
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-bold text-foreground">Hotel Dashboard</h1>
-          <p className="text-muted-foreground">{hotel?.name || 'Hotel'} - {format(selectedMonth, 'MMMM yyyy')}</p>
+          <p className="text-muted-foreground">{selectedHotel?.name || 'Hotel'} - {format(selectedMonth, 'MMMM yyyy')}</p>
         </div>
         
         <div className="flex items-center gap-4">

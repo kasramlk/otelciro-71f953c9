@@ -9,6 +9,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { ErrorBoundary } from "@/components/ui/error-boundary";
 import { setupGlobalErrorHandling } from "@/lib/error-handler";
 import { ProtectedSocialMediaRoute } from "@/components/auth/ProtectedSocialMediaRoute";
+import { HotelProvider } from "@/components/providers/HotelProvider";
 import Auth from "./pages/Auth";
 import Index from "./pages/Index";
 import { CompanyProfile } from "./pages/CompanyProfile";
@@ -221,54 +222,74 @@ const AppContent = () => {
           
           {/* HMS Routes - Default for hotel managers */}
           <Route path="/dashboard" element={
-            <HMSLayout>
-              <HMSDashboard />
-            </HMSLayout>
+            <HotelProvider>
+              <HMSLayout>
+                <HMSDashboard />
+              </HMSLayout>
+            </HotelProvider>
           } />
           <Route path="/reservations" element={
-            <HMSLayout>
-              <HMSReservations />
-            </HMSLayout>
+            <HotelProvider>
+              <HMSLayout>
+                <HMSReservations />
+              </HMSLayout>
+            </HotelProvider>
           } />
           <Route path="/reservations/new" element={
-            <HMSLayout>
-              <HMSNewReservation />
-            </HMSLayout>
+            <HotelProvider>
+              <HMSLayout>
+                <HMSNewReservation />
+              </HMSLayout>
+            </HotelProvider>
           } />
           <Route path="/room-plan" element={
-            <HMSLayout>
-              <HMSRoomPlan />
-            </HMSLayout>
+            <HotelProvider>
+              <HMSLayout>
+                <HMSRoomPlan />
+              </HMSLayout>
+            </HotelProvider>
           } />
           <Route path="/housekeeping" element={
-            <HMSLayout>
-              <HMSHousekeeping />
-            </HMSLayout>
+            <HotelProvider>
+              <HMSLayout>
+                <HMSHousekeeping />
+              </HMSLayout>
+            </HotelProvider>
           } />
           <Route path="/front-office" element={
-            <HMSLayout>
-              <HMSFrontOffice />
-            </HMSLayout>
+            <HotelProvider>
+              <HMSLayout>
+                <HMSFrontOffice />
+              </HMSLayout>
+            </HotelProvider>
           } />
           <Route path="/guests" element={
-            <HMSLayout>
-              <HMSGuests />
-            </HMSLayout>
+            <HotelProvider>
+              <HMSLayout>
+                <HMSGuests />
+              </HMSLayout>
+            </HotelProvider>
           } />
           <Route path="/guest-crm" element={
-            <HMSLayout>
-              <HMSGuestCRM />
-            </HMSLayout>
+            <HotelProvider>
+              <HMSLayout>
+                <HMSGuestCRM />
+              </HMSLayout>
+            </HotelProvider>
           } />
           <Route path="/analytics" element={
-            <HMSLayout>
-              <HMSAnalytics />
-            </HMSLayout>
+            <HotelProvider>
+              <HMSLayout>
+                <HMSAnalytics />
+              </HMSLayout>
+            </HotelProvider>
           } />
           <Route path="/revenue-ai" element={
-            <HMSLayout>
-              <HMSRevenueAI />
-            </HMSLayout>
+            <HotelProvider>
+              <HMSLayout>
+                <HMSRevenueAI />
+              </HMSLayout>
+            </HotelProvider>
           } />
           <Route path="/notifications" element={
             <HMSLayout>
