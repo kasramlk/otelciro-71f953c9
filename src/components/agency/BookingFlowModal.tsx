@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useConfirmation } from "@/components/ui/confirmation-dialog";
+import { createAgencyBooking } from "@/lib/services/booking-service";
 import {
   Dialog,
   DialogContent,
@@ -66,7 +67,7 @@ const BookingFlowModal = ({ open, onClose, hotel, action }: BookingFlowModalProp
   const handleBookingSubmit = async () => {
     if (!bookingData.guestName || !bookingData.guestEmail) {
       toast({
-        title: "Missing Information",
+        title: "Missing Information", 
         description: "Please fill in all required guest details.",
         variant: "destructive"
       });
@@ -75,70 +76,48 @@ const BookingFlowModal = ({ open, onClose, hotel, action }: BookingFlowModalProp
 
     const confirmed = await showConfirmation({
       title: "Confirm Booking",
-      description: `Create booking for ${bookingData.guestName} at ${hotel.name}?`,
-      confirmText: "Create Booking",
+      description: `Create HMS reservation for ${bookingData.guestName} at ${hotel.name}?`,
+      confirmText: "Create Reservation",
       onConfirm: async () => {
         setLoading(true);
         try {
-          // Create guest profile first
-          const { data: guest, error: guestError } = await supabase
-            .from('guests')
-            .upsert({
-              first_name: bookingData.guestName.split(' ')[0],
-              last_name: bookingData.guestName.split(' ').slice(1).join(' '),
-              email: bookingData.guestEmail,
-              phone: bookingData.guestPhone,
-              hotel_id: '550e8400-e29b-41d4-a716-446655440001' // Mock hotel ID
-            }, { 
-              onConflict: 'email,hotel_id',
-              ignoreDuplicates: false 
-            })
-            .select()
-            .single();
-
-          if (guestError) throw guestError;
-
-          // Create booking hold
-          const { data: booking, error: bookingError } = await supabase
-            .from('booking_holds')
-            .insert({
-              hotel_id: '550e8400-e29b-41d4-a716-446655440001',
-              agency_id: '550e8400-e29b-41d4-a716-446655440002', // Mock agency ID
-              room_type_id: '550e8400-e29b-41d4-a716-446655440010', // Mock room type
-              guest_name: bookingData.guestName,
-              check_in: format(bookingData.checkIn, 'yyyy-MM-dd'),
-              check_out: format(bookingData.checkOut, 'yyyy-MM-dd'),
-              adults: bookingData.adults,
-              children: bookingData.children,
-              rate_quoted: totalAmount,
-              special_requests: bookingData.specialRequests,
-              expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(), // 24 hours
-              status: 'confirmed'
-            })
-            .select()
-            .single();
-
-          if (bookingError) throw bookingError;
-
-          toast({
-            title: "Booking Created Successfully!",
-            description: `Booking reference: ${booking.id.slice(-8).toUpperCase()}`,
-            action: (
-              <Button variant="outline" size="sm" onClick={() => {
-                // Navigate to booking details
-                console.log('View booking:', booking.id);
-              }}>
-                View Details
-              </Button>
-            )
+          // Use booking service to create actual HMS reservation
+          const bookingResult = await createAgencyBooking({
+            hotelId: hotel.id,
+            roomTypeId: bookingData.selectedRoom?.id || hotel.rooms?.[0]?.id,
+            guestName: bookingData.guestName,
+            guestEmail: bookingData.guestEmail,
+            guestPhone: bookingData.guestPhone,
+            checkIn: format(bookingData.checkIn, 'yyyy-MM-dd'),
+            checkOut: format(bookingData.checkOut, 'yyyy-MM-dd'),
+            adults: bookingData.adults,
+            children: bookingData.children,
+            specialRequests: bookingData.specialRequests,
+            agencyId: 'agency-sample-id', // TODO: Get from auth context
+            rateQuoted: totalAmount
           });
 
-          onClose();
+          if (bookingResult.success) {
+            toast({
+              title: "Reservation Created Successfully!",
+              description: `HMS Reservation: ${bookingResult.bookingReference}`,
+              action: (
+                <Button variant="outline" size="sm" onClick={() => {
+                  console.log('View reservation:', bookingResult.reservationId);
+                }}>
+                  View in HMS
+                </Button>
+              )
+            });
+            onClose();
+          } else {
+            throw new Error(bookingResult.error || 'Booking failed');
+          }
         } catch (error) {
           console.error('Booking error:', error);
           toast({
-            title: "Booking Failed",
-            description: "Unable to create booking. Please try again.",
+            title: "Reservation Failed",
+            description: error instanceof Error ? error.message : "Unable to create HMS reservation. Please try again.",
             variant: "destructive"
           });
         } finally {

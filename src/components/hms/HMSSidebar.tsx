@@ -37,9 +37,11 @@ import {
   Activity
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { RealtimeNotifications } from "@/components/hms/RealtimeNotifications";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
-import { Badge } from "@/components/ui/badge";
+import { RealtimeNotifications } from "@/components/hms/RealtimeNotifications";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useTheme } from "next-themes";
 import { supabase } from "@/integrations/supabase/client";
