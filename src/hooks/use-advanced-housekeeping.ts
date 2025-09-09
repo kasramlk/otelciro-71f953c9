@@ -214,19 +214,32 @@ export function useUpdateRoomStatus() {
   });
 }
 
-// Room Maintenance Operations
+// Room Maintenance Operations - Simplified to avoid type recursion
 export function useRoomMaintenance(hotelId: string) {
   return useQuery({
     queryKey: ['room-maintenance', hotelId],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('room_maintenance')
-        .select('*')
-        .eq('hotel_id', hotelId)
-        .order('created_at', { ascending: false });
-
-      if (error) return [];
-      return data || [];
+    queryFn: async (): Promise<RoomMaintenanceRecord[]> => {
+      try {
+        // Use direct fetch to avoid Supabase type inference issues
+        const url = `https://zldcotumxouasgzdsvmh.supabase.co/rest/v1/room_maintenance?hotel_id=eq.${hotelId}&order=created_at.desc`;
+        const response = await fetch(url, {
+          headers: {
+            'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpsZGNvdHVteG91YXNnemRzdm1oIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU2NjY5NDEsImV4cCI6MjA3MTI0Mjk0MX0.tMMHzRMpmm4lLvRq27M1O7rcOsUnYr2bFEki3TdqFeQ',
+            'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpsZGNvdHVteG91YXNnemRzdm1oIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU2NjY5NDEsImV4cCI6MjA3MTI0Mjk0MX0.tMMHzRMpmm4lLvRq27M1O7rcOsUnYr2bFEki3TdqFeQ'
+          }
+        });
+        
+        if (!response.ok) {
+          console.error('Room maintenance fetch failed:', response.statusText);
+          return [];
+        }
+        
+        const data = await response.json();
+        return data || [];
+      } catch (error) {
+        console.error('Failed to fetch room maintenance:', error);
+        return [];
+      }
     },
     enabled: !!hotelId,
     staleTime: 5 * 60 * 1000
