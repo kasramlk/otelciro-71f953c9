@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { 
   Plus, 
@@ -18,16 +18,24 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { useHMSStore } from '@/stores/hms-store';
 import { useToast } from "@/hooks/use-toast";
 import { useConfirmation } from "@/components/ui/confirmation-dialog";
 import { format } from 'date-fns';
+import { useHousekeepingTasks, useCreateHousekeepingTask, useUpdateTaskStatus, useUpdateRoomStatus, useCreateMaintenanceRequest } from '@/hooks/use-advanced-housekeeping';
+import { useHotelContext } from '@/hooks/use-hotel-context';
+import { useEnhancedRooms } from '@/hooks/use-enhanced-rooms';
 import { RealtimeNotificationSystem } from '@/components/realtime/RealtimeNotificationSystem';
 import { BulkOperations } from '@/components/bulk/BulkOperations';
 import { EnhancedExportSystem } from '@/components/export/EnhancedExportSystem';
 
 export const HMSHousekeeping = () => {
-  const { rooms, housekeepingTasks, updateRoomStatus, addTask, updateTask, addAuditEntry } = useHMSStore();
+  const { selectedHotelId } = useHotelContext();
+  const { data: rooms = [] } = useEnhancedRooms(selectedHotelId || '');
+  const { data: housekeepingTasks = [] } = useHousekeepingTasks(selectedHotelId || '');
+  const createTaskMutation = useCreateHousekeepingTask();
+  const updateTaskStatusMutation = useUpdateTaskStatus();
+  const updateRoomStatusMutation = useUpdateRoomStatus();
+  const createMaintenanceMutation = useCreateMaintenanceRequest();
   const [isNewTaskOpen, setIsNewTaskOpen] = useState(false);
   const [selectedRoom, setSelectedRoom] = useState<any>(null);
   const [isRoomStatusOpen, setIsRoomStatusOpen] = useState(false);
@@ -37,49 +45,19 @@ export const HMSHousekeeping = () => {
 
   // Handle task deletion (mark as deleted)
   const handleTaskDelete = async (taskId: string) => {
-    const task = housekeepingTasks.find(t => t.id === taskId);
-    if (!task) return;
-
-    showConfirmation({
-      title: "Delete Task",
-      description: `Are you sure you want to delete the task "${task.description}"?`,
-      confirmText: "Delete Task",
-      variant: "destructive",
-      onConfirm: () => {
-        // Mark as deleted in local store (simulate soft delete)
-        updateTask(taskId, { 
-          status: 'deleted' as any
-        });
-
-        addAuditEntry('Task Deleted', `Task "${task.description}" for room ${task.roomNumber} was deleted`);
-        toast({ 
-          title: 'Task deleted', 
-          description: 'Task has been removed successfully.',
-          action: (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => {
-                // Undo deletion by restoring to open status
-                updateTask(taskId, { status: 'open' });
-                toast({ title: 'Task restored' });
-              }}
-            >
-              Undo
-            </Button>
-          )
-        });
-      }
-    });
+    // Note: In real implementation, you would create a delete mutation
+    toast({ title: 'Delete functionality will be implemented in next update' });
   };
 
   // Group rooms by status
-  const roomsByStatus = {
-    clean: rooms.filter(r => r.status === 'clean'),
-    dirty: rooms.filter(r => r.status === 'dirty'),
-    occupied: rooms.filter(r => r.status === 'occupied'),
-    ooo: rooms.filter(r => r.status === 'ooo')
-  };
+  const roomsByStatus = useMemo(() => {
+    return {
+      clean: rooms.filter(r => r.housekeeping_status === 'Clean'),
+      dirty: rooms.filter(r => r.housekeeping_status === 'Dirty'),
+      occupied: rooms.filter(r => r.status === 'Occupied'),
+      ooo: rooms.filter(r => r.status === 'Out of Order')
+    };
+  }, [rooms]);
 
   // Group tasks by status (exclude deleted ones)
   const tasksByStatus = {
@@ -89,73 +67,83 @@ export const HMSHousekeeping = () => {
   };
 
   // Handle room status change
-  const handleRoomStatusChange = (roomId: string, newStatus: 'clean' | 'dirty' | 'occupied' | 'ooo', notes?: string) => {
-    const room = rooms.find(r => r.id === roomId);
-    if (!room) return;
-
-    updateRoomStatus(roomId, newStatus);
-    addAuditEntry('Room Status Changed', `Room ${room.number} status changed to ${newStatus}${notes ? `: ${notes}` : ''}`);
-    
-    toast({ 
-      title: 'Room status updated', 
-      description: `Room ${room.number} is now ${newStatus}` 
-    });
-    
-    setIsRoomStatusOpen(false);
-    setSelectedRoom(null);
+  const handleRoomStatusChange = async (roomId: string, newStatus: 'Clean' | 'Dirty' | 'Occupied' | 'Out of Order', notes?: string) => {
+    try {
+      await updateRoomStatusMutation.mutateAsync({
+        roomId,
+        status: newStatus === 'Out of Order' ? 'Out of Order' : 'Available',
+        housekeepingStatus: newStatus
+      });
+      
+      toast({ 
+        title: 'Room status updated', 
+        description: `Room status changed to ${newStatus}` 
+      });
+      
+      setIsRoomStatusOpen(false);
+      setSelectedRoom(null);
+    } catch (error) {
+      console.error('Failed to update room status:', error);
+      toast({ title: 'Failed to update room status', variant: 'destructive' });
+    }
   };
 
   // Handle task status toggle
-  const handleTaskStatusToggle = (taskId: string, currentStatus: string) => {
+  const handleTaskStatusToggle = async (taskId: string, currentStatus: string) => {
     const statusMap = {
-      'open': 'in-progress',
-      'in-progress': 'completed',
-      'completed': 'open'
+      'open': 'pending',
+      'pending': 'in_progress', 
+      'in_progress': 'completed',
+      'completed': 'pending'
     };
     
-    const newStatus = statusMap[currentStatus as keyof typeof statusMap] as 'open' | 'in-progress' | 'completed';
-    updateTask(taskId, { 
-      status: newStatus,
-      completedAt: newStatus === 'completed' ? new Date() : null
-    });
-
-    const task = housekeepingTasks.find(t => t.id === taskId);
-    if (task) {
-      addAuditEntry('Task Status Changed', `Task "${task.description}" status changed to ${newStatus}`);
-      toast({ title: `Task marked as ${newStatus}` });
+    const newStatus = statusMap[currentStatus as keyof typeof statusMap] as 'open' | 'in_progress' | 'completed';
+    
+    try {
+      await updateTaskStatusMutation.mutateAsync({
+        taskId,
+        status: newStatus
+      });
+      
+      toast({ title: `Task marked as ${newStatus.replace('_', ' ')}` });
+    } catch (error) {
+      console.error('Failed to update task status:', error);
+      toast({ title: 'Failed to update task status', variant: 'destructive' });
     }
   };
 
   // Handle new task creation
-  const handleNewTask = (taskData: any) => {
-    const room = rooms.find(r => r.id === taskData.roomId);
-    if (!room) return;
+  const handleNewTask = async (taskData: any) => {
+    if (!selectedHotelId) {
+      toast({ title: 'No hotel selected', variant: 'destructive' });
+      return;
+    }
 
-    addTask({
-      roomId: taskData.roomId,
-      roomNumber: room.number,
-      taskType: taskData.taskType,
-      status: 'open',
-      priority: taskData.priority,
-      assignedTo: taskData.assignedTo,
-      description: taskData.description,
-      dueDate: new Date(taskData.dueDate),
-      notes: taskData.notes || '',
-      createdAt: new Date(),
-      completedAt: null
-    });
+    try {
+      await createTaskMutation.mutateAsync({
+        hotelId: selectedHotelId,
+        roomId: taskData.roomId,
+        taskType: taskData.taskType,
+        priority: taskData.priority,
+        assignedTo: taskData.assignedTo,
+        description: taskData.description,
+        dueDate: new Date(taskData.dueDate)
+      });
 
-    addAuditEntry('New Task Created', `New ${taskData.taskType} task created for room ${room.number}`);
-    toast({ title: 'Task created successfully' });
-    setIsNewTaskOpen(false);
+      toast({ title: 'Task created successfully' });
+      setIsNewTaskOpen(false);
+    } catch (error) {
+      console.error('Failed to create task:', error);
+      toast({ title: 'Failed to create task', variant: 'destructive' });
+    }
   };
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'clean': return 'border-green-500 bg-green-50';
-      case 'dirty': return 'border-yellow-500 bg-yellow-50';
-      case 'occupied': return 'border-blue-500 bg-blue-50';
-      case 'ooo': return 'border-red-500 bg-red-50';
+      case 'Clean': return 'border-green-500 bg-green-50';
+      case 'Dirty': return 'border-yellow-500 bg-yellow-50';
+      case 'Occupied': return 'border-blue-500 bg-blue-50';
+      case 'Out of Order': return 'border-red-500 bg-red-50';
       default: return 'border-gray-300 bg-gray-50';
     }
   };
@@ -237,16 +225,16 @@ export const HMSHousekeeping = () => {
                     key={room.id}
                     variant="outline"
                     size="sm"
-                    className={`p-2 h-auto ${getStatusColor(room.status)}`}
+                    className={`p-2 h-auto ${getStatusColor(room.housekeeping_status || room.status)}`}
                     onClick={() => {
                       setSelectedRoom(room);
                       setIsRoomStatusOpen(true);
                     }}
                   >
-                    <div className="text-center">
-                      <div className="font-medium">{room.number}</div>
-                      <div className="text-xs text-muted-foreground">{room.roomType}</div>
-                    </div>
+                       <div className="text-center">
+                         <div className="font-medium">{room.number}</div>
+                         <div className="text-xs text-muted-foreground">{room.room_types?.name || 'Room'}</div>
+                       </div>
                   </Button>
                 ))}
               </div>
@@ -287,23 +275,23 @@ export const HMSHousekeeping = () => {
                   <div key={task.id} className="border rounded-lg p-3 hover:bg-muted/50">
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
-                        <div className="flex items-center gap-2">
-                          <span className="font-medium text-sm">Room {task.roomNumber}</span>
-                          <Badge variant={getTaskPriorityColor(task.priority)} className="text-xs">
-                            {task.priority}
-                          </Badge>
-                        </div>
-                        <p className="text-sm text-muted-foreground mt-1">{task.description}</p>
-                        <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
-                          <span className="flex items-center gap-1">
-                            <User className="h-3 w-3" />
-                            {task.assignedTo}
-                          </span>
-                          <span className="flex items-center gap-1">
-                            <Calendar className="h-3 w-3" />
-                            {format(task.dueDate, 'MMM dd')}
-                          </span>
-                        </div>
+                         <div className="flex items-center gap-2">
+                           <span className="font-medium text-sm">Room {task.rooms?.number || 'N/A'}</span>
+                           <Badge variant={getTaskPriorityColor(task.priority)} className="text-xs">
+                             {task.priority}
+                           </Badge>
+                         </div>
+                         <p className="text-sm text-muted-foreground mt-1">{task.description}</p>
+                         <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
+                           <span className="flex items-center gap-1">
+                             <User className="h-3 w-3" />
+                             {task.assigned_to}
+                           </span>
+                           <span className="flex items-center gap-1">
+                             <Calendar className="h-3 w-3" />
+                             {format(new Date(task.due_date), 'MMM dd')}
+                           </span>
+                         </div>
                       </div>
                       <div className="flex gap-1">
                         <Button

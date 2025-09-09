@@ -11,9 +11,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useHMSStore } from '@/stores/hms-store';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
+import { useInHouseGuests, useTodaysArrivals, useTodaysDepartures, useCheckInGuest, useCheckOutGuest, useRoomMove, useStayExtension } from '@/hooks/use-advanced-front-office';
+import { useHotelContext } from '@/hooks/use-hotel-context';
 import { ReservationDetailModal } from '@/components/reservations/ReservationDetailModal';
 import { RoomMoveModal as ExternalRoomMoveModal } from '@/components/reservations/RoomMoveModal';
 import { PaymentProcessingModal } from '@/components/payment/PaymentProcessingModal';
@@ -22,40 +23,58 @@ import { EnhancedExportSystem } from '@/components/export/EnhancedExportSystem';
 import { OnlineUsers } from '@/components/realtime/OnlineUsers';
 
 export const HMSFrontOffice = () => {
-  const { reservations, rooms, updateReservation, addAuditEntry } = useHMSStore();
+  const { selectedHotelId } = useHotelContext();
+  const { data: inHouseGuests = [] } = useInHouseGuests(selectedHotelId || '');
+  const { data: todaysArrivals = [] } = useTodaysArrivals(selectedHotelId || '');
+  const { data: todaysDepartures = [] } = useTodaysDepartures(selectedHotelId || '');
+  const checkInMutation = useCheckInGuest();
+  const checkOutMutation = useCheckOutGuest();
+  const roomMoveMutation = useRoomMove();
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState('all');
   const [selectedReservation, setSelectedReservation] = useState<any>(null);
   const [modalType, setModalType] = useState<'detail' | 'roomMove' | 'payment' | null>(null);
   const { toast } = useToast();
 
-  // Filter in-house reservations (checked-in guests)
-  const inHouseReservations = useMemo(() => {
-    return reservations.filter(res => {
+  // Get current data based on active tab
+  const currentReservations = useMemo(() => {
+    let data = [];
+    
+    switch (activeTab) {
+      case 'arrivals':
+        data = todaysArrivals;
+        break;
+      case 'departures':
+        data = todaysDepartures;
+        break;
+      case 'in-house':
+        data = inHouseGuests;
+        break;
+      default:
+        data = [...inHouseGuests, ...todaysArrivals, ...todaysDepartures];
+    }
+    
+    // Apply search filter
+    return data.filter(res => {
+      const guestName = res.guests ? `${res.guests.first_name || ''} ${res.guests.last_name || ''}`.trim() : '';
       const matchesSearch = searchQuery === '' || 
-        res.guestName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        res.code.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (res.roomNumber && res.roomNumber.includes(searchQuery));
+        guestName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        res.code?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (res.rooms?.number && res.rooms.number.includes(searchQuery));
       
-      const matchesTab = activeTab === 'all' || 
-        (activeTab === 'arrivals' && format(res.checkIn, 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd')) ||
-        (activeTab === 'departures' && format(res.checkOut, 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd')) ||
-        (activeTab === 'in-house' && res.status === 'checked-in');
-
-      return matchesSearch && matchesTab && res.status !== 'cancelled';
+      return matchesSearch;
     });
-  }, [reservations, searchQuery, activeTab]);
+  }, [inHouseGuests, todaysArrivals, todaysDepartures, searchQuery, activeTab]);
 
   // Stats for the tabs
   const stats = useMemo(() => {
-    const today = format(new Date(), 'yyyy-MM-dd');
     return {
-      total: inHouseReservations.length,
-      arrivals: reservations.filter(r => format(r.checkIn, 'yyyy-MM-dd') === today && r.status === 'confirmed').length,
-      departures: reservations.filter(r => format(r.checkOut, 'yyyy-MM-dd') === today && r.status === 'checked-in').length,
-      inHouse: reservations.filter(r => r.status === 'checked-in').length
+      total: [...inHouseGuests, ...todaysArrivals, ...todaysDepartures].length,
+      arrivals: todaysArrivals.length,
+      departures: todaysDepartures.length,
+      inHouse: inHouseGuests.length
     };
-  }, [reservations]);
+  }, [inHouseGuests, todaysArrivals, todaysDepartures]);
 
   // Handle folio export
   const handleFolioExport = (reservation: any) => {
@@ -87,36 +106,29 @@ Balance: €${reservation.balance}
   };
 
   // Handle room move
-  const handleRoomMove = (reservationId: string, newRoomId: string, notes: string) => {
-    const newRoom = rooms.find(r => r.id === newRoomId);
-    if (!newRoom) return;
-
-    updateReservation(reservationId, {
-      roomId: newRoomId,
-      roomNumber: newRoom.number
-    });
-
-    const reservation = reservations.find(r => r.id === reservationId);
-    addAuditEntry('Room Move', `${reservation?.guestName} moved to room ${newRoom.number}${notes ? `: ${notes}` : ''}`);
-    
-    toast({ title: 'Room moved successfully', description: `Guest moved to room ${newRoom.number}` });
-    setModalType(null);
-    setSelectedReservation(null);
+  const handleRoomMove = async (reservationId: string, newRoomId: string, reason: string) => {
+    try {
+      await roomMoveMutation.mutateAsync({
+        reservationId,
+        newRoomId,
+        reason
+      });
+      
+      toast({ title: 'Room moved successfully' });
+      setModalType(null);
+      setSelectedReservation(null);
+    } catch (error) {
+      console.error('Failed to move room:', error);
+      toast({ title: 'Failed to move room', variant: 'destructive' });
+    }
   };
 
   // Handle payment processing
   const handlePayment = (reservationId: string, amount: number, method: string, notes: string) => {
-    const reservation = reservations.find(r => r.id === reservationId);
-    if (!reservation) return;
-
-    const newBalance = Math.max(0, reservation.balance - amount);
-    updateReservation(reservationId, { balance: newBalance });
-
-    addAuditEntry('Payment Processed', `€${amount} payment received via ${method} for ${reservation.guestName}`);
-    
+    // This will be implemented with folio management hooks
     toast({ 
-      title: 'Payment processed', 
-      description: `€${amount} received. New balance: €${newBalance.toFixed(2)}` 
+      title: 'Payment processing not yet implemented', 
+      description: 'Payment functionality will be available in the folio manager.' 
     });
     
     setModalType(null);
@@ -125,19 +137,10 @@ Balance: €${reservation.balance}
 
   // Handle folio split
   const handleFolioSplit = (reservationId: string, splitType: 'percentage' | 'selection', splitValue: number) => {
-    const reservation = reservations.find(r => r.id === reservationId);
-    if (!reservation) return;
-
-    const splitAmount = splitType === 'percentage' 
-      ? reservation.totalAmount * (splitValue / 100)
-      : splitValue;
-
-    // Mock folio split - in real system this would create new folios
-    addAuditEntry('Folio Split', `Folio for ${reservation.guestName} split - €${splitAmount.toFixed(2)} separated`);
-    
+    // This will be implemented with folio management hooks
     toast({ 
-      title: 'Folio split successfully', 
-      description: `€${splitAmount.toFixed(2)} separated to new folio` 
+      title: 'Folio split functionality not yet implemented', 
+      description: 'Folio splitting will be available in the folio manager.' 
     });
     
     setModalType(null);
@@ -240,7 +243,7 @@ Balance: €${reservation.balance}
                 {activeTab === 'arrivals' ? 'Today\'s Arrivals' :
                  activeTab === 'departures' ? 'Today\'s Departures' :
                  activeTab === 'in-house' ? 'In-House Guests' :
-                 'All Reservations'} ({inHouseReservations.length})
+                 'All Reservations'} ({currentReservations.length})
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -258,30 +261,35 @@ Balance: €${reservation.balance}
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {inHouseReservations.map((reservation) => (
+                    {currentReservations.map((reservation) => (
                       <TableRow key={reservation.id} className="hover:bg-muted/50">
-                        <TableCell>
-                          <div>
-                            <p className="font-medium">{reservation.guestName}</p>
-                            <p className="text-sm text-muted-foreground">{reservation.code}</p>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div>
-                            <p>{reservation.roomType}</p>
-                            {reservation.roomNumber && (
-                              <p className="text-sm text-muted-foreground">Room {reservation.roomNumber}</p>
-                            )}
-                          </div>
-                        </TableCell>
-                        <TableCell>{format(reservation.checkIn, 'MMM dd, yyyy')}</TableCell>
-                        <TableCell>{format(reservation.checkOut, 'MMM dd, yyyy')}</TableCell>
-                        <TableCell>{getStatusBadge(reservation.status)}</TableCell>
-                        <TableCell>
-                          <span className={reservation.balance > 0 ? 'text-red-600 font-medium' : 'text-green-600'}>
-                            €{reservation.balance.toFixed(2)}
-                          </span>
-                        </TableCell>
+                         <TableCell>
+                           <div>
+                             <p className="font-medium">
+                               {reservation.guests 
+                                 ? `${reservation.guests.first_name || ''} ${reservation.guests.last_name || ''}`.trim()
+                                 : 'Unknown Guest'
+                               }
+                             </p>
+                             <p className="text-sm text-muted-foreground">{reservation.code}</p>
+                           </div>
+                         </TableCell>
+                         <TableCell>
+                           <div>
+                             <p>{reservation.room_types?.name || 'Room'}</p>
+                             {reservation.rooms?.number && (
+                               <p className="text-sm text-muted-foreground">Room {reservation.rooms.number}</p>
+                             )}
+                           </div>
+                         </TableCell>
+                         <TableCell>{format(new Date(reservation.check_in), 'MMM dd, yyyy')}</TableCell>
+                         <TableCell>{format(new Date(reservation.check_out), 'MMM dd, yyyy')}</TableCell>
+                         <TableCell>{getStatusBadge(reservation.status)}</TableCell>
+                         <TableCell>
+                           <span className={(reservation.balance_due || 0) > 0 ? 'text-red-600 font-medium' : 'text-green-600'}>
+                             €{(reservation.balance_due || 0).toFixed(2)}
+                           </span>
+                         </TableCell>
                         <TableCell>
                           <div className="flex items-center gap-2">
                             <Button
@@ -324,7 +332,7 @@ Balance: €${reservation.balance}
                   </TableBody>
                 </Table>
                 
-                {inHouseReservations.length === 0 && (
+                {currentReservations.length === 0 && (
                   <div className="text-center py-8 text-muted-foreground">
                     No reservations found for current filter
                   </div>
