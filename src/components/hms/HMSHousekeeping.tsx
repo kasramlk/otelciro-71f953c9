@@ -60,11 +60,13 @@ export const HMSHousekeeping = () => {
   }, [rooms]);
 
   // Group tasks by status (exclude deleted ones)
-  const tasksByStatus = {
-    open: housekeepingTasks.filter(t => t.status === 'open'),
-    'in-progress': housekeepingTasks.filter(t => t.status === 'in-progress'),
-    completed: housekeepingTasks.filter(t => t.status === 'completed')
-  };
+  const tasksByStatus = useMemo(() => {
+    return {
+      pending: housekeepingTasks.filter(t => t.status === 'pending'),
+      'in-progress': housekeepingTasks.filter(t => t.status === 'in_progress'),
+      completed: housekeepingTasks.filter(t => t.status === 'completed')
+    };
+  }, [housekeepingTasks]);
 
   // Handle room status change
   const handleRoomStatusChange = async (roomId: string, newStatus: 'Clean' | 'Dirty' | 'Occupied' | 'Out of Order', notes?: string) => {
@@ -91,13 +93,12 @@ export const HMSHousekeeping = () => {
   // Handle task status toggle
   const handleTaskStatusToggle = async (taskId: string, currentStatus: string) => {
     const statusMap = {
-      'open': 'pending',
       'pending': 'in_progress', 
       'in_progress': 'completed',
       'completed': 'pending'
     };
     
-    const newStatus = statusMap[currentStatus as keyof typeof statusMap] as 'open' | 'in_progress' | 'completed';
+    const newStatus = statusMap[currentStatus as keyof typeof statusMap] as 'pending' | 'in_progress' | 'completed';
     
     try {
       await updateTaskStatusMutation.mutateAsync({
@@ -160,20 +161,20 @@ export const HMSHousekeeping = () => {
   const getTaskStatusIcon = (status: string) => {
     switch (status) {
       case 'completed': return <CheckCircle className="h-4 w-4 text-green-500" />;
-      case 'in-progress': return <Clock className="h-4 w-4 text-blue-500" />;
-      case 'open': return <AlertTriangle className="h-4 w-4 text-yellow-500" />;
+      case 'in_progress': return <Clock className="h-4 w-4 text-blue-500" />;
+      case 'pending': return <AlertTriangle className="h-4 w-4 text-yellow-500" />;
       default: return <Clock className="h-4 w-4" />;
     }
   };
 
   const bulkTaskItems = housekeepingTasks
-    .filter(task => task.status === 'open' || task.status === 'in-progress' || task.status === 'completed')
+    .filter(task => task.status === 'pending' || task.status === 'in_progress' || task.status === 'completed')
     .map(task => ({
       id: task.id,
       type: 'reservation' as const, // Using 'reservation' as closest match
-      name: `${task.taskType} - Room ${task.roomNumber}`,
+      name: `${task.task_type} - Room ${task.room_id || 'N/A'}`,
       status: task.status,
-      details: task.description
+      details: task.description || ''
     }));
 
   return (
@@ -266,7 +267,7 @@ export const HMSHousekeeping = () => {
             <CardHeader>
               <CardTitle className="flex items-center gap-2 capitalize">
                 {getTaskStatusIcon(status)}
-                {status === 'in-progress' ? 'In Progress' : status} Tasks ({taskList.length})
+                {status === 'in_progress' ? 'In Progress' : status === 'pending' ? 'Pending' : 'Completed'} Tasks ({taskList.length})
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -276,7 +277,7 @@ export const HMSHousekeeping = () => {
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
                          <div className="flex items-center gap-2">
-                           <span className="font-medium text-sm">Room {task.rooms?.number || 'N/A'}</span>
+                           <span className="font-medium text-sm">Room {task.room_id || 'N/A'}</span>
                            <Badge variant={getTaskPriorityColor(task.priority)} className="text-xs">
                              {task.priority}
                            </Badge>
@@ -285,22 +286,22 @@ export const HMSHousekeeping = () => {
                          <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
                            <span className="flex items-center gap-1">
                              <User className="h-3 w-3" />
-                             {task.assigned_to}
+                             {task.assigned_to || 'Unassigned'}
                            </span>
                            <span className="flex items-center gap-1">
                              <Calendar className="h-3 w-3" />
-                             {format(new Date(task.due_date), 'MMM dd')}
+                             {format(new Date(task.due_date || task.created_at), 'MMM dd')}
                            </span>
                          </div>
                       </div>
                       <div className="flex gap-1">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => handleTaskStatusToggle(task.id, task.status)}
-                        >
-                          {status === 'open' ? 'Start' : status === 'in-progress' ? 'Complete' : 'Reopen'}
-                        </Button>
+                         <Button
+                           size="sm"
+                           variant="outline"
+                           onClick={() => handleTaskStatusToggle(task.id, task.status)}
+                         >
+                           {status === 'pending' ? 'Start' : status === 'in_progress' ? 'Complete' : 'Reopen'}
+                         </Button>
                         <Button
                           size="sm"
                           variant="outline"
@@ -313,9 +314,9 @@ export const HMSHousekeeping = () => {
                     </div>
                   </div>
                 ))}
-                {taskList.length === 0 && (
-                  <p className="text-center text-muted-foreground py-4">No {status} tasks</p>
-                )}
+                 {taskList.length === 0 && (
+                   <p className="text-center text-muted-foreground py-4">No {status === 'pending' ? 'pending' : status} tasks</p>
+                 )}
               </div>
             </CardContent>
           </Card>
