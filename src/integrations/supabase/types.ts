@@ -436,6 +436,154 @@ export type Database = {
           },
         ]
       }
+      channel_connections: {
+        Row: {
+          api_credentials: Json
+          availability_push_enabled: boolean | null
+          channel_name: string
+          channel_settings: Json | null
+          channel_type: string
+          connection_status: string
+          created_at: string
+          endpoint_url: string
+          hotel_id: string
+          id: string
+          last_sync_at: string | null
+          rate_push_enabled: boolean | null
+          receive_reservations: boolean | null
+          sync_frequency: number | null
+          updated_at: string
+        }
+        Insert: {
+          api_credentials?: Json
+          availability_push_enabled?: boolean | null
+          channel_name: string
+          channel_settings?: Json | null
+          channel_type: string
+          connection_status?: string
+          created_at?: string
+          endpoint_url: string
+          hotel_id: string
+          id?: string
+          last_sync_at?: string | null
+          rate_push_enabled?: boolean | null
+          receive_reservations?: boolean | null
+          sync_frequency?: number | null
+          updated_at?: string
+        }
+        Update: {
+          api_credentials?: Json
+          availability_push_enabled?: boolean | null
+          channel_name?: string
+          channel_settings?: Json | null
+          channel_type?: string
+          connection_status?: string
+          created_at?: string
+          endpoint_url?: string
+          hotel_id?: string
+          id?: string
+          last_sync_at?: string | null
+          rate_push_enabled?: boolean | null
+          receive_reservations?: boolean | null
+          sync_frequency?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      channel_rate_mappings: {
+        Row: {
+          channel_id: string
+          channel_rate_plan_code: string
+          channel_room_code: string
+          created_at: string
+          id: string
+          is_active: boolean | null
+          markup_amount: number | null
+          markup_percentage: number | null
+          room_type_id: string
+          updated_at: string
+        }
+        Insert: {
+          channel_id: string
+          channel_rate_plan_code: string
+          channel_room_code: string
+          created_at?: string
+          id?: string
+          is_active?: boolean | null
+          markup_amount?: number | null
+          markup_percentage?: number | null
+          room_type_id: string
+          updated_at?: string
+        }
+        Update: {
+          channel_id?: string
+          channel_rate_plan_code?: string
+          channel_room_code?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean | null
+          markup_amount?: number | null
+          markup_percentage?: number | null
+          room_type_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "channel_rate_mappings_channel_id_fkey"
+            columns: ["channel_id"]
+            isOneToOne: false
+            referencedRelation: "channel_connections"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      channel_sync_logs: {
+        Row: {
+          channel_id: string
+          completed_at: string | null
+          duration_ms: number | null
+          error_message: string | null
+          id: string
+          records_processed: number | null
+          started_at: string
+          sync_data: Json | null
+          sync_status: string
+          sync_type: string
+        }
+        Insert: {
+          channel_id: string
+          completed_at?: string | null
+          duration_ms?: number | null
+          error_message?: string | null
+          id?: string
+          records_processed?: number | null
+          started_at?: string
+          sync_data?: Json | null
+          sync_status: string
+          sync_type: string
+        }
+        Update: {
+          channel_id?: string
+          completed_at?: string | null
+          duration_ms?: number | null
+          error_message?: string | null
+          id?: string
+          records_processed?: number | null
+          started_at?: string
+          sync_data?: Json | null
+          sync_status?: string
+          sync_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "channel_sync_logs_channel_id_fkey"
+            columns: ["channel_id"]
+            isOneToOne: false
+            referencedRelation: "channel_connections"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       checkin_logs: {
         Row: {
           checked_in_at: string
@@ -1640,6 +1788,66 @@ export type Database = {
           },
         ]
       }
+      inbound_reservations: {
+        Row: {
+          booking_data: Json
+          channel_id: string
+          channel_reservation_id: string
+          error_message: string | null
+          guest_data: Json
+          hotel_id: string
+          id: string
+          processed_at: string | null
+          processing_status: string
+          raw_data: Json
+          received_at: string
+          reservation_id: string | null
+        }
+        Insert: {
+          booking_data: Json
+          channel_id: string
+          channel_reservation_id: string
+          error_message?: string | null
+          guest_data: Json
+          hotel_id: string
+          id?: string
+          processed_at?: string | null
+          processing_status?: string
+          raw_data: Json
+          received_at?: string
+          reservation_id?: string | null
+        }
+        Update: {
+          booking_data?: Json
+          channel_id?: string
+          channel_reservation_id?: string
+          error_message?: string | null
+          guest_data?: Json
+          hotel_id?: string
+          id?: string
+          processed_at?: string | null
+          processing_status?: string
+          raw_data?: Json
+          received_at?: string
+          reservation_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inbound_reservations_channel_id_fkey"
+            columns: ["channel_id"]
+            isOneToOne: false
+            referencedRelation: "channel_connections"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inbound_reservations_reservation_id_fkey"
+            columns: ["reservation_id"]
+            isOneToOne: false
+            referencedRelation: "reservations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ingestion_audit: {
         Row: {
           action: string
@@ -2493,6 +2701,77 @@ export type Database = {
             columns: ["room_type_id"]
             isOneToOne: false
             referencedRelation: "room_types"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      rate_push_queue: {
+        Row: {
+          channel_id: string | null
+          completed_at: string | null
+          created_at: string
+          date_from: string
+          date_to: string
+          error_message: string | null
+          hotel_id: string
+          id: string
+          max_retries: number | null
+          priority: number | null
+          push_data: Json | null
+          push_type: string
+          rate_plan_id: string
+          retry_count: number | null
+          room_type_id: string
+          scheduled_at: string | null
+          started_at: string | null
+          status: string
+        }
+        Insert: {
+          channel_id?: string | null
+          completed_at?: string | null
+          created_at?: string
+          date_from: string
+          date_to: string
+          error_message?: string | null
+          hotel_id: string
+          id?: string
+          max_retries?: number | null
+          priority?: number | null
+          push_data?: Json | null
+          push_type: string
+          rate_plan_id: string
+          retry_count?: number | null
+          room_type_id: string
+          scheduled_at?: string | null
+          started_at?: string | null
+          status?: string
+        }
+        Update: {
+          channel_id?: string | null
+          completed_at?: string | null
+          created_at?: string
+          date_from?: string
+          date_to?: string
+          error_message?: string | null
+          hotel_id?: string
+          id?: string
+          max_retries?: number | null
+          priority?: number | null
+          push_data?: Json | null
+          push_type?: string
+          rate_plan_id?: string
+          retry_count?: number | null
+          room_type_id?: string
+          scheduled_at?: string | null
+          started_at?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rate_push_queue_channel_id_fkey"
+            columns: ["channel_id"]
+            isOneToOne: false
+            referencedRelation: "channel_connections"
             referencedColumns: ["id"]
           },
         ]
