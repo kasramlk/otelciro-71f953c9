@@ -621,6 +621,440 @@ export const CompanyProfile = () => {
         </div>
       </section>
 
+      {/* Technology & Security Overview */}
+      <section id="technology" className="py-20 px-6 relative z-10">
+        <div className="container mx-auto max-w-6xl">
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8 }}
+            className="text-center mb-16"
+          >
+            <h2 className="text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-white via-accent to-white mb-4">
+              Technology & Security
+            </h2>
+            <p className="text-xl text-white/80 max-w-3xl mx-auto">
+              Enterprise-grade infrastructure built for hospitality
+            </p>
+            <div className="w-24 h-1 bg-gradient-to-r from-primary via-secondary to-accent mx-auto rounded-full mt-6" />
+          </motion.div>
+
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {[
+              {
+                icon: Shield,
+                title: "Cloud & Multi-Tenant SaaS",
+                desc: "Scalable architecture with API integrations to leading PMSs and OTAs",
+                color: "from-primary to-primary-light"
+              },
+              {
+                icon: Zap,
+                title: "GDPR-Aligned Practices",
+                desc: "Role-based access, audit trails, and comprehensive data protection",
+                color: "from-secondary to-secondary-light"
+              },
+              {
+                icon: TrendingUp,
+                title: "99.9% Uptime Target",
+                desc: "Automated backups, disaster recovery, and enterprise reliability",
+                color: "from-accent to-accent-light"
+              }
+            ].map((tech, index) => (
+              <Interactive3DCard key={index} index={index}>
+                <motion.div
+                  whileHover={{ y: -10 }}
+                  className="text-center h-full flex flex-col"
+                >
+                  <motion.div
+                    whileHover={{ rotate: 360, scale: 1.1 }}
+                    transition={{ duration: 0.6 }}
+                    className={`w-16 h-16 mb-6 mx-auto rounded-2xl bg-gradient-to-r ${tech.color} flex items-center justify-center`}
+                  >
+                    <tech.icon className="h-8 w-8 text-white" />
+                  </motion.div>
+
+                  <h3 className="text-xl font-bold text-white mb-4">{tech.title}</h3>
+                  <p className="text-white/80 leading-relaxed flex-1 text-sm">{tech.desc}</p>
+                </motion.div>
+              </Interactive3DCard>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Enhanced Portfolio Section with Hotel Showcase */}
+      <section id="portfolio" className="py-20 px-6 relative z-10">
+        <div className="container mx-auto max-w-6xl">
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8 }}
+            className="text-center mb-16"
+          >
+            <h2 className="text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-white via-accent to-white mb-4">
+              Current Portfolio
+            </h2>
+            <p className="text-xl text-white/80 mb-2">~30 hotels managed across Türkiye</p>
+            <div className="w-24 h-1 bg-gradient-to-r from-primary via-secondary to-accent mx-auto rounded-full" />
+          </motion.div>
+
+          <Interactive3DCard>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {hotels.map((hotel, index) => (
+                <motion.div
+                  key={index}
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  whileInView={{ opacity: 1, scale: 1 }}
+                  transition={{ duration: 0.3, delay: index * 0.02 }}
+                  whileHover={{ scale: 1.02, x: 5 }}
+                  className="flex items-center gap-3 p-4 rounded-xl hover:bg-white/5 transition-all cursor-pointer group border border-white/10 hover:border-accent/30"
+                >
+                  <motion.div
+                    whileHover={{ rotate: 360, scale: 1.2 }}
+                    className="p-2 rounded-lg bg-gradient-to-r from-accent/20 to-primary/20"
+                  >
+                    <Star className="h-4 w-4 text-accent" />
+                  </motion.div>
+                  <span className="text-white/90 group-hover:text-white transition-colors text-sm font-medium">
+                    {hotel}
+                  </span>
+                </motion.div>
+              ))}
+            </div>
+            
+            {/* Portfolio Stats */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.4 }}
+              className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-6"
+            >
+              {[
+                { label: "Properties Managed", value: "30+", desc: "Across Türkiye" },
+                { label: "Cities Covered", value: "15+", desc: "Major destinations" },
+                { label: "Portfolio Growth", value: "Monthly", desc: "Expanding rapidly" }
+              ].map((stat, index) => (
+                <motion.div
+                  key={index}
+                  whileHover={{ scale: 1.05, y: -5 }}
+                  className="text-center p-6 rounded-2xl bg-gradient-to-br from-white/5 to-transparent border border-white/10 hover:border-accent/30 transition-all"
+                >
+                  <div className="text-3xl font-bold text-accent mb-2">{stat.value}</div>
+                  <div className="text-white font-semibold mb-1">{stat.label}</div>
+                  <div className="text-white/70 text-sm">{stat.desc}</div>
+                </motion.div>
+              ))}
+            </motion.div>
+          </Interactive3DCard>
+        </div>
+      </section>
+
+      {/* Traction & Roadmap Section */}
+      <section id="roadmap" className="py-20 px-6 relative z-10">
+        <div className="container mx-auto max-w-6xl">
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8 }}
+            className="text-center mb-16"
+          >
+            <h2 className="text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-white via-accent to-white mb-4">
+              Traction & Growth Roadmap
+            </h2>
+            <p className="text-xl text-white/80 max-w-3xl mx-auto">
+              From agency roots to hospitality tech leader
+            </p>
+            <div className="w-24 h-1 bg-gradient-to-r from-primary via-secondary to-accent mx-auto rounded-full mt-6" />
+          </motion.div>
+
+          <div className="grid lg:grid-cols-2 gap-12">
+            {/* Current Traction */}
+            <Interactive3DCard index={0}>
+              <div className="space-y-6">
+                <div className="flex items-center gap-3 mb-6">
+                  <motion.div
+                    whileHover={{ rotate: 360, scale: 1.2 }}
+                    className="w-12 h-12 rounded-xl bg-gradient-to-r from-green-500 to-emerald-500 flex items-center justify-center"
+                  >
+                    <TrendingUp className="h-6 w-6 text-white" />
+                  </motion.div>
+                  <h3 className="text-3xl font-bold text-white">Current Traction</h3>
+                </div>
+
+                <div className="space-y-6">
+                  {[
+                    { 
+                      phase: "2016-2023", 
+                      title: "Agency & Consultancy Foundation", 
+                      desc: "Built reputation and expertise in hospitality consulting",
+                      status: "completed"
+                    },
+                    { 
+                      phase: "2024", 
+                      title: "Hotel Management Focus", 
+                      desc: "Pivoted to direct hotel management and online sales",
+                      status: "completed"
+                    },
+                    { 
+                      phase: "Now", 
+                      title: "30 Hotels Under Management", 
+                      desc: "Managing ~30 properties across Türkiye using diverse PMSs",
+                      status: "current"
+                    }
+                  ].map((milestone, index) => (
+                    <motion.div
+                      key={index}
+                      whileHover={{ x: 10, scale: 1.02 }}
+                      className={`relative flex items-start gap-4 p-4 rounded-xl transition-all ${
+                        milestone.status === 'current' 
+                          ? 'bg-gradient-to-r from-accent/20 to-transparent border border-accent/30' 
+                          : 'bg-gradient-to-r from-white/5 to-transparent hover:from-white/10'
+                      }`}
+                    >
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-bold ${
+                        milestone.status === 'current' ? 'bg-accent' : 
+                        milestone.status === 'completed' ? 'bg-green-500' : 'bg-white/20'
+                      }`}>
+                        {milestone.status === 'completed' ? '✓' : index + 1}
+                      </div>
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-2">
+                          <Badge className={`${
+                            milestone.status === 'current' ? 'bg-accent text-black' : 'bg-white/20 text-white'
+                          } px-3 py-1`}>
+                            {milestone.phase}
+                          </Badge>
+                        </div>
+                        <h4 className="font-semibold text-white mb-1">{milestone.title}</h4>
+                        <p className="text-white/80 text-sm">{milestone.desc}</p>
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
+              </div>
+            </Interactive3DCard>
+
+            {/* Future Roadmap */}
+            <Interactive3DCard index={1}>
+              <div className="space-y-6">
+                <div className="flex items-center gap-3 mb-6">
+                  <motion.div
+                    whileHover={{ rotate: 360, scale: 1.2 }}
+                    className="w-12 h-12 rounded-xl bg-gradient-to-r from-primary to-secondary flex items-center justify-center"
+                  >
+                    <Rocket className="h-6 w-6 text-white" />
+                  </motion.div>
+                  <h3 className="text-3xl font-bold text-white">Growth Roadmap</h3>
+                </div>
+
+                <div className="space-y-6">
+                  {[
+                    { 
+                      phase: "Phase 1", 
+                      title: "Platform Migration", 
+                      desc: "Migrate first 30 hotels into unified OtelCiro ecosystem",
+                      target: "Q1-Q2 2025"
+                    },
+                    { 
+                      phase: "Year 1", 
+                      title: "150 Hotels + Dubai Launch", 
+                      desc: "Scale to 150 hotels in Türkiye and launch in Dubai with 10-15 properties",
+                      target: "End of 2025"
+                    },
+                    { 
+                      phase: "3-Year Vision", 
+                      title: "600+ Hotels TR & UAE", 
+                      desc: "Become the leading hospitality ecosystem across Türkiye and UAE",
+                      target: "2025-2028"
+                    }
+                  ].map((milestone, index) => (
+                    <motion.div
+                      key={index}
+                      whileHover={{ x: 10, scale: 1.02 }}
+                      className="relative flex items-start gap-4 p-4 rounded-xl bg-gradient-to-r from-white/5 to-transparent hover:from-primary/10 transition-all border border-white/10 hover:border-primary/30"
+                    >
+                      <div className="w-8 h-8 rounded-full bg-gradient-to-r from-primary to-secondary flex items-center justify-center text-white text-sm font-bold">
+                        {index + 1}
+                      </div>
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-2">
+                          <Badge className="bg-primary/20 text-primary-light border border-primary/30 px-3 py-1">
+                            {milestone.phase}
+                          </Badge>
+                          <Badge className="bg-white/10 text-white/80 px-3 py-1 text-xs">
+                            {milestone.target}
+                          </Badge>
+                        </div>
+                        <h4 className="font-semibold text-white mb-1">{milestone.title}</h4>
+                        <p className="text-white/80 text-sm">{milestone.desc}</p>
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
+              </div>
+            </Interactive3DCard>
+          </div>
+        </div>
+      </section>
+
+      {/* Business Model & Differentiators */}
+      <section id="business-model" className="py-20 px-6 relative z-10">
+        <div className="container mx-auto max-w-6xl">
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8 }}
+            className="text-center mb-16"
+          >
+            <h2 className="text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-white via-accent to-white mb-4">
+              Business Model & Differentiators
+            </h2>
+            <div className="w-24 h-1 bg-gradient-to-r from-primary via-secondary to-accent mx-auto rounded-full" />
+          </motion.div>
+
+          <div className="grid lg:grid-cols-2 gap-12">
+            {/* Business Model */}
+            <Interactive3DCard index={0}>
+              <div className="space-y-6">
+                <div className="flex items-center gap-3 mb-6">
+                  <motion.div
+                    whileHover={{ rotate: 360, scale: 1.2 }}
+                    className="w-12 h-12 rounded-xl bg-gradient-to-r from-accent to-accent-light flex items-center justify-center"
+                  >
+                    <Briefcase className="h-6 w-6 text-black" />
+                  </motion.div>
+                  <h3 className="text-3xl font-bold text-white">Business Model</h3>
+                </div>
+
+                <div className="p-6 rounded-2xl bg-gradient-to-r from-accent/20 to-transparent border border-accent/30 mb-6">
+                  <p className="text-white font-semibold leading-relaxed">
+                    Hotels that engage our consultancy get access to the OtelCiro ecosystem <span className="text-accent">at no extra software cost</span>. We monetize through consultancy/management services tied to measurable outcomes.
+                  </p>
+                </div>
+
+                <div className="space-y-4">
+                  <h4 className="text-xl font-semibold text-white mb-4">Service Packages:</h4>
+                  {[
+                    { 
+                      title: "Digital Kick-Off", 
+                      desc: "OTA optimization, AI-driven pricing, performance reporting",
+                      tier: "Basic"
+                    },
+                    { 
+                      title: "B2B & Corporate Sales", 
+                      desc: "Agency network management, corporate contracts, strategic planning",
+                      tier: "Professional"
+                    },
+                    { 
+                      title: "Premium Elite – 360° Management", 
+                      desc: "Full operations management, guaranteed revenue uplift, VIP consultancy",
+                      tier: "Enterprise"
+                    }
+                  ].map((pkg, index) => (
+                    <motion.div
+                      key={index}
+                      whileHover={{ x: 5, scale: 1.02 }}
+                      className="p-4 rounded-xl bg-gradient-to-r from-white/5 to-transparent hover:from-white/10 transition-all border border-white/10"
+                    >
+                      <div className="flex items-center gap-2 mb-2">
+                        <Badge className={`${
+                          pkg.tier === 'Enterprise' ? 'bg-accent text-black' :
+                          pkg.tier === 'Professional' ? 'bg-secondary text-white' :
+                          'bg-primary text-white'
+                        } px-3 py-1`}>
+                          {pkg.tier}
+                        </Badge>
+                      </div>
+                      <h5 className="font-semibold text-white mb-1">{pkg.title}</h5>
+                      <p className="text-white/80 text-sm">{pkg.desc}</p>
+                    </motion.div>
+                  ))}
+                </div>
+              </div>
+            </Interactive3DCard>
+
+            {/* Key Differentiators */}
+            <Interactive3DCard index={1}>
+              <div className="space-y-6">
+                <div className="flex items-center gap-3 mb-6">
+                  <motion.div
+                    whileHover={{ rotate: 360, scale: 1.2 }}
+                    className="w-12 h-12 rounded-xl bg-gradient-to-r from-secondary to-primary flex items-center justify-center"
+                  >
+                    <Crown className="h-6 w-6 text-white" />
+                  </motion.div>
+                  <h3 className="text-3xl font-bold text-white">Key Differentiators</h3>
+                </div>
+
+                <div className="space-y-4">
+                  {[
+                    {
+                      icon: Shield,
+                      title: "All-in-One Partner",
+                      desc: "Your sales office + revenue manager + marketing team, not just a toolset",
+                      color: "text-primary"
+                    },
+                    {
+                      icon: Target,
+                      title: "Outcome-Linked Model",
+                      desc: "Consultancy first; platform access is included for engaged hotels",
+                      color: "text-secondary"
+                    },
+                    {
+                      icon: Users,
+                      title: "Agency Network Advantage",
+                      desc: "Direct reach to 100+ B2B partners for immediate demand generation",
+                      color: "text-accent"
+                    },
+                    {
+                      icon: Building2,
+                      title: "SME Focus",
+                      desc: "Tailored specifically to small/mid-range hotels that cannot staff a full back office",
+                      color: "text-white"
+                    }
+                  ].map((diff, index) => (
+                    <motion.div
+                      key={index}
+                      whileHover={{ x: 10, scale: 1.02 }}
+                      className="flex items-start gap-4 p-4 rounded-xl hover:bg-white/5 transition-all cursor-pointer group border border-white/10 hover:border-white/30"
+                    >
+                      <motion.div
+                        whileHover={{ rotate: 360, scale: 1.2 }}
+                        className={`p-3 rounded-xl bg-gradient-to-r from-white/10 to-white/5 ${diff.color}`}
+                      >
+                        <diff.icon className="h-5 w-5" />
+                      </motion.div>
+                      <div className="flex-1">
+                        <h5 className="font-semibold text-white mb-2 group-hover:text-accent transition-colors">
+                          {diff.title}
+                        </h5>
+                        <p className="text-white/80 text-sm group-hover:text-white transition-colors">
+                          {diff.desc}
+                        </p>
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
+
+                {/* Partnership Highlight */}
+                <motion.div
+                  whileHover={{ scale: 1.02 }}
+                  className="mt-8 p-6 rounded-2xl bg-gradient-to-r from-primary/20 to-secondary/20 border border-primary/30"
+                >
+                  <div className="flex items-center gap-3 mb-3">
+                    <Globe className="h-6 w-6 text-primary" />
+                    <h5 className="font-semibold text-white">B2B Network</h5>
+                  </div>
+                  <p className="text-white/90 text-sm leading-relaxed">
+                    <span className="font-semibold text-accent">100+ Active Partners:</span> W2M, Dilman, Mercan DMC, Rocket DMS, Lux Travel, Peninsula, and 90+ more local & global agencies for immediate demand generation.
+                  </p>
+                </motion.div>
+              </div>
+            </Interactive3DCard>
+          </div>
+        </div>
+      </section>
+
       {/* Enhanced Services Section with 3D Cards */}
       <section id="services" className="py-20 px-6 relative z-10">
         <div className="container mx-auto max-w-6xl">
