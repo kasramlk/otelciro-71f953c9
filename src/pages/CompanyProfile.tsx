@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
 import { Navbar } from "@/components/landing/Navbar";
+import { TranslationProvider, Language } from "@/hooks/useTranslation";
 import { 
   Building2, 
   Globe, 
@@ -160,6 +161,7 @@ const Interactive3DCard = ({ children, className = "", index = 0 }: { children: 
 
 export const CompanyProfile = () => {
   const [scrollY, setScrollY] = useState(0);
+  const [language, setLanguage] = useState<Language>('en');
   
   useEffect(() => {
     const handleScroll = () => setScrollY(window.scrollY);
@@ -233,24 +235,25 @@ export const CompanyProfile = () => {
   };
 
   return (
-    <div className="min-h-screen overflow-x-hidden relative">
-      {/* 3D Background Scene */}
-      <div className="fixed inset-0 z-0">
-        <Scene3DBackground />
-      </div>
-      
-      {/* Gradient Overlays */}
-      <div className="fixed inset-0 z-1">
-        <div className="absolute inset-0 bg-gradient-to-br from-slate-900/90 via-slate-800/85 to-slate-900/90" />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_50%,rgba(0,53,128,0.3),transparent)] opacity-80" />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_20%,rgba(0,159,227,0.3),transparent)] opacity-80" />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_40%_80%,rgba(254,186,2,0.2),transparent)] opacity-70" />
-      </div>
+    <TranslationProvider language={language} setLanguage={setLanguage}>
+      <div className="min-h-screen overflow-x-hidden relative">
+        {/* 3D Background Scene */}
+        <div className="fixed inset-0 z-0">
+          <Scene3DBackground />
+        </div>
+        
+        {/* Gradient Overlays */}
+        <div className="fixed inset-0 z-1">
+          <div className="absolute inset-0 bg-gradient-to-br from-slate-900/90 via-slate-800/85 to-slate-900/90" />
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_50%,rgba(0,53,128,0.3),transparent)] opacity-80" />
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_20%,rgba(0,159,227,0.3),transparent)] opacity-80" />
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_40%_80%,rgba(254,186,2,0.2),transparent)] opacity-70" />
+        </div>
 
-      {/* Navbar */}
-      <div className="relative z-50">
-        <Navbar onNavigate={handleNavigation} />
-      </div>
+        {/* Navbar */}
+        <div className="relative z-50">
+          <Navbar onNavigate={handleNavigation} />
+        </div>
 
       {/* Hero Section */}
       <motion.section 
@@ -917,5 +920,6 @@ export const CompanyProfile = () => {
         </div>
       </footer>
     </div>
+    </TranslationProvider>
   );
 };

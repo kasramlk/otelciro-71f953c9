@@ -64,8 +64,8 @@ export const BusinessShowcase = () => {
       color: 'from-secondary to-secondary-light'
     },
     {
-      icon: Globe,
-      title: t('landing.ecosystem.miniGDS'),
+      icon: Link,
+      title: t('landing.ecosystem.channelManager'),
       color: 'from-blue-500 to-blue-400'
     },
     {
@@ -223,7 +223,7 @@ export const BusinessShowcase = () => {
               const Icon = tool.icon;
               return (
                 <motion.div
-                  key={tool.title}
+                  key={`ecosystem-${index}`}
                   initial={{ opacity: 0, y: 30 }}
                   animate={ecosystemVisible ? { opacity: 1, y: 0 } : {}}
                   transition={{ duration: 0.6, delay: index * 0.1 }}
