@@ -12,6 +12,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger, DropdownMenuIte
 import { useHMSStore } from '@/stores/hms-store';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
+import { useEnhancedReservations } from '@/hooks/use-enhanced-reservations';
 import { HMSNewReservation } from './HMSNewReservation';
 import { ReservationDetailModal } from '@/components/reservations/ReservationDetailModal';
 import { RoomMoveModal } from '@/components/reservations/RoomMoveModal';
@@ -22,7 +23,8 @@ import { EnhancedExportSystem } from '@/components/export/EnhancedExportSystem';
 import { OnlineUsers } from '@/components/realtime/OnlineUsers';
 
 export const HMSReservations = () => {
-  const { reservations } = useHMSStore();
+  const { selectedHotelId } = useHMSStore();
+  const { data: reservations = [], isLoading } = useEnhancedReservations(selectedHotelId || '');
   const { toast } = useToast();
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
@@ -35,39 +37,43 @@ export const HMSReservations = () => {
 
   // Filter reservations
   const filteredReservations = useMemo(() => {
+    if (!reservations || reservations.length === 0) return [];
+    
     return reservations.filter(reservation => {
+      // Get guest name from guests relationship or fallback
+      const guestName = reservation.guests 
+        ? `${reservation.guests.first_name || ''} ${reservation.guests.last_name || ''}`.trim()
+        : 'Unknown Guest';
+      
       const matchesSearch = 
-        reservation.guestName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        reservation.code.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        reservation.email.toLowerCase().includes(searchQuery.toLowerCase());
+        guestName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        reservation.code?.toLowerCase().includes(searchQuery.toLowerCase());
       
       const matchesStatus = statusFilter === 'all' || reservation.status === statusFilter;
       const matchesSource = sourceFilter === 'all' || reservation.source === sourceFilter;
       
-      // Date range filter logic would go here
-      
       return matchesSearch && matchesStatus && matchesSource;
     });
-  }, [reservations, searchQuery, statusFilter, sourceFilter, dateRange]);
+  }, [reservations, searchQuery, statusFilter, sourceFilter]);
 
   // Stats
   const stats = useMemo(() => {
     const total = filteredReservations.length;
-    const confirmed = filteredReservations.filter(r => r.status === 'confirmed').length;
-    const checkedIn = filteredReservations.filter(r => r.status === 'checked-in').length;
-    const cancelled = filteredReservations.filter(r => r.status === 'cancelled').length;
-    const totalRevenue = filteredReservations.reduce((sum, r) => sum + r.totalAmount, 0);
+    const confirmed = filteredReservations.filter(r => r.status === 'Confirmed').length;
+    const checkedIn = filteredReservations.filter(r => r.status === 'Checked In').length;
+    const cancelled = filteredReservations.filter(r => r.status === 'Cancelled').length;
+    const totalRevenue = filteredReservations.reduce((sum, r) => sum + (r.total_amount || 0), 0);
 
     return { total, confirmed, checkedIn, cancelled, totalRevenue };
   }, [filteredReservations]);
 
   const getStatusBadge = (status: string) => {
     const variants = {
-      'confirmed': 'default',
-      'checked-in': 'secondary',
-      'checked-out': 'outline',
-      'cancelled': 'destructive',
-      'no-show': 'destructive'
+      'Confirmed': 'default',
+      'Checked In': 'secondary',
+      'Checked Out': 'outline',
+      'Cancelled': 'destructive',
+      'No Show': 'destructive'
     };
     return <Badge variant={(variants[status as keyof typeof variants] as any) || 'default'}>{status}</Badge>;
   };
@@ -118,15 +124,20 @@ export const HMSReservations = () => {
     // Mock export functionality
     const csvContent = [
       ['Code', 'Guest', 'Check In', 'Check Out', 'Status', 'Source', 'Total Amount'].join(','),
-      ...filteredReservations.map(r => [
-        r.code,
-        r.guestName,
-        format(r.checkIn, 'yyyy-MM-dd'),
-        format(r.checkOut, 'yyyy-MM-dd'),
-        r.status,
-        r.source,
-        r.totalAmount.toString()
-      ].join(','))
+      ...filteredReservations.map(r => {
+        const guestName = r.guests 
+          ? `${r.guests.first_name || ''} ${r.guests.last_name || ''}`.trim()
+          : 'Unknown Guest';
+        return [
+          r.code || '',
+          guestName,
+          format(new Date(r.check_in), 'yyyy-MM-dd'),
+          format(new Date(r.check_out), 'yyyy-MM-dd'),
+          r.status,
+          r.source || 'Direct',
+          (r.total_amount || 0).toString()
+        ].join(',');
+      })
     ].join('\n');
 
     const blob = new Blob([csvContent], { type: 'text/csv' });
@@ -160,15 +171,15 @@ export const HMSReservations = () => {
           </div>
           
           {/* Global Search */}
-          <GlobalSearch
-            onNavigate={(type, id) => {
-              if (type === 'reservation') {
-                const reservation = reservations.find(r => r.id === id);
-                if (reservation) handleViewDetails(reservation);
-              }
-            }}
-            className="max-w-2xl"
-          />
+            <GlobalSearch
+              onNavigate={(type, id) => {
+                if (type === 'reservation') {
+                  const reservation = reservations?.find(r => r.id === id);
+                  if (reservation) handleViewDetails(reservation);
+                }
+              }}
+              className="max-w-2xl"
+            />
         </div>
         
         <div className="flex items-center gap-4">
@@ -359,28 +370,35 @@ export const HMSReservations = () => {
                     <TableCell className="font-medium">{reservation.code}</TableCell>
                     <TableCell>
                       <div>
-                        <p className="font-medium">{reservation.guestName}</p>
-                        <p className="text-sm text-muted-foreground">{reservation.email}</p>
+                        <p className="font-medium">
+                          {reservation.guests 
+                            ? `${reservation.guests.first_name || ''} ${reservation.guests.last_name || ''}`.trim()
+                            : 'Unknown Guest'
+                          }
+                        </p>
+                        <p className="text-sm text-muted-foreground">{reservation.booking_reference || 'N/A'}</p>
                       </div>
                     </TableCell>
-                    <TableCell>{format(reservation.checkIn, 'MMM dd, yyyy')}</TableCell>
-                    <TableCell>{format(reservation.checkOut, 'MMM dd, yyyy')}</TableCell>
-                    <TableCell>{reservation.nights}</TableCell>
+                    <TableCell>{format(new Date(reservation.check_in), 'MMM dd, yyyy')}</TableCell>
+                    <TableCell>{format(new Date(reservation.check_out), 'MMM dd, yyyy')}</TableCell>
+                    <TableCell>
+                      {Math.ceil((new Date(reservation.check_out).getTime() - new Date(reservation.check_in).getTime()) / (1000 * 60 * 60 * 24))}
+                    </TableCell>
                     <TableCell>
                       <div>
-                        <p>{reservation.roomType}</p>
-                        {reservation.roomNumber && (
-                          <p className="text-sm text-muted-foreground">Room {reservation.roomNumber}</p>
+                        <p>{reservation.room_types?.name || 'Room'}</p>
+                        {reservation.rooms?.number && (
+                          <p className="text-sm text-muted-foreground">Room {reservation.rooms.number}</p>
                         )}
                       </div>
                     </TableCell>
                     <TableCell>{getStatusBadge(reservation.status)}</TableCell>
-                    <TableCell>{getSourceBadge(reservation.source)}</TableCell>
+                    <TableCell>{getSourceBadge(reservation.source || 'Direct')}</TableCell>
                     <TableCell>
                       <div>
-                        <p className="font-medium">€{reservation.totalAmount.toFixed(2)}</p>
-                        {reservation.balance > 0 && (
-                          <p className="text-sm text-red-600">Balance: €{reservation.balance.toFixed(2)}</p>
+                        <p className="font-medium">€{(reservation.total_amount || 0).toFixed(2)}</p>
+                        {(reservation.balance_due || 0) > 0 && (
+                          <p className="text-sm text-red-600">Balance: €{reservation.balance_due.toFixed(2)}</p>
                         )}
                       </div>
                     </TableCell>

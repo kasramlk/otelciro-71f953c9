@@ -9,6 +9,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { useHMSStore } from '@/stores/hms-store';
 import { ROOM_TYPES } from '@/lib/mock-data';
 import { format, addDays, startOfToday } from 'date-fns';
+import { useEnhancedReservations } from '@/hooks/use-enhanced-reservations';
+import { useEnhancedRooms } from '@/hooks/use-enhanced-rooms';
 import { ReservationDetailModal } from '@/components/reservations/ReservationDetailModal';
 import { RoomMoveModal } from '@/components/reservations/RoomMoveModal';
 import { RealtimeNotificationSystem } from '@/components/realtime/RealtimeNotificationSystem';
@@ -17,7 +19,9 @@ import { EnhancedExportSystem } from '@/components/export/EnhancedExportSystem';
 import { useToast } from '@/hooks/use-toast';
 
 export const HMSRoomPlan = () => {
-  const { rooms, reservations } = useHMSStore();
+  const { selectedHotelId } = useHMSStore();
+  const { data: rooms = [] } = useEnhancedRooms(selectedHotelId || '');
+  const { data: reservations = [] } = useEnhancedReservations(selectedHotelId || '');
   const [viewDays, setViewDays] = useState(7);
   const [roomTypeFilter, setRoomTypeFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
@@ -32,8 +36,9 @@ export const HMSRoomPlan = () => {
 
   // Filter rooms based on selected filters
   const filteredRooms = useMemo(() => {
+    if (!rooms) return [];
     return rooms.filter(room => {
-      const matchesRoomType = roomTypeFilter === 'all' || room.roomTypeId === roomTypeFilter;
+      const matchesRoomType = roomTypeFilter === 'all' || room.room_type_id === roomTypeFilter;
       const matchesStatus = statusFilter === 'all' || room.status === statusFilter;
       return matchesRoomType && matchesStatus;
     });
@@ -41,11 +46,11 @@ export const HMSRoomPlan = () => {
 
   // Get reservations for specific room and date
   const getReservationForRoomDate = (roomId: string, date: Date) => {
-    return reservations.find(res => 
-      res.roomId === roomId &&
-      date >= res.checkIn &&
-      date < res.checkOut &&
-      (res.status === 'confirmed' || res.status === 'checked-in')
+    return reservations?.find(res => 
+      res.room_id === roomId &&
+      date >= new Date(res.check_in) &&
+      date < new Date(res.check_out) &&
+      (res.status === 'Confirmed' || res.status === 'Checked In')
     );
   };
 
@@ -62,11 +67,11 @@ export const HMSRoomPlan = () => {
     }
     
     switch (room.status) {
-      case 'clean':
+      case 'Available':
         return { status: 'available', color: 'bg-green-100', text: 'text-green-800' };
-      case 'dirty':
+      case 'Dirty':
         return { status: 'dirty', color: 'bg-yellow-100', text: 'text-yellow-800' };
-      case 'ooo':
+      case 'Out of Order':
         return { status: 'out-of-order', color: 'bg-red-100', text: 'text-red-800' };
       default:
         return { status: 'available', color: 'bg-gray-100', text: 'text-gray-800' };
@@ -91,9 +96,9 @@ export const HMSRoomPlan = () => {
   const bulkRoomItems = filteredRooms.map(room => ({
     id: room.id,
     type: 'room' as const,
-    name: `Room ${room.number} (${room.roomType})`,
+    name: `Room ${room.number} (${room.room_types?.name || 'Room'})`,
     status: room.status.toLowerCase(),
-    details: `Floor ${room.floor} - ${room.roomType} room`
+    details: `Floor ${room.floor} - ${room.room_types?.name || 'Room'} room`
   }));
 
   return (
@@ -250,10 +255,10 @@ export const HMSRoomPlan = () => {
                     {/* Room Info */}
                     <div className="p-3 border-r">
                       <div className="font-medium">{room.number}</div>
-                      <div className="text-xs text-muted-foreground">{room.roomType}</div>
+                      <div className="text-xs text-muted-foreground">{room.room_types?.name || 'Room'}</div>
                       <Badge 
-                        variant={room.status === 'clean' ? 'default' : 
-                                room.status === 'dirty' ? 'secondary' : 'destructive'} 
+                        variant={room.status === 'Available' ? 'default' : 
+                                room.status === 'Dirty' ? 'secondary' : 'destructive'} 
                         className="text-xs mt-1"
                       >
                         {room.status}
@@ -273,12 +278,17 @@ export const HMSRoomPlan = () => {
                         >
                           {reservation ? (
                             <div className="text-xs">
-                              <div className="font-medium truncate">{reservation.guestName}</div>
+                              <div className="font-medium truncate">
+                                {reservation.guests 
+                                  ? `${reservation.guests.first_name || ''} ${reservation.guests.last_name || ''}`.trim()
+                                  : 'Guest'
+                                }
+                              </div>
                               <div>{reservation.code}</div>
-                              {reservation.checkIn.toDateString() === date.toDateString() && 
+                              {new Date(reservation.check_in).toDateString() === date.toDateString() && 
                                 <Badge variant="outline" className="text-xs">Arrival</Badge>
                               }
-                              {new Date(reservation.checkOut.getTime() - 24 * 60 * 60 * 1000).toDateString() === date.toDateString() && 
+                              {new Date(new Date(reservation.check_out).getTime() - 24 * 60 * 60 * 1000).toDateString() === date.toDateString() && 
                                 <Badge variant="outline" className="text-xs">Departure</Badge>
                               }
                             </div>
@@ -303,7 +313,7 @@ export const HMSRoomPlan = () => {
       {/* Reservation Details Modal */}
       {selectedReservation && (
         <ReservationDetailModal
-          reservation={reservations.find(r => r.id === selectedReservation)}
+          reservation={reservations?.find(r => r.id === selectedReservation)}
           open={detailsModalOpen}
           onClose={() => setDetailsModalOpen(false)}
         />
@@ -311,20 +321,22 @@ export const HMSRoomPlan = () => {
 
       {/* Room Move Modal */}
       {selectedReservation && (
-        <RoomMoveModal
-          reservation={(() => {
-            const res = reservations.find(r => r.id === selectedReservation);
-            if (!res) return null;
-            return {
-              id: res.id,
-              guestName: res.guestName,
-              roomNumber: res.roomNumber || '',
-              roomType: res.roomType,
-              checkIn: format(res.checkIn, 'yyyy-MM-dd'),
-              checkOut: format(res.checkOut, 'yyyy-MM-dd'),
-              guests: res.adults || 1
-            };
-          })()}
+          <RoomMoveModal
+            reservation={(() => {
+              const res = reservations?.find(r => r.id === selectedReservation);
+              if (!res) return null;
+              return {
+                id: res.id,
+                guestName: res.guests 
+                  ? `${res.guests.first_name || ''} ${res.guests.last_name || ''}`.trim()
+                  : 'Unknown Guest',
+                roomNumber: res.rooms?.number || '',
+                roomType: res.room_types?.name || 'Room',
+                checkIn: format(new Date(res.check_in), 'yyyy-MM-dd'),
+                checkOut: format(new Date(res.check_out), 'yyyy-MM-dd'),
+                guests: res.adults || 1
+              };
+            })()}
           open={showMoveModal}
           onClose={() => setShowMoveModal(false)}
         />
