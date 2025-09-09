@@ -11,6 +11,7 @@ import { setupGlobalErrorHandling } from "@/lib/error-handler";
 import { ProtectedSocialMediaRoute } from "@/components/auth/ProtectedSocialMediaRoute";
 import Auth from "./pages/Auth";
 import Index from "./pages/Index";
+import { CompanyProfile } from "./pages/CompanyProfile";
 import NewReservation from "./pages/NewReservation";
 import Dashboard from "./pages/Dashboard";
 import Reservations from "./pages/Reservations";
@@ -144,6 +145,7 @@ const AppContent = () => {
       {/* Public Routes */}
       <Route path="/auth" element={<Auth />} />
       <Route path="/" element={session ? <Navigate to="/dashboard" replace /> : <Index />} />
+      <Route path="/compprofile" element={<CompanyProfile />} />
       
       {/* Protected Routes - Redirect to auth if no session */}
       {!session ? (

@@ -77,6 +77,13 @@ export const Navbar = ({ onNavigate }: NavbarProps) => {
             >
               {t('navbar.pricing')}
             </Button>
+            <Button
+              variant="ghost"
+              onClick={() => window.open('/compprofile', '_blank')}
+              className="hover:text-primary"
+            >
+              Company Profile
+            </Button>
           </div>
 
           {/* Language Switcher & Mobile Menu */}
@@ -131,6 +138,13 @@ export const Navbar = ({ onNavigate }: NavbarProps) => {
                 className="justify-start hover:text-primary"
               >
                 {t('navbar.pricing')}
+              </Button>
+              <Button
+                variant="ghost"
+                onClick={() => window.open('/compprofile', '_blank')}
+                className="justify-start hover:text-primary"
+              >
+                Company Profile
               </Button>
             </div>
           </motion.div>
