@@ -58,6 +58,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
+import { useFolioItems, useFolioBalance, useAddFolioCharge, useProcessPayment, useVoidFolioItem, useGenerateInvoice } from '@/hooks/use-advanced-folio-management';
 
 const chargePaymentSchema = z.object({
   description: z.string().min(1, "Description is required"),
@@ -124,6 +125,12 @@ const mockFolioItems = [
 ];
 
 export default function FolioManager({ reservationId, reservationCode }: FolioManagerProps) {
+  const { data: folioItems = [] } = useFolioItems(reservationId);
+  const { balance } = useFolioBalance(reservationId);
+  const addChargeMutation = useAddFolioCharge();
+  const processPaymentMutation = useProcessPayment();
+  const voidItemMutation = useVoidFolioItem();
+  const generateInvoiceMutation = useGenerateInvoice();
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isVoidDialogOpen, setIsVoidDialogOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
@@ -141,38 +148,74 @@ export default function FolioManager({ reservationId, reservationCode }: FolioMa
     resolver: zodResolver(voidSchema),
   });
 
-  // Calculate balance
+  // Calculate balance using real data
   const calculateBalance = () => {
-    const activeItems = mockFolioItems.filter(item => !item.voidedAt);
-    const charges = activeItems
-      .filter(item => item.type === "Charge")
-      .reduce((sum, item) => sum + item.amount, 0);
-    const payments = activeItems
-      .filter(item => item.type === "Payment")
-      .reduce((sum, item) => sum + item.amount, 0);
-    return charges - payments;
+    return balance;
   };
 
-  const onSubmit = (data: ChargePaymentData) => {
-    console.log("Add folio item:", data);
-    toast({
-      title: `${data.type} added`,
-      description: `${data.type} of $${data.amount.toFixed(2)} has been added to the folio.`,
-    });
-    setIsAddDialogOpen(false);
-    form.reset();
+  const onSubmit = async (data: ChargePaymentData) => {
+    try {
+      if (data.type === "Charge") {
+        await addChargeMutation.mutateAsync({
+          reservationId,
+          amount: data.amount,
+          description: data.description,
+          currency: data.currency,
+          type: 'room_charge' // Default charge type
+        });
+      } else {
+        await processPaymentMutation.mutateAsync({
+          reservationId,
+          hotelId: 'default', // This should come from context in real implementation
+          amount: data.amount,
+          paymentMethod: data.description,
+          paymentType: 'cash', // Default payment type
+          currency: data.currency
+        });
+      }
+      
+      toast({
+        title: `${data.type} added`,
+        description: `${data.type} of $${data.amount.toFixed(2)} has been added to the folio.`,
+      });
+      setIsAddDialogOpen(false);
+      form.reset();
+    } catch (error) {
+      console.error('Failed to add folio item:', error);
+      toast({
+        title: `Failed to add ${data.type.toLowerCase()}`,
+        description: 'Please try again.',
+        variant: 'destructive'
+      });
+    }
   };
 
-  const onVoidSubmit = (data: VoidData) => {
-    console.log("Void item:", selectedItem, "Reason:", data.reason);
-    toast({
-      title: "Item voided",
-      description: "The folio item has been successfully voided.",
-      variant: "destructive",
-    });
-    setIsVoidDialogOpen(false);
-    setSelectedItem(null);
-    voidForm.reset();
+  const onVoidSubmit = async (data: VoidData) => {
+    if (!selectedItem) return;
+    
+    try {
+      await voidItemMutation.mutateAsync({
+        itemId: selectedItem.id,
+        reason: data.reason,
+        itemType: selectedItem.type === "Charge" ? "charge" : "payment"
+      });
+      
+      toast({
+        title: "Item voided",
+        description: "The folio item has been successfully voided.",
+        variant: "destructive",
+      });
+      setIsVoidDialogOpen(false);
+      setSelectedItem(null);
+      voidForm.reset();
+    } catch (error) {
+      console.error('Failed to void item:', error);
+      toast({
+        title: "Failed to void item",
+        description: "Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleVoidItem = (item) => {
@@ -180,12 +223,22 @@ export default function FolioManager({ reservationId, reservationCode }: FolioMa
     setIsVoidDialogOpen(true);
   };
 
-  const exportFolio = (format: 'csv' | 'pdf') => {
-    console.log(`Exporting folio ${reservationCode} as ${format.toUpperCase()}`);
-    toast({
-      title: "Export started",
-      description: `Folio is being exported as ${format.toUpperCase()}. Download will start shortly.`,
-    });
+  const exportFolio = async (format: 'csv' | 'pdf') => {
+    try {
+      // In a real implementation, this would use the export hook
+      console.log(`Exporting folio ${reservationCode} as ${format.toUpperCase()}`);
+      toast({
+        title: "Export started",
+        description: `Folio is being exported as ${format.toUpperCase()}. Download will start shortly.`,
+      });
+    } catch (error) {
+      console.error('Failed to export folio:', error);
+      toast({
+        title: "Export failed",
+        description: "Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   const getTypeIcon = (type: string) => {
@@ -276,68 +329,68 @@ export default function FolioManager({ reservationId, reservationCode }: FolioMa
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
-          <TableBody>
-            {mockFolioItems
-              .sort((a, b) => b.postedAt.getTime() - a.postedAt.getTime())
-              .map((item) => (
-                <TableRow key={item.id} className={item.voidedAt ? "opacity-50" : ""}>
-                  <TableCell>
-                    <div className="flex items-center space-x-2">
-                      {getTypeIcon(item.type)}
-                      <Badge variant={getTypeBadgeVariant(item.type)}>
-                        {item.type}
-                      </Badge>
-                    </div>
-                  </TableCell>
-                  <TableCell className="font-medium">{item.description}</TableCell>
-                  <TableCell>
-                    <span className={item.type === "Charge" ? "text-red-600" : "text-green-600"}>
-                      {item.type === "Charge" ? "+" : "-"}${item.amount.toFixed(2)}
-                    </span>
-                  </TableCell>
-                  <TableCell>{item.currency}</TableCell>
-                  <TableCell>{format(item.postedAt, "MMM dd, yyyy HH:mm")}</TableCell>
-                  <TableCell>
-                    {item.voidedAt ? (
-                      <Badge variant="outline" className="text-red-600">
-                        <AlertTriangle className="mr-1 h-3 w-3" />
-                        Voided
-                      </Badge>
-                    ) : (
-                      <Badge variant="outline">Active</Badge>
-                    )}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    {!item.voidedAt && (
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" className="h-8 w-8 p-0">
-                            <span className="sr-only">Open menu</span>
-                            <MoreHorizontal className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem 
-                            className="text-destructive"
-                            onClick={() => handleVoidItem(item)}
-                          >
-                            <Trash2 className="mr-2 h-4 w-4" />
-                            Void Item
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    )}
-                    {item.voidedAt && (
-                      <p className="text-xs text-muted-foreground">
-                        Void: {item.voidReason}
-                      </p>
-                    )}
-                  </TableCell>
-                </TableRow>
-              ))}
-          </TableBody>
+           <TableBody>
+             {folioItems
+               .sort((a, b) => new Date(b.postedAt).getTime() - new Date(a.postedAt).getTime())
+               .map((item) => (
+                 <TableRow key={item.id} className={item.voidedAt ? "opacity-50" : ""}>
+                   <TableCell>
+                     <div className="flex items-center space-x-2">
+                       {getTypeIcon(item.type === "charge" ? "Charge" : "Payment")}
+                       <Badge variant={getTypeBadgeVariant(item.type === "charge" ? "Charge" : "Payment")}>
+                         {item.type === "charge" ? "Charge" : "Payment"}
+                       </Badge>
+                     </div>
+                   </TableCell>
+                   <TableCell className="font-medium">{item.description}</TableCell>
+                   <TableCell>
+                     <span className={item.type === "charge" ? "text-red-600" : "text-green-600"}>
+                       {item.type === "charge" ? "+" : ""}${Math.abs(item.amount).toFixed(2)}
+                     </span>
+                   </TableCell>
+                   <TableCell>{item.currency}</TableCell>
+                   <TableCell>{format(new Date(item.postedAt), "MMM dd, yyyy HH:mm")}</TableCell>
+                   <TableCell>
+                     {item.voidedAt ? (
+                       <Badge variant="outline" className="text-red-600">
+                         <AlertTriangle className="mr-1 h-3 w-3" />
+                         Voided
+                       </Badge>
+                     ) : (
+                       <Badge variant="outline">Active</Badge>
+                     )}
+                   </TableCell>
+                   <TableCell className="text-right">
+                     {!item.voidedAt && (
+                       <DropdownMenu>
+                         <DropdownMenuTrigger asChild>
+                           <Button variant="ghost" className="h-8 w-8 p-0">
+                             <span className="sr-only">Open menu</span>
+                             <MoreHorizontal className="h-4 w-4" />
+                           </Button>
+                         </DropdownMenuTrigger>
+                         <DropdownMenuContent align="end">
+                           <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                           <DropdownMenuSeparator />
+                           <DropdownMenuItem 
+                             className="text-destructive"
+                             onClick={() => handleVoidItem(item)}
+                           >
+                             <Trash2 className="mr-2 h-4 w-4" />
+                             Void Item
+                           </DropdownMenuItem>
+                         </DropdownMenuContent>
+                       </DropdownMenu>
+                     )}
+                     {item.voidedAt && (
+                       <p className="text-xs text-muted-foreground">
+                         Void: {item.voidReason}
+                       </p>
+                     )}
+                   </TableCell>
+                 </TableRow>
+               ))}
+           </TableBody>
         </Table>
       </div>
 

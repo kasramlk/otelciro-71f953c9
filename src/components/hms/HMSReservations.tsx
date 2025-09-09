@@ -9,10 +9,10 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
-import { useHMSStore } from '@/stores/hms-store';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
-import { useEnhancedReservations } from '@/hooks/use-enhanced-reservations';
+import { useAdvancedReservations, useGroupReservations, useOptimizeRoomAssignments } from '@/hooks/use-advanced-reservations';
+import { useHotelContext } from '@/hooks/use-hotel-context';
 import { HMSNewReservation } from './HMSNewReservation';
 import { ReservationDetailModal } from '@/components/reservations/ReservationDetailModal';
 import { RoomMoveModal } from '@/components/reservations/RoomMoveModal';
@@ -23,8 +23,10 @@ import { EnhancedExportSystem } from '@/components/export/EnhancedExportSystem';
 import { OnlineUsers } from '@/components/realtime/OnlineUsers';
 
 export const HMSReservations = () => {
-  const { selectedHotelId } = useHMSStore();
-  const { data: reservations = [], isLoading } = useEnhancedReservations(selectedHotelId || '');
+  const { selectedHotelId } = useHotelContext();
+  const { data: reservations = [], isLoading } = useAdvancedReservations(selectedHotelId || '');
+  const { data: groupReservations = [] } = useGroupReservations(selectedHotelId || '');
+  const optimizeRoomsMutation = useOptimizeRoomAssignments();
   const { toast } = useToast();
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
@@ -114,10 +116,27 @@ export const HMSReservations = () => {
   const handleCancelReservation = (reservation: any) => {
     console.log("Cancel reservation:", reservation);
     toast({
-      title: "Reservation cancelled",
-      description: `Reservation ${reservation.code} has been cancelled.`,
-      variant: "destructive",
+      title: "Cancel functionality not implemented",
+      description: "Reservation cancellation will be implemented in the next update.",
     });
+  };
+
+  const handleOptimizeRooms = async () => {
+    if (!selectedHotelId) {
+      toast({ title: 'No hotel selected', variant: 'destructive' });
+      return;
+    }
+    
+    try {
+      await optimizeRoomsMutation.mutateAsync({ 
+        hotelId: selectedHotelId,
+        date: new Date().toISOString().split('T')[0] // Today's date
+      });
+      toast({ title: 'Room optimization completed', description: 'Available rooms have been assigned to unassigned reservations.' });
+    } catch (error) {
+      console.error('Failed to optimize rooms:', error);
+      toast({ title: 'Room optimization failed', variant: 'destructive' });
+    }
   };
 
   const handleExport = () => {
@@ -199,7 +218,10 @@ export const HMSReservations = () => {
           }}
         />
         
-        <Dialog open={isNewReservationOpen} onOpenChange={setIsNewReservationOpen}>
+          <Button className="bg-gradient-primary" onClick={handleOptimizeRooms}>
+            Optimize Rooms
+          </Button>
+          <Dialog open={isNewReservationOpen} onOpenChange={setIsNewReservationOpen}>
           <DialogTrigger asChild>
             <Button className="bg-gradient-primary">
               <Plus className="h-4 w-4 mr-2" />
