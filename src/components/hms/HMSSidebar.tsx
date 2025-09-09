@@ -32,7 +32,9 @@ import {
   Image,
   Calendar1,
   Palette,
-  Zap
+  Zap,
+  Smartphone,
+  Activity
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -66,7 +68,9 @@ const operationsItems: SidebarItem[] = [
 
 const businessItems: SidebarItem[] = [
   { title: "Analytics", href: "/analytics", icon: BarChart3 },
+  { title: "Advanced Analytics", href: "/advanced-analytics", icon: TrendingUp, color: "text-accent" },
   { title: "Revenue AI", href: "/revenue-ai", icon: TrendingUp, color: "text-accent" },
+  { title: "AI Insights V2", href: "/ai-insights-v2", icon: Zap, color: "text-accent" },
   { title: "Reports", href: "/reports", icon: FileText }
 ];
 
@@ -80,6 +84,8 @@ const socialMediaItems: SidebarItem[] = [
 ];
 
 const systemItems: SidebarItem[] = [
+  { title: "Mobile Dashboard", href: "/mobile-dashboard", icon: Smartphone },
+  { title: "Performance", href: "/performance", icon: Activity, color: "text-accent" },
   { title: "Settings", href: "/settings", icon: Settings },
   { title: "Audit Log", href: "/audit-log", icon: BookOpen }
 ];

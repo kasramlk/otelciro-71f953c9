@@ -80,6 +80,10 @@ import SocialMediaAdvanced from "./pages/SocialMediaAdvanced";
 import SocialMediaIntegration from "./pages/SocialMediaIntegration";
 import SocialMediaEnterprise from "./pages/SocialMediaEnterprise";
 import Beds24Integration from "./pages/admin/Beds24Integration";
+import AdvancedAnalytics from "./pages/AdvancedAnalytics";
+import MobileDashboard from "./pages/MobileDashboard";  
+import AIInsightsV2Page from "./pages/AIInsightsV2";
+import PerformancePage from "./pages/Performance";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -377,6 +381,36 @@ const AppContent = () => {
             <HMSLayout>
               <AuditLog />
             </HMSLayout>
+          } />
+          
+          {/* Advanced HMS Routes */}
+          <Route path="/advanced-analytics" element={
+            <HotelProvider>
+              <HMSLayout>
+                <AdvancedAnalytics />
+              </HMSLayout>
+            </HotelProvider>
+          } />
+          <Route path="/mobile-dashboard" element={
+            <HotelProvider>
+              <HMSLayout>
+                <MobileDashboard />
+              </HMSLayout>
+            </HotelProvider>
+          } />
+          <Route path="/ai-insights-v2" element={
+            <HotelProvider>
+              <HMSLayout>
+                <AIInsightsV2Page />
+              </HMSLayout>
+            </HotelProvider>
+          } />
+          <Route path="/performance" element={
+            <HotelProvider>
+              <HMSLayout>
+                <PerformancePage />
+              </HMSLayout>
+            </HotelProvider>
           } />
           
           {/* Hotel Management Routes */}

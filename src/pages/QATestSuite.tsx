@@ -1,6 +1,8 @@
 import React from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import QATestSuite from '@/components/testing/QATestSuite';
+import EnhancedQATestSuite from '@/components/testing/EnhancedQATestSuite';
+import EnhancedSecurityCenter from '@/components/security/EnhancedSecurityCenter';
 import DeploymentChecklist from '@/components/production/DeploymentChecklist';
 
 const QATestSuitePage = () => {
@@ -11,13 +13,23 @@ const QATestSuitePage = () => {
         <p className="text-muted-foreground">Testing and deployment preparation</p>
       </div>
       
-      <Tabs defaultValue="tests" className="w-full">
+      <Tabs defaultValue="enhanced-tests" className="w-full">
         <TabsList>
-          <TabsTrigger value="tests">Test Suite</TabsTrigger>
+          <TabsTrigger value="enhanced-tests">Enhanced HMS Tests</TabsTrigger>
+          <TabsTrigger value="security">Security Center</TabsTrigger>
+          <TabsTrigger value="basic-tests">Basic Test Suite</TabsTrigger>
           <TabsTrigger value="deployment">Deployment Checklist</TabsTrigger>
         </TabsList>
         
-        <TabsContent value="tests">
+        <TabsContent value="enhanced-tests">
+          <EnhancedQATestSuite />
+        </TabsContent>
+        
+        <TabsContent value="security">
+          <EnhancedSecurityCenter />
+        </TabsContent>
+        
+        <TabsContent value="basic-tests">
           <QATestSuite />
         </TabsContent>
         
