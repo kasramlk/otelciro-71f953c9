@@ -32,6 +32,7 @@ export type Database = {
           logo_url: string | null
           name: string
           org_id: string
+          owner_id: string | null
           payment_terms: number | null
           type: string
           updated_at: string
@@ -53,6 +54,7 @@ export type Database = {
           logo_url?: string | null
           name: string
           org_id: string
+          owner_id?: string | null
           payment_terms?: number | null
           type?: string
           updated_at?: string
@@ -74,6 +76,7 @@ export type Database = {
           logo_url?: string | null
           name?: string
           org_id?: string
+          owner_id?: string | null
           payment_terms?: number | null
           type?: string
           updated_at?: string
@@ -135,6 +138,60 @@ export type Database = {
           valid_until?: string | null
         }
         Relationships: []
+      }
+      agency_users: {
+        Row: {
+          agency_id: string
+          created_at: string
+          id: string
+          invited_at: string | null
+          invited_by: string | null
+          is_active: boolean | null
+          joined_at: string | null
+          role: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          agency_id: string
+          created_at?: string
+          id?: string
+          invited_at?: string | null
+          invited_by?: string | null
+          is_active?: boolean | null
+          joined_at?: string | null
+          role?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          agency_id?: string
+          created_at?: string
+          id?: string
+          invited_at?: string | null
+          invited_by?: string | null
+          is_active?: boolean | null
+          joined_at?: string | null
+          role?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agency_users_agency_id_fkey"
+            columns: ["agency_id"]
+            isOneToOne: false
+            referencedRelation: "agencies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agency_users_invited_by_fkey"
+            columns: ["invited_by"]
+            isOneToOne: false
+            referencedRelation: "agency_users"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       audit_log: {
         Row: {
@@ -4055,6 +4112,14 @@ export type Database = {
       get_user_org_id: {
         Args: Record<PropertyKey, never>
         Returns: string
+      }
+      get_user_primary_agency: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
+      has_agency_role: {
+        Args: { _agency_id: string; _role: string; _user_id: string }
+        Returns: boolean
       }
       has_role: {
         Args: {

@@ -3,15 +3,63 @@ import { motion } from "framer-motion";
 import { ThemeProvider } from "next-themes";
 import { TravelAgencySidebar } from "@/components/agency/TravelAgencySidebar";
 import { AgencyBranding } from "@/components/agency/AgencyBranding";
+import { useAgencyAuth } from "@/hooks/use-agency-auth";
+import { AgencyAuthProvider } from "@/components/providers/AgencyAuthProvider";
 
 interface TravelAgencyLayoutProps {
   children: ReactNode;
 }
 
-export const TravelAgencyLayout = ({ children }: TravelAgencyLayoutProps) => {
-  // TODO: Get actual agency ID from user context
-  const agencyId = "sample-agency-id";
+const TravelAgencyLayoutContent = ({ children }: TravelAgencyLayoutProps) => {
+  const { currentAgency, isLoadingAgencies } = useAgencyAuth();
 
+  if (isLoadingAgencies) {
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <div className="animate-pulse text-lg">Loading agency data...</div>
+      </div>
+    );
+  }
+
+  if (!currentAgency) {
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-xl font-semibold mb-2">No Agency Found</h2>
+          <p className="text-muted-foreground">You don't have access to any travel agency. Please contact your administrator.</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <AgencyBranding agencyId={currentAgency.id}>
+      <div className="flex h-screen bg-gradient-to-br from-green-50 via-background to-blue-50 dark:from-background dark:via-background dark:to-background">
+        <TravelAgencySidebar />
+        
+        <main className="flex-1 overflow-hidden">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            transition={{ duration: 0.3, ease: "easeInOut" }}
+            className="h-full overflow-y-auto"
+          >
+            <div className="p-8 space-y-8">
+              <div className="border-l-4 border-primary pl-4">
+                <h1 className="text-2xl font-bold text-foreground">{currentAgency.name}</h1>
+                <p className="text-muted-foreground">Search, compare and book hotel inventory worldwide</p>
+              </div>
+              {children}
+            </div>
+          </motion.div>
+        </main>
+      </div>
+    </AgencyBranding>
+  );
+};
+
+export const TravelAgencyLayout = ({ children }: TravelAgencyLayoutProps) => {
   return (
     <ThemeProvider
       attribute="class"
@@ -19,29 +67,11 @@ export const TravelAgencyLayout = ({ children }: TravelAgencyLayoutProps) => {
       enableSystem
       disableTransitionOnChange
     >
-      <AgencyBranding agencyId={agencyId}>
-        <div className="flex h-screen bg-gradient-to-br from-green-50 via-background to-blue-50 dark:from-background dark:via-background dark:to-background">
-          <TravelAgencySidebar />
-          
-          <main className="flex-1 overflow-hidden">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              transition={{ duration: 0.3, ease: "easeInOut" }}
-              className="h-full overflow-y-auto"
-            >
-              <div className="p-8 space-y-8">
-                <div className="border-l-4 border-primary pl-4">
-                  <h1 className="text-2xl font-bold text-foreground">Travel Agency Portal</h1>
-                  <p className="text-muted-foreground">Search, compare and book hotel inventory worldwide</p>
-                </div>
-                {children}
-              </div>
-            </motion.div>
-          </main>
-        </div>
-      </AgencyBranding>
+      <AgencyAuthProvider>
+        <TravelAgencyLayoutContent>
+          {children}
+        </TravelAgencyLayoutContent>
+      </AgencyAuthProvider>
     </ThemeProvider>
   );
 };
