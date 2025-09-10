@@ -22,20 +22,10 @@ const TravelAgencyLayoutContent = ({ children }: TravelAgencyLayoutProps) => {
     );
   }
 
-  if (!currentAgency) {
-    return (
-      <div className="flex h-screen items-center justify-center">
-        <div className="text-center space-y-4">
-          <h2 className="text-xl font-semibold mb-2">No Agency Found</h2>
-          <p className="text-muted-foreground mb-4">You don't have access to any travel agency. Create one to get started.</p>
-          <AgencySwitcher />
-        </div>
-      </div>
-    );
-  }
+  // Always show dashboard, even if no agency is selected yet
 
   return (
-    <AgencyBranding agencyId={currentAgency.id}>
+    <AgencyBranding agencyId={currentAgency?.id}>
       <div className="flex h-screen bg-gradient-to-br from-green-50 via-background to-blue-50 dark:from-background dark:via-background dark:to-background">
         <TravelAgencySidebar />
         
@@ -50,7 +40,7 @@ const TravelAgencyLayoutContent = ({ children }: TravelAgencyLayoutProps) => {
             <div className="p-8 space-y-8">
               <div className="flex items-center justify-between">
                 <div className="border-l-4 border-primary pl-4">
-                  <h1 className="text-2xl font-bold text-foreground">{currentAgency.name}</h1>
+                  <h1 className="text-2xl font-bold text-foreground">{currentAgency?.name || 'Travel Agency Dashboard'}</h1>
                   <p className="text-muted-foreground">Search, compare and book hotel inventory worldwide</p>
                 </div>
                 <AgencySwitcher />
