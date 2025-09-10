@@ -35,6 +35,8 @@ import AgencyNegotiations from "./pages/agency/AgencyNegotiations";
 import AgencyProfile from "./pages/agency/AgencyProfile";
 import AgencySearches from "./pages/agency/AgencySearches";
 import AgencyPartners from "./pages/agency/AgencyPartners";
+import AgencyContracts from "./pages/agency/AgencyContracts";
+import AgencyAnalytics from "./pages/agency/AgencyAnalytics";
 import HotelDashboard from "./pages/hotel/HotelDashboard";
 import HotelReservations from "./pages/hotel/HotelReservations";
 import HousekeepingModule from "./pages/hotel/HousekeepingModule";
@@ -56,6 +58,7 @@ import { NotificationCenter } from "./components/realtime/NotificationCenter";
 import { OnlineUsers } from "./components/realtime/OnlineUsers";
 import { TravelAgencyLayout } from "./layouts/TravelAgencyLayout";
 import { AdminLayout } from "./layouts/AdminLayout";
+import { AgencyUserManagement } from "./components/agency/AgencyUserManagement";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import HotelOnboarding from "./pages/admin/HotelOnboarding";
 import UserManagement from "./pages/admin/UserManagement";
@@ -185,6 +188,37 @@ const AppContent = () => {
             userRole === 'travel_agency' ? (
               <TravelAgencyLayout>
                 <AgencyBookings />
+              </TravelAgencyLayout>
+            ) : <Navigate to="/dashboard" replace />
+          } />
+          <Route path="/agency/contracts" element={
+            userRole === 'travel_agency' ? (
+              <TravelAgencyLayout>
+                <AgencyContracts />
+              </TravelAgencyLayout>
+            ) : <Navigate to="/dashboard" replace />
+          } />
+          <Route path="/agency/payments" element={
+            userRole === 'travel_agency' ? (
+              <TravelAgencyLayout>
+                <AgencyPayments />
+              </TravelAgencyLayout>
+            ) : <Navigate to="/dashboard" replace />
+          } />
+          <Route path="/agency/analytics" element={
+            userRole === 'travel_agency' ? (
+              <TravelAgencyLayout>
+                <AgencyAnalytics />
+              </TravelAgencyLayout>
+            ) : <Navigate to="/dashboard" replace />
+          } />
+          <Route path="/agency/profile" element={
+            userRole === 'travel_agency' ? (
+              <TravelAgencyLayout>
+                <div className="space-y-6">
+                  <AgencyProfile />
+                  <AgencyUserManagement />
+                </div>
               </TravelAgencyLayout>
             ) : <Navigate to="/dashboard" replace />
           } />
