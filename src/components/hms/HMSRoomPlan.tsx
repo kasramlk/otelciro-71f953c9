@@ -7,7 +7,8 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useHMSStore } from '@/stores/hms-store';
-import { ROOM_TYPES } from '@/lib/mock-data';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 import { format, addDays, startOfToday } from 'date-fns';
 import { useEnhancedReservations } from '@/hooks/use-enhanced-reservations';
 import { useEnhancedRooms } from '@/hooks/use-enhanced-rooms';
@@ -22,6 +23,21 @@ export const HMSRoomPlan = () => {
   const { selectedHotelId } = useHMSStore();
   const { data: rooms = [] } = useEnhancedRooms(selectedHotelId || '');
   const { data: reservations = [] } = useEnhancedReservations(selectedHotelId || '');
+  
+  // Fetch room types for filtering
+  const { data: roomTypes = [] } = useQuery({
+    queryKey: ['room-types', selectedHotelId],
+    queryFn: async () => {
+      if (!selectedHotelId) return [];
+      const { data, error } = await supabase
+        .from('room_types')
+        .select('id, name, code')
+        .eq('hotel_id', selectedHotelId);
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!selectedHotelId
+  });
   const [viewDays, setViewDays] = useState(7);
   const [roomTypeFilter, setRoomTypeFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
@@ -166,7 +182,7 @@ export const HMSRoomPlan = () => {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Room Types</SelectItem>
-                {ROOM_TYPES.map(type => (
+                {roomTypes.map(type => (
                   <SelectItem key={type.id} value={type.id}>{type.name}</SelectItem>
                 ))}
               </SelectContent>

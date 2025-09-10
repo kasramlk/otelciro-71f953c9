@@ -15,7 +15,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { useHMSStore } from '@/stores/hms-store';
-import { ROOM_TYPES, RATE_PLANS } from '@/lib/mock-data';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
 
 const reservationSchema = z.object({
@@ -42,7 +43,23 @@ interface HMSNewReservationProps {
 export const HMSNewReservation = ({ onClose, onSave }: HMSNewReservationProps = {} as HMSNewReservationProps) => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { addReservation, rooms, addAuditEntry } = useHMSStore();
+  const { addReservation, rooms, addAuditEntry, selectedHotelId } = useHMSStore();
+
+  // Get current hotel
+  const { data: currentHotel } = useQuery({
+    queryKey: ['hotel', selectedHotelId],
+    queryFn: async () => {
+      if (!selectedHotelId) return null;
+      const { data, error } = await supabase
+        .from('hotels')
+        .select('*')
+        .eq('id', selectedHotelId)
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!selectedHotelId
+  });
   const [activeTab, setActiveTab] = useState('rooms');
   const [selectedRoom, setSelectedRoom] = useState<string>('');
   const [emailAddress, setEmailAddress] = useState('');
@@ -58,7 +75,36 @@ export const HMSNewReservation = ({ onClose, onSave }: HMSNewReservationProps = 
   });
 
   const watchedValues = watch();
-  const selectedRoomType = ROOM_TYPES.find(rt => rt.id === watchedValues.roomTypeId);
+  // Fetch room types and rate plans from database
+  const { data: roomTypes = [] } = useQuery({
+    queryKey: ['room-types', currentHotel?.id],
+    queryFn: async () => {
+      if (!currentHotel?.id) return [];
+      const { data, error } = await supabase
+        .from('room_types')
+        .select('id, name, code, capacity_adults, capacity_children')
+        .eq('hotel_id', currentHotel.id);
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!currentHotel?.id
+  });
+
+  const { data: ratePlans = [] } = useQuery({
+    queryKey: ['rate-plans', currentHotel?.id],
+    queryFn: async () => {
+      if (!currentHotel?.id) return [];
+      const { data, error } = await supabase
+        .from('rate_plans')
+        .select('id, name, code')
+        .eq('hotel_id', currentHotel.id);
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!currentHotel?.id
+  });
+
+  const selectedRoomType = roomTypes.find(rt => rt.id === watchedValues.roomTypeId);
   const availableRooms = rooms.filter(r => 
     r.roomTypeId === watchedValues.roomTypeId && 
     (r.status === 'clean' || r.status === 'dirty')
@@ -271,9 +317,9 @@ export const HMSNewReservation = ({ onClose, onSave }: HMSNewReservationProps = 
                       <SelectValue placeholder="Select room type" />
                     </SelectTrigger>
                     <SelectContent>
-                      {ROOM_TYPES.map(rt => (
+                      {roomTypes.map(rt => (
                         <SelectItem key={rt.id} value={rt.id}>
-                          {rt.name} - {rt.count} available
+                          {rt.name} ({rt.code}) - Max: {rt.capacity_adults + (rt.capacity_children || 0)}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -350,7 +396,7 @@ export const HMSNewReservation = ({ onClose, onSave }: HMSNewReservationProps = 
                       <SelectValue placeholder="Select rate plan" />
                     </SelectTrigger>
                     <SelectContent>
-                      {RATE_PLANS.map(rp => (
+                      {ratePlans.map(rp => (
                         <SelectItem key={rp.id} value={rp.code}>
                           {rp.name} ({rp.code})
                         </SelectItem>

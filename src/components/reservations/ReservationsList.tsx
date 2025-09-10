@@ -177,11 +177,10 @@ export const ReservationsList = ({ filterStatus }: ReservationsListProps) => {
         setReservations(result);
         handleDataLoad(result, false);
       } else {
-        // Error occurred, use mock data as fallback
-        const mockData = generateMockReservations(50);
-        setReservations(mockData);
-        setError('Unable to load reservations from database. Showing sample data.');
-        handleDataLoad(mockData, false, 'Database connection failed');
+        // Error occurred - show error state
+        setReservations([]);
+        setError('Unable to load reservations from database.');
+        handleDataLoad([], false, 'Database connection failed');
       }
       
       setLoading(false);

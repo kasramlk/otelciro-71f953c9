@@ -14,7 +14,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useHMSStore } from '@/stores/hms-store';
 import { useToast } from '@/hooks/use-toast';
-import { ROOM_TYPES } from '@/lib/mock-data';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
 
 interface PricingRecommendation {
