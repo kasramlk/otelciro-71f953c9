@@ -3,6 +3,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import { 
   Search, 
   Calendar, 
@@ -17,38 +19,60 @@ import {
 
 const AgencyDashboard = () => {
   const navigate = useNavigate();
+
+  // Fetch real hotel data
+  const { data: hotelsData, isLoading: hotelsLoading } = useQuery({
+    queryKey: ['agency-dashboard-hotels'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('hotels')
+        .select(`
+          *,
+          room_types(count),
+          rate_plans(count)
+        `);
+      
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  // Fetch recent bookings data (mock for now as bookings table might not exist)
+  const totalHotels = hotelsData?.length || 0;
+  const totalRoomTypes = hotelsData?.reduce((acc, hotel) => acc + (hotel.room_types?.[0]?.count || 0), 0) || 0;
+  
   const stats = [
     {
-      title: "Total Bookings",
-      value: "247",
-      change: "+12%",
+      title: "Available Hotels",
+      value: hotelsLoading ? "..." : totalHotels.toString(),
+      change: "+5%",
       changeType: "positive",
-      icon: Calendar,
-      description: "This month"
+      icon: Building2,
+      description: "Using Otelciro PMS"
     },
     {
-      title: "Commission Earned",
-      value: "$18,249",
-      change: "+8.2%", 
+      title: "Room Types",
+      value: hotelsLoading ? "..." : totalRoomTypes.toString(),
+      change: "+12%", 
       changeType: "positive",
+      icon: Users,
+      description: "Available for booking"
+    },
+    {
+      title: "Commission Earned", 
+      value: "$18,249",
+      change: "+8.2%",
+      changeType: "positive", 
       icon: DollarSign,
       description: "Last 30 days"
     },
     {
-      title: "Active Hotels", 
-      value: "89",
-      change: "+3",
-      changeType: "positive", 
-      icon: Building2,
-      description: "Partner properties"
-    },
-    {
-      title: "Average ADR",
-      value: "$156.80",
-      change: "-2.1%",
-      changeType: "negative",
-      icon: TrendingUp,
-      description: "Weighted average"
+      title: "Total Bookings",
+      value: "247",
+      change: "+15%",
+      changeType: "positive",
+      icon: Calendar,
+      description: "This month"
     }
   ];
 
@@ -59,12 +83,14 @@ const AgencyDashboard = () => {
     { query: "Luxury spa hotel in Cappadocia", timestamp: "2 hours ago", results: 12 }
   ];
 
-  const topPerformingHotels = [
-    { name: "Grand Hyatt Istanbul", bookings: 28, commission: "$4,200", city: "Istanbul" },
-    { name: "Swissotel Ankara", bookings: 22, commission: "$3,150", city: "Ankara" },
-    { name: "Hilton Antalya", bookings: 19, commission: "$2,890", city: "Antalya" },
-    { name: "Raffles Istanbul", bookings: 16, commission: "$2,540", city: "Istanbul" }
-  ];
+  // Use real hotel data for top performing (first 4 hotels as example)
+  const topPerformingHotels = hotelsData?.slice(0, 4).map((hotel, index) => ({
+    name: hotel.name,
+    bookings: 28 - (index * 3), // Mock booking numbers for now
+    commission: `$${(4200 - (index * 500)).toLocaleString()}`,
+    city: hotel.city || 'Unknown',
+    id: hotel.id
+  })) || [];
 
   return (
     <div className="space-y-8">
@@ -85,9 +111,9 @@ const AgencyDashboard = () => {
               </div>
           <Button 
             className="bg-gradient-to-r from-green-500 to-blue-500 hover:opacity-90 text-white"
-            onClick={() => navigate('/agency/search')}
+            onClick={() => navigate('/agency/hotel-search')}
           >
-            Start Booking
+            Search Hotels
             <ArrowUpRight className="ml-2 h-4 w-4" />
           </Button>
             </div>
@@ -204,7 +230,7 @@ const AgencyDashboard = () => {
               <Button 
                 variant="outline" 
                 className="w-full"
-                onClick={() => navigate('/agency/partners')}
+                onClick={() => navigate('/agency/hotel-search')}
               >
                 View All Hotels
               </Button>
