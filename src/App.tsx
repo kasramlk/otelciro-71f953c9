@@ -27,7 +27,6 @@ import AuditLog from "./pages/AuditLog";
 import Occupancy from "./pages/Occupancy";
 import NotFound from "./pages/NotFound";
 import HotelSearch from "./pages/agency/HotelSearch";
-import HotelSearchPage from "./pages/agency/HotelSearchPage";
 import AgencyDashboard from "./pages/agency/AgencyDashboard";
 import AgencyBookings from "./pages/agency/AgencyBookings";
 import AgencyReports from "./pages/agency/AgencyReports";
@@ -182,13 +181,6 @@ const AppContent = () => {
             userRole === 'travel_agency' ? (
               <TravelAgencyLayout>
                 <HotelSearch />
-              </TravelAgencyLayout>
-            ) : <Navigate to="/dashboard" replace />
-          } />
-          <Route path="/agency/hotel-search" element={
-            userRole === 'travel_agency' ? (
-              <TravelAgencyLayout>
-                <HotelSearchPage />
               </TravelAgencyLayout>
             ) : <Navigate to="/dashboard" replace />
           } />

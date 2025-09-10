@@ -4109,13 +4109,6 @@ export type Database = {
         Args: { hotel_uuid: string }
         Returns: Json
       }
-      get_user_agency_access: {
-        Args: { _user_id: string }
-        Returns: {
-          agency_id: string
-          role: string
-        }[]
-      }
       get_user_org_id: {
         Args: Record<PropertyKey, never>
         Returns: string
