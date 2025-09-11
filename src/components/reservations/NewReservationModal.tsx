@@ -154,6 +154,9 @@ export const NewReservationModal = ({ open, onClose }: NewReservationModalProps)
   }, [open]);
 
   const validateCurrentStep = async (): Promise<boolean> => {
+    console.log('🔍 validateCurrentStep called, currentStep:', currentStep);
+    console.log('🔍 formData:', formData);
+    
     const errors: Record<string, string> = {};
     
     try {
@@ -186,6 +189,14 @@ export const NewReservationModal = ({ open, onClose }: NewReservationModalProps)
           }
           
            // Room availability check - only run if all required fields are filled
+           console.log('🔍 Checking availability conditions:', {
+             hasCheckIn: !!formData.checkIn,
+             hasCheckOut: !!formData.checkOut,
+             hasRoomType: !!formData.roomType,
+             availabilityChecked,
+             hasDateErrors: !!(errors.checkIn || errors.checkOut)
+           });
+           
            if (formData.checkIn && formData.checkOut && formData.roomType && 
                !availabilityChecked && 
                !errors.checkIn && !errors.checkOut) {
