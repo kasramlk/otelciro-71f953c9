@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -70,6 +70,8 @@ export const NewReservationModal = ({ open, onClose }: NewReservationModalProps)
   const [loading, setLoading] = useState(false);
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
   const [availabilityChecked, setAvailabilityChecked] = useState(false);
+  const [roomTypes, setRoomTypes] = useState<any[]>([]);
+  const [ratePlans, setRatePlans] = useState<any[]>([]);
   const { toast } = useToast();
   const { logReservationCreated, logGuestCreated } = useAuditLogger();
   const { handleAsyncOperation } = useErrorHandler();
@@ -126,6 +128,30 @@ export const NewReservationModal = ({ open, onClose }: NewReservationModalProps)
       setAvailabilityChecked(false);
     }
   };
+
+  // Load room types and rate plans
+  const loadData = async () => {
+    try {
+      const hotelId = '6163aacb-81d7-4eb2-ab68-4d3e172bef3e'; // Current hotel ID
+      
+      const [roomTypesRes, ratePlansRes] = await Promise.all([
+        supabase.from('room_types').select('id, name, code').eq('hotel_id', hotelId),
+        supabase.from('rate_plans').select('id, name, code').eq('hotel_id', hotelId)
+      ]);
+      
+      if (roomTypesRes.data) setRoomTypes(roomTypesRes.data);
+      if (ratePlansRes.data) setRatePlans(ratePlansRes.data);
+    } catch (error) {
+      console.error('Error loading data:', error);
+    }
+  };
+
+  // Load data when modal opens
+  useEffect(() => {
+    if (open) {
+      loadData();
+    }
+  }, [open]);
 
   const validateCurrentStep = async (): Promise<boolean> => {
     const errors: Record<string, string> = {};
@@ -556,10 +582,11 @@ export const NewReservationModal = ({ open, onClose }: NewReservationModalProps)
                     <SelectValue placeholder="Select room type" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="standard">Standard Room - $150/night</SelectItem>
-                    <SelectItem value="deluxe">Deluxe Room - $200/night</SelectItem>
-                    <SelectItem value="suite">Suite - $300/night</SelectItem>
-                    <SelectItem value="executive">Executive Suite - $450/night</SelectItem>
+                    {roomTypes.map(roomType => (
+                      <SelectItem key={roomType.id} value={roomType.id}>
+                        {roomType.name} ({roomType.code})
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -570,10 +597,11 @@ export const NewReservationModal = ({ open, onClose }: NewReservationModalProps)
                     <SelectValue placeholder="Select rate plan" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="standard">Standard Rate</SelectItem>
-                    <SelectItem value="advance">Advance Purchase (15% off)</SelectItem>
-                    <SelectItem value="corporate">Corporate Rate</SelectItem>
-                    <SelectItem value="weekend">Weekend Special</SelectItem>
+                    {ratePlans.map(ratePlan => (
+                      <SelectItem key={ratePlan.id} value={ratePlan.id}>
+                        {ratePlan.name} ({ratePlan.code})
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>

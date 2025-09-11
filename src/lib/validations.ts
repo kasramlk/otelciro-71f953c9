@@ -153,12 +153,16 @@ export const validateRoomAvailability = async (
     const checkoutStr = checkOut.toISOString().split('T')[0];
     
     // Get inventory allotment for the date range
+    console.log('Checking availability for:', { roomTypeId, checkinStr, checkoutStr });
+    
     const { data: inventoryData, error: invError } = await supabase
       .from('inventory')
       .select('allotment, stop_sell')
       .eq('room_type_id', roomTypeId)
       .gte('date', checkinStr)
       .lt('date', checkoutStr);
+    
+    console.log('Inventory query result:', { inventoryData, invError });
     
     if (invError) {
       console.error('Inventory check error:', invError);
@@ -167,10 +171,14 @@ export const validateRoomAvailability = async (
     
     // If no inventory data, get physical room count as fallback
     if (!inventoryData || inventoryData.length === 0) {
+      console.log('No inventory data found, checking physical rooms for room type:', roomTypeId);
+      
       const { data: roomCount } = await supabase
         .from('rooms')
         .select('id')
         .eq('room_type_id', roomTypeId);
+      
+      console.log('Physical rooms found:', roomCount);
       
       if (!roomCount || roomCount.length === 0) {
         return { available: false, message: 'No rooms of this type available' };
