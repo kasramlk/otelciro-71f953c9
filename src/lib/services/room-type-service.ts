@@ -3,12 +3,10 @@ import { auditLogger } from '@/lib/audit-logger';
 
 export interface RoomTypeData {
   name: string;
+  code: string;
   description?: string;
   capacity_adults: number;
   capacity_children?: number;
-  size_sqm?: number;
-  amenities?: string[];
-  base_rate?: number;
 }
 
 export interface RoomTypeUpdate extends Partial<RoomTypeData> {
@@ -46,10 +44,10 @@ export const roomTypeService = {
 
     // Log the creation
     await auditLogger.log({
-      action: 'create',
-      entityType: 'room_type',
-      entityId: data.id,
-      newValues: data,
+      action: 'CREATE',
+      entity_type: 'room_type',
+      entity_id: data.id,
+      new_values: data,
     });
 
     // Create default inventory for next 365 days
@@ -78,11 +76,11 @@ export const roomTypeService = {
     if (error) throw error;
 
     await auditLogger.log({
-      action: 'update',
-      entityType: 'room_type',
-      entityId: id,
-      oldValues: oldData,
-      newValues: data,
+      action: 'UPDATE',
+      entity_type: 'room_type',
+      entity_id: id,
+      old_values: oldData,
+      new_values: data,
     });
 
     return data;
@@ -126,10 +124,10 @@ export const roomTypeService = {
     if (error) throw error;
 
     await auditLogger.log({
-      action: 'delete',
-      entityType: 'room_type',
-      entityId: id,
-      oldValues: oldData,
+      action: 'DELETE',
+      entity_type: 'room_type',
+      entity_id: id,
+      old_values: oldData,
     });
 
     return true;

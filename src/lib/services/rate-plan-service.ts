@@ -3,16 +3,9 @@ import { auditLogger } from '@/lib/audit-logger';
 
 export interface RatePlanData {
   name: string;
+  code: string;
   description?: string;
-  rate_type: 'standard' | 'package' | 'promotional';
   currency: string;
-  base_rate: number;
-  is_active: boolean;
-  booking_conditions?: any;
-  cancellation_policy?: any;
-  includes_breakfast?: boolean;
-  includes_tax?: boolean;
-  tax_rate?: number;
 }
 
 export interface RatePlanUpdate extends Partial<RatePlanData> {
@@ -52,7 +45,6 @@ export const ratePlanService = {
       `)
       .eq('hotel_id', hotelId)
       .eq('daily_rates.room_type_id', roomTypeId)
-      .eq('is_active', true)
       .order('name');
 
     if (error) throw error;
@@ -74,14 +66,14 @@ export const ratePlanService = {
 
     // Log the creation
     await auditLogger.log({
-      action: 'create',
-      entityType: 'rate_plan',
-      entityId: data.id,
-      newValues: data,
+      action: 'CREATE',
+      entity_type: 'rate_plan',
+      entity_id: data.id,
+      new_values: data,
     });
 
     // Create default daily rates for all room types
-    await this.createDefaultDailyRates(hotelId, data.id, ratePlanData.base_rate);
+    await this.createDefaultDailyRates(hotelId, data.id, 120); // Default base rate
 
     return data;
   },
@@ -106,11 +98,11 @@ export const ratePlanService = {
     if (error) throw error;
 
     await auditLogger.log({
-      action: 'update',
-      entityType: 'rate_plan',
-      entityId: id,
-      oldValues: oldData,
-      newValues: data,
+      action: 'UPDATE',
+      entity_type: 'rate_plan',
+      entity_id: id,
+      old_values: oldData,
+      new_values: data,
     });
 
     return data;
@@ -149,10 +141,10 @@ export const ratePlanService = {
     if (error) throw error;
 
     await auditLogger.log({
-      action: 'delete',
-      entityType: 'rate_plan',
-      entityId: id,
-      oldValues: oldData,
+      action: 'DELETE',
+      entity_type: 'rate_plan',
+      entity_id: id,
+      old_values: oldData,
     });
 
     return true;
@@ -163,7 +155,7 @@ export const ratePlanService = {
     // Get all room types for this hotel
     const { data: roomTypes } = await supabase
       .from('room_types')
-      .select('id, base_rate')
+      .select('id, name')
       .eq('hotel_id', hotelId);
 
     if (!roomTypes || roomTypes.length === 0) return;
@@ -181,8 +173,9 @@ export const ratePlanService = {
       const weekendMultiplier = this.getWeekendMultiplier(date);
       
       for (const roomType of roomTypes) {
-        const roomTypeBaseRate = roomType.base_rate || baseRate;
-        const adjustedRate = roomTypeBaseRate * seasonalMultiplier * weekendMultiplier;
+        // Deluxe rooms get a premium
+        const roomTypeMultiplier = roomType.name.toLowerCase().includes('deluxe') ? 1.4 : 1.0;
+        const adjustedRate = baseRate * seasonalMultiplier * weekendMultiplier * roomTypeMultiplier;
         
         dailyRatesData.push({
           hotel_id: hotelId,
@@ -258,10 +251,10 @@ export const ratePlanService = {
 
     // Log the rate change
     await auditLogger.log({
-      action: 'update',
-      entityType: 'daily_rates',
-      entityId: `${hotelId}-${roomTypeId}-${ratePlanId}`,
-      newValues: {
+      action: 'UPDATE',
+      entity_type: 'daily_rates',
+      entity_id: `${hotelId}-${roomTypeId}-${ratePlanId}`,
+      new_values: {
         date_range: `${dateFrom} to ${dateTo}`,
         new_rate: newRate,
         records_updated: data?.length || 0
