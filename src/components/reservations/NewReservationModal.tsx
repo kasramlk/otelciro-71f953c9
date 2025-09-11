@@ -159,32 +159,39 @@ export const NewReservationModal = ({ open, onClose }: NewReservationModalProps)
             }
           }
           
-          // Room availability check
-          if (formData.checkIn && formData.checkOut && formData.roomType && !availabilityChecked) {
-            const availability = await validateRoomAvailability(
-              formData.roomType,
-              formData.checkIn,
-              formData.checkOut
-            );
-            
-            if (!availability.available) {
-              errors.roomType = availability.message || 'Room not available';
-              // Offer waitlist option
-              showConfirmation({
-                title: 'Room Not Available',
-                description: availability.message + ' Would you like to add this guest to the waitlist instead?',
-                confirmText: 'Add to Waitlist',
-                onConfirm: () => {
-                  // Handle waitlist addition
-                  toast({
-                    title: "Added to Waitlist",
-                    description: "Guest has been added to the waitlist for these dates.",
-                  });
-                  onClose();
-                }
-              });
-            } else {
-              setAvailabilityChecked(true);
+          // Room availability check - only run if all required fields are filled
+          if (formData.checkIn && formData.checkOut && formData.roomType && 
+              !availabilityChecked && 
+              !errors.checkIn && !errors.checkOut) {
+            try {
+              const availability = await validateRoomAvailability(
+                formData.roomType,
+                formData.checkIn,
+                formData.checkOut
+              );
+              
+              if (!availability.available) {
+                errors.roomType = availability.message || 'Room not available';
+                // Offer waitlist option
+                showConfirmation({
+                  title: 'Room Not Available',
+                  description: availability.message + ' Would you like to add this guest to the waitlist instead?',
+                  confirmText: 'Add to Waitlist',
+                  onConfirm: () => {
+                    // Handle waitlist addition
+                    toast({
+                      title: "Added to Waitlist",
+                      description: "Guest has been added to the waitlist for these dates.",
+                    });
+                    onClose();
+                  }
+                });
+              } else {
+                setAvailabilityChecked(true);
+              }
+            } catch (error) {
+              console.error('Availability check failed:', error);
+              // Don't block the user if availability check fails
             }
           }
           
