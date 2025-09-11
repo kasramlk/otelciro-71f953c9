@@ -9,8 +9,10 @@ export interface RoomTypeData {
   capacity_children?: number;
 }
 
-export interface RoomTypeUpdate extends Partial<RoomTypeData> {
+export interface RoomTypeUpdate extends Partial<Omit<RoomTypeData, 'name' | 'code'>> {
   id: string;
+  name?: string;
+  code?: string;
 }
 
 export const roomTypeService = {
@@ -155,12 +157,7 @@ export const roomTypeService = {
         room_type_id: roomTypeId,
         date: date.toISOString().split('T')[0],
         allotment,
-        available: allotment,
         stop_sell: false,
-        min_stay: 1,
-        max_stay: null,
-        cta: false, // closed to arrival
-        ctd: false, // closed to departure
       });
     }
 
@@ -192,7 +189,6 @@ export const roomTypeService = {
       .from('inventory')
       .update({
         allotment: newAllotment,
-        available: newAllotment // Reset available to match new allotment
       })
       .eq('hotel_id', hotelId)
       .eq('room_type_id', roomTypeId)

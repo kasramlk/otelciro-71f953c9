@@ -8,8 +8,10 @@ export interface RatePlanData {
   currency: string;
 }
 
-export interface RatePlanUpdate extends Partial<RatePlanData> {
+export interface RatePlanUpdate extends Partial<Omit<RatePlanData, 'name' | 'code'>> {
   id: string;
+  name?: string;
+  code?: string;
 }
 
 export const ratePlanService = {

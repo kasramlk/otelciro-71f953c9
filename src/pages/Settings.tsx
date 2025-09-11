@@ -52,6 +52,20 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useToast } from "@/hooks/use-toast";
+import {
+  useHotelSettings,
+  useUpdateHotel,
+  useRoomTypes,
+  useCreateRoomType,
+  useUpdateRoomType,
+  useDeleteRoomType,
+  useRatePlans,
+  useCreateRatePlan,
+  useUpdateRatePlan,
+  useDeleteRatePlan,
+  useRooms,
+  useHotelUsers
+} from "@/hooks/use-settings-data";
 
 const hotelSchema = z.object({
   name: z.string().min(1, "Hotel name is required"),
@@ -67,8 +81,8 @@ const roomTypeSchema = z.object({
   name: z.string().min(1, "Room type name is required"),
   code: z.string().min(1, "Room type code is required"),
   description: z.string().optional(),
-  capacityAdults: z.number().min(1, "At least 1 adult capacity required"),
-  capacityChildren: z.number().min(0),
+  capacity_adults: z.number().min(1, "At least 1 adult capacity required"),
+  capacity_children: z.number().min(0),
 });
 
 const roomSchema = z.object({
@@ -89,270 +103,259 @@ type RoomTypeData = z.infer<typeof roomTypeSchema>;
 type RoomData = z.infer<typeof roomSchema>;
 type RatePlanData = z.infer<typeof ratePlanSchema>;
 
-// Mock data
-const mockHotel = {
-  id: "1",
-  name: "Grand Plaza Hotel",
-  code: "GPH001",
-  address: "123 Main Street",
-  city: "New York",
-  country: "United States",
-  timezone: "America/New_York",
-  phone: "+1 (555) 123-4567",
-};
-
-const mockRoomTypes = [
-  {
-    id: "1",
-    name: "Standard Room",
-    code: "STD",
-    description: "Comfortable standard accommodation",
-    capacityAdults: 2,
-    capacityChildren: 1,
-  },
-  {
-    id: "2",
-    name: "Deluxe Room",
-    code: "DLX",
-    description: "Spacious room with city view",
-    capacityAdults: 2,
-    capacityChildren: 2,
-  },
-  {
-    id: "3",
-    name: "Executive Suite",
-    code: "EXE",
-    description: "Luxury suite with separate living area",
-    capacityAdults: 4,
-    capacityChildren: 2,
-  },
-];
-
-const mockRooms = [
-  {
-    id: "1",
-    number: "101",
-    roomTypeId: "1",
-    roomTypeName: "Standard Room",
-    floor: 1,
-    status: "Available",
-  },
-  {
-    id: "2",
-    number: "102",
-    roomTypeId: "1",
-    roomTypeName: "Standard Room",
-    floor: 1,
-    status: "Occupied",
-  },
-  {
-    id: "3",
-    number: "201",
-    roomTypeId: "2",
-    roomTypeName: "Deluxe Room",
-    floor: 2,
-    status: "Available",
-  },
-];
-
-const mockRatePlans = [
-  {
-    id: "1",
-    name: "Best Available Rate",
-    code: "BAR",
-    description: "Flexible rate with free cancellation",
-    currency: "USD",
-  },
-  {
-    id: "2",
-    name: "Advance Purchase",
-    code: "ADV",
-    description: "Non-refundable discounted rate",
-    currency: "USD",
-  },
-];
-
-const mockUsers = [
-  {
-    id: "1",
-    name: "John Manager",
-    email: "john@hotel.com",
-    role: "Manager",
-    isActive: true,
-  },
-  {
-    id: "2",
-    name: "Sarah Desk",
-    email: "sarah@hotel.com", 
-    role: "FrontDesk",
-    isActive: true,
-  },
-  {
-    id: "3",
-    name: "Mike House",
-    email: "mike@hotel.com",
-    role: "Housekeeping",
-    isActive: true,
-  },
-];
-
 const getRoleBadgeVariant = (role: string) => {
   switch (role) {
-    case "Owner":
-      return "default";
-    case "Manager":
-      return "secondary";
-    case "FrontDesk":
-      return "outline";
+    case 'admin':
+      return 'destructive';
+    case 'manager':
+      return 'default';
+    case 'staff':
+      return 'secondary';
     default:
-      return "secondary";
+      return 'outline';
   }
 };
 
 export default function Settings() {
+  // Fixed hotel ID for now - in a real app this would come from context
+  const hotelId = "6163aacb-81d7-4eb2-ab68-4d3e172bef3e";
+  
   const [activeTab, setActiveTab] = useState("hotel");
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [dialogType, setDialogType] = useState<"hotel" | "roomType" | "room" | "ratePlan" | "user">("hotel");
-  const [editingItem, setEditingItem] = useState(null);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [dialogType, setDialogType] = useState<"create" | "edit">("create");
+  const [editingItem, setEditingItem] = useState<any>(null);
+  const [currentEntity, setCurrentEntity] = useState<"hotel" | "roomType" | "room" | "ratePlan">("hotel");
+
   const { toast } = useToast();
 
+  // Data hooks
+  const { data: hotel, isLoading: hotelLoading } = useHotelSettings(hotelId);
+  const { data: roomTypes, isLoading: roomTypesLoading } = useRoomTypes(hotelId);
+  const { data: ratePlans, isLoading: ratePlansLoading } = useRatePlans(hotelId);
+  const { data: rooms, isLoading: roomsLoading } = useRooms(hotelId);
+  const { data: users, isLoading: usersLoading } = useHotelUsers(hotelId);
+
+  // Mutation hooks
+  const updateHotel = useUpdateHotel();
+  const createRoomType = useCreateRoomType(hotelId);
+  const updateRoomType = useUpdateRoomType(hotelId);
+  const deleteRoomType = useDeleteRoomType(hotelId);
+  const createRatePlan = useCreateRatePlan(hotelId);
+  const updateRatePlan = useUpdateRatePlan(hotelId);
+  const deleteRatePlan = useDeleteRatePlan(hotelId);
+
+  // Form initialization
   const hotelForm = useForm<HotelData>({
     resolver: zodResolver(hotelSchema),
-    defaultValues: mockHotel,
+    defaultValues: hotel || {
+      name: "",
+      code: "",
+      address: "",
+      city: "",
+      country: "",
+      timezone: "UTC",
+      phone: "",
+    },
   });
 
   const roomTypeForm = useForm<RoomTypeData>({
     resolver: zodResolver(roomTypeSchema),
     defaultValues: {
-      capacityAdults: 2,
-      capacityChildren: 0,
+      name: "",
+      code: "",
+      description: "",
+      capacity_adults: 2,
+      capacity_children: 0,
     },
-  });
-
-  const roomForm = useForm<RoomData>({
-    resolver: zodResolver(roomSchema),
   });
 
   const ratePlanForm = useForm<RatePlanData>({
     resolver: zodResolver(ratePlanSchema),
     defaultValues: {
+      name: "",
+      code: "",
+      description: "",
       currency: "USD",
     },
   });
 
-  const openDialog = (type: typeof dialogType, item = null) => {
+  // Update form when hotel data loads
+  useState(() => {
+    if (hotel) {
+      hotelForm.reset(hotel);
+    }
+  });
+
+  const openDialog = (type: "create" | "edit", entity: "hotel" | "roomType" | "room" | "ratePlan", item?: any) => {
     setDialogType(type);
+    setCurrentEntity(entity);
     setEditingItem(item);
-    setIsDialogOpen(true);
     
-    if (item) {
-      switch (type) {
-        case "roomType":
-          roomTypeForm.reset(item);
-          break;
-        case "room":
-          roomForm.reset(item);
-          break;
-        case "ratePlan":
-          ratePlanForm.reset(item);
-          break;
+    if (type === "edit" && item) {
+      if (entity === "roomType") {
+        roomTypeForm.reset(item);
+      } else if (entity === "ratePlan") {
+        ratePlanForm.reset(item);
       }
     } else {
-      switch (type) {
-        case "roomType":
-          roomTypeForm.reset();
-          break;
-        case "room":
-          roomForm.reset();
-          break;
-        case "ratePlan":
-          ratePlanForm.reset();
-          break;
+      if (entity === "roomType") {
+        roomTypeForm.reset({
+          name: "",
+          code: "",
+          description: "",
+          capacity_adults: 2,
+          capacity_children: 0,
+        });
+      } else if (entity === "ratePlan") {
+        ratePlanForm.reset({
+          name: "",
+          code: "",
+          description: "",
+          currency: "USD",
+        });
       }
+    }
+    
+    setDialogOpen(true);
+  };
+
+  const onSubmitHotel = async (data: HotelData) => {
+    try {
+      await updateHotel.mutateAsync({ id: hotelId, updates: data });
+    } catch (error) {
+      console.error('Error updating hotel:', error);
     }
   };
 
-  const onSubmitHotel = (data: HotelData) => {
-    console.log("Hotel data:", data);
-    toast({
-      title: "Hotel profile updated",
-      description: "Hotel information has been successfully updated.",
-    });
+  const onSubmitRoomType = async (data: RoomTypeData) => {
+    // Ensure required fields are present
+    if (!data.name || !data.code) return;
+    
+    try {
+      if (dialogType === "edit" && editingItem) {
+        await updateRoomType.mutateAsync({ 
+          id: editingItem.id, 
+          name: data.name,
+          code: data.code,
+          description: data.description,
+          capacity_adults: data.capacity_adults,
+          capacity_children: data.capacity_children
+        });
+      } else {
+        await createRoomType.mutateAsync({
+          name: data.name,
+          code: data.code,
+          description: data.description,
+          capacity_adults: data.capacity_adults,
+          capacity_children: data.capacity_children || 0
+        });
+      }
+      setDialogOpen(false);
+    } catch (error) {
+      console.error('Error with room type:', error);
+    }
   };
 
-  const onSubmitRoomType = (data: RoomTypeData) => {
-    console.log("Room type data:", data);
-    toast({
-      title: editingItem ? "Room type updated" : "Room type created",
-      description: `${data.name} has been successfully ${editingItem ? "updated" : "created"}.`,
-    });
-    setIsDialogOpen(false);
-    roomTypeForm.reset();
+  const onSubmitRatePlan = async (data: RatePlanData) => {
+    // Ensure required fields are present
+    if (!data.name || !data.code) return;
+    
+    try {
+      if (dialogType === "edit" && editingItem) {
+        await updateRatePlan.mutateAsync({ 
+          id: editingItem.id,
+          name: data.name,
+          code: data.code,
+          description: data.description,
+          currency: data.currency
+        });
+      } else {
+        await createRatePlan.mutateAsync({
+          name: data.name,
+          code: data.code,
+          description: data.description,
+          currency: data.currency
+        });
+      }
+      setDialogOpen(false);
+    } catch (error) {
+      console.error('Error with rate plan:', error);
+    }
   };
 
-  const onSubmitRoom = (data: RoomData) => {
-    console.log("Room data:", data);
-    toast({
-      title: editingItem ? "Room updated" : "Room created", 
-      description: `Room ${data.number} has been successfully ${editingItem ? "updated" : "created"}.`,
-    });
-    setIsDialogOpen(false);
-    roomForm.reset();
+  const handleDelete = async (type: "roomType" | "ratePlan", item: any) => {
+    try {
+      if (type === "roomType") {
+        await deleteRoomType.mutateAsync(item.id);
+      } else if (type === "ratePlan") {
+        await deleteRatePlan.mutateAsync(item.id);
+      }
+    } catch (error) {
+      console.error('Error deleting item:', error);
+    }
   };
 
-  const onSubmitRatePlan = (data: RatePlanData) => {
-    console.log("Rate plan data:", data);
-    toast({
-      title: editingItem ? "Rate plan updated" : "Rate plan created",
-      description: `${data.name} has been successfully ${editingItem ? "updated" : "created"}.`,
-    });
-    setIsDialogOpen(false);
-    ratePlanForm.reset();
-  };
-
-  const handleDelete = (type: string, item: any) => {
-    console.log(`Delete ${type}:`, item);
-    toast({
-      title: `${type} deleted`,
-      description: `The ${type} has been successfully deleted.`,
-      variant: "destructive",
-    });
-  };
+  if (hotelLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+          <p className="mt-2 text-muted-foreground">Loading settings...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="flex-1 space-y-6 p-4 md:p-8 pt-6">
-      <div className="flex items-center justify-between">
-        <h2 className="text-3xl font-bold tracking-tight flex items-center">
-          <Settings2 className="mr-2 h-8 w-8" />
-          Settings
-        </h2>
+    <div className="flex-1 space-y-4 p-4 pt-6 md:p-8">
+      <div className="flex items-center justify-between space-y-2">
+        <div>
+          <h2 className="text-3xl font-bold tracking-tight flex items-center gap-2">
+            <Settings2 className="h-8 w-8" />
+            Settings
+          </h2>
+          <p className="text-muted-foreground">
+            Manage your hotel configuration, room types, rate plans, and users.
+          </p>
+        </div>
       </div>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-5">
-          <TabsTrigger value="hotel">Hotel Profile</TabsTrigger>
-          <TabsTrigger value="roomTypes">Room Types</TabsTrigger>
-          <TabsTrigger value="rooms">Rooms</TabsTrigger>
-          <TabsTrigger value="ratePlans">Rate Plans</TabsTrigger>
-          <TabsTrigger value="users">Users & Roles</TabsTrigger>
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
+        <TabsList>
+          <TabsTrigger value="hotel">
+            <Hotel className="h-4 w-4 mr-2" />
+            Hotel Profile
+          </TabsTrigger>
+          <TabsTrigger value="roomTypes">
+            <Bed className="h-4 w-4 mr-2" />
+            Room Types
+          </TabsTrigger>
+          <TabsTrigger value="rooms">
+            <Building className="h-4 w-4 mr-2" />
+            Rooms
+          </TabsTrigger>
+          <TabsTrigger value="ratePlans">
+            <DollarSign className="h-4 w-4 mr-2" />
+            Rate Plans
+          </TabsTrigger>
+          <TabsTrigger value="users">
+            <Users className="h-4 w-4 mr-2" />
+            Users
+          </TabsTrigger>
         </TabsList>
-        
-        {/* Hotel Profile Tab */}
+
         <TabsContent value="hotel" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center">
-                <Hotel className="mr-2 h-5 w-5" />
-                Hotel Profile
-              </CardTitle>
+              <CardTitle>Hotel Information</CardTitle>
               <CardDescription>
-                Manage your hotel's basic information and settings
+                Update your hotel's basic information and settings.
               </CardDescription>
             </CardHeader>
             <CardContent>
               <Form {...hotelForm}>
-                <form onSubmit={hotelForm.handleSubmit(onSubmitHotel)} className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <form onSubmit={hotelForm.handleSubmit(onSubmitHotel)} className="space-y-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <FormField
                       control={hotelForm.control}
                       name="name"
@@ -360,13 +363,12 @@ export default function Settings() {
                         <FormItem>
                           <FormLabel>Hotel Name</FormLabel>
                           <FormControl>
-                            <Input {...field} />
+                            <Input placeholder="Enter hotel name" {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
-
                     <FormField
                       control={hotelForm.control}
                       name="code"
@@ -374,29 +376,25 @@ export default function Settings() {
                         <FormItem>
                           <FormLabel>Hotel Code</FormLabel>
                           <FormControl>
-                            <Input {...field} />
+                            <Input placeholder="e.g., HTL001" {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
-                  </div>
-
-                  <FormField
-                    control={hotelForm.control}
-                    name="address"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Address</FormLabel>
-                        <FormControl>
-                          <Input {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <FormField
+                      control={hotelForm.control}
+                      name="address"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Address</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Enter address" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
                     <FormField
                       control={hotelForm.control}
                       name="city"
@@ -404,13 +402,12 @@ export default function Settings() {
                         <FormItem>
                           <FormLabel>City</FormLabel>
                           <FormControl>
-                            <Input {...field} />
+                            <Input placeholder="Enter city" {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
-
                     <FormField
                       control={hotelForm.control}
                       name="country"
@@ -418,42 +415,12 @@ export default function Settings() {
                         <FormItem>
                           <FormLabel>Country</FormLabel>
                           <FormControl>
-                            <Input {...field} />
+                            <Input placeholder="Enter country" {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <FormField
-                      control={hotelForm.control}
-                      name="timezone"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Timezone</FormLabel>
-                          <Select onValueChange={field.onChange} defaultValue={field.value}>
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              <SelectItem value="UTC">UTC</SelectItem>
-                              <SelectItem value="America/New_York">Eastern Time</SelectItem>
-                              <SelectItem value="America/Chicago">Central Time</SelectItem>
-                              <SelectItem value="America/Denver">Mountain Time</SelectItem>
-                              <SelectItem value="America/Los_Angeles">Pacific Time</SelectItem>
-                              <SelectItem value="Europe/London">London</SelectItem>
-                              <SelectItem value="Europe/Paris">Paris</SelectItem>
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
                     <FormField
                       control={hotelForm.control}
                       name="phone"
@@ -461,230 +428,242 @@ export default function Settings() {
                         <FormItem>
                           <FormLabel>Phone</FormLabel>
                           <FormControl>
-                            <Input {...field} />
+                            <Input placeholder="Enter phone number" {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
                   </div>
-
-                  <Button type="submit">Update Hotel Profile</Button>
+                  <Button type="submit" disabled={updateHotel.isPending}>
+                    {updateHotel.isPending ? "Updating..." : "Update Hotel Information"}
+                  </Button>
                 </form>
               </Form>
             </CardContent>
           </Card>
         </TabsContent>
 
-        {/* Room Types Tab */}
         <TabsContent value="roomTypes" className="space-y-4">
+          <div className="flex justify-between items-center">
+            <div>
+              <h3 className="text-lg font-medium">Room Types</h3>
+              <p className="text-sm text-muted-foreground">
+                Manage different room types and their configurations.
+              </p>
+            </div>
+            <Button onClick={() => openDialog("create", "roomType")}>
+              <Plus className="h-4 w-4 mr-2" />
+              Add Room Type
+            </Button>
+          </div>
+          
           <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center justify-between">
-                <span className="flex items-center">
-                  <Bed className="mr-2 h-5 w-5" />
-                  Room Types
-                </span>
-                <Button onClick={() => openDialog("roomType")}>
-                  <Plus className="mr-2 h-4 w-4" />
-                  Add Room Type
-                </Button>
-              </CardTitle>
-              <CardDescription>
-                Manage room categories and their configurations
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
+            <CardContent className="p-0">
               <Table>
                 <TableHeader>
                   <TableRow>
                     <TableHead>Name</TableHead>
                     <TableHead>Code</TableHead>
-                    <TableHead>Description</TableHead>
-                    <TableHead>Adult Capacity</TableHead>
-                    <TableHead>Child Capacity</TableHead>
-                    <TableHead>Actions</TableHead>
+                    <TableHead>Capacity</TableHead>
+                    <TableHead>Rooms</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {mockRoomTypes.map((roomType) => (
-                    <TableRow key={roomType.id}>
-                      <TableCell className="font-medium">{roomType.name}</TableCell>
-                      <TableCell>
-                        <Badge variant="outline">{roomType.code}</Badge>
+                  {roomTypesLoading ? (
+                    <TableRow>
+                      <TableCell colSpan={5} className="text-center">Loading room types...</TableCell>
+                    </TableRow>
+                  ) : roomTypes?.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={5} className="text-center text-muted-foreground">
+                        No room types found. Create your first room type to get started.
                       </TableCell>
-                      <TableCell className="max-w-xs truncate">{roomType.description}</TableCell>
-                      <TableCell>{roomType.capacityAdults}</TableCell>
-                      <TableCell>{roomType.capacityChildren}</TableCell>
-                      <TableCell>
-                        <div className="flex items-center space-x-2">
+                    </TableRow>
+                  ) : (
+                    roomTypes?.map((roomType) => (
+                      <TableRow key={roomType.id}>
+                        <TableCell className="font-medium">{roomType.name}</TableCell>
+                        <TableCell>{roomType.code}</TableCell>
+                        <TableCell>
+                          {roomType.capacity_adults} Adults
+                          {roomType.capacity_children > 0 && `, ${roomType.capacity_children} Children`}
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="outline">
+                            {roomType.rooms?.length || 0} rooms
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-right space-x-2">
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => openDialog("roomType", roomType)}
+                            onClick={() => openDialog("edit", "roomType", roomType)}
                           >
                             <Edit className="h-4 w-4" />
                           </Button>
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => handleDelete("room type", roomType)}
+                            onClick={() => handleDelete("roomType", roomType)}
+                            disabled={roomType.rooms?.length > 0}
                           >
                             <Trash2 className="h-4 w-4" />
                           </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
                 </TableBody>
               </Table>
             </CardContent>
           </Card>
         </TabsContent>
 
-        {/* Rooms Tab */}
         <TabsContent value="rooms" className="space-y-4">
+          <div className="flex justify-between items-center">
+            <div>
+              <h3 className="text-lg font-medium">Physical Rooms</h3>
+              <p className="text-sm text-muted-foreground">
+                View and manage individual room inventory.
+              </p>
+            </div>
+          </div>
+          
           <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center justify-between">
-                <span className="flex items-center">
-                  <Building className="mr-2 h-5 w-5" />
-                  Rooms
-                </span>
-                <Button onClick={() => openDialog("room")}>
-                  <Plus className="mr-2 h-4 w-4" />
-                  Add Room
-                </Button>
-              </CardTitle>
-              <CardDescription>
-                Manage individual room inventory
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
+            <CardContent className="p-0">
               <Table>
                 <TableHeader>
                   <TableRow>
                     <TableHead>Room Number</TableHead>
-                    <TableHead>Room Type</TableHead>
+                    <TableHead>Type</TableHead>
                     <TableHead>Floor</TableHead>
                     <TableHead>Status</TableHead>
-                    <TableHead>Actions</TableHead>
+                    <TableHead>Housekeeping</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {mockRooms.map((room) => (
-                    <TableRow key={room.id}>
-                      <TableCell className="font-medium">{room.number}</TableCell>
-                      <TableCell>{room.roomTypeName}</TableCell>
-                      <TableCell>{room.floor}</TableCell>
-                      <TableCell>
-                        <Badge variant={room.status === "Available" ? "secondary" : "default"}>
-                          {room.status}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center space-x-2">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => openDialog("room", room)}
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleDelete("room", room)}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
+                  {roomsLoading ? (
+                    <TableRow>
+                      <TableCell colSpan={5} className="text-center">Loading rooms...</TableCell>
+                    </TableRow>
+                  ) : rooms?.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={5} className="text-center text-muted-foreground">
+                        No rooms found. Rooms are automatically created when you add room types.
                       </TableCell>
                     </TableRow>
-                  ))}
+                  ) : (
+                    rooms?.map((room) => (
+                      <TableRow key={room.id}>
+                        <TableCell className="font-medium">{room.number}</TableCell>
+                        <TableCell>{room.room_types?.name || 'Unknown'}</TableCell>
+                        <TableCell>{room.floor || 'N/A'}</TableCell>
+                        <TableCell>
+                          <Badge variant={room.status === 'Available' ? 'default' : 'secondary'}>
+                            {room.status}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant={room.housekeeping_status === 'Clean' ? 'default' : 'outline'}>
+                            {room.housekeeping_status}
+                          </Badge>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
                 </TableBody>
               </Table>
             </CardContent>
           </Card>
         </TabsContent>
 
-        {/* Rate Plans Tab */}
         <TabsContent value="ratePlans" className="space-y-4">
+          <div className="flex justify-between items-center">
+            <div>
+              <h3 className="text-lg font-medium">Rate Plans</h3>
+              <p className="text-sm text-muted-foreground">
+                Configure different pricing strategies and packages.
+              </p>
+            </div>
+            <Button onClick={() => openDialog("create", "ratePlan")}>
+              <Plus className="h-4 w-4 mr-2" />
+              Add Rate Plan
+            </Button>
+          </div>
+          
           <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center justify-between">
-                <span className="flex items-center">
-                  <DollarSign className="mr-2 h-5 w-5" />
-                  Rate Plans
-                </span>
-                <Button onClick={() => openDialog("ratePlan")}>
-                  <Plus className="mr-2 h-4 w-4" />
-                  Add Rate Plan
-                </Button>
-              </CardTitle>
-              <CardDescription>
-                Manage pricing strategies and rate configurations
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
+            <CardContent className="p-0">
               <Table>
                 <TableHeader>
                   <TableRow>
                     <TableHead>Name</TableHead>
                     <TableHead>Code</TableHead>
-                    <TableHead>Description</TableHead>
                     <TableHead>Currency</TableHead>
-                    <TableHead>Actions</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {mockRatePlans.map((ratePlan) => (
-                    <TableRow key={ratePlan.id}>
-                      <TableCell className="font-medium">{ratePlan.name}</TableCell>
-                      <TableCell>
-                        <Badge variant="outline">{ratePlan.code}</Badge>
+                  {ratePlansLoading ? (
+                    <TableRow>
+                      <TableCell colSpan={5} className="text-center">Loading rate plans...</TableCell>
+                    </TableRow>
+                  ) : ratePlans?.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={5} className="text-center text-muted-foreground">
+                        No rate plans found. Create your first rate plan to start pricing rooms.
                       </TableCell>
-                      <TableCell className="max-w-xs truncate">{ratePlan.description}</TableCell>
-                      <TableCell>{ratePlan.currency}</TableCell>
-                      <TableCell>
-                        <div className="flex items-center space-x-2">
+                    </TableRow>
+                  ) : (
+                    ratePlans?.map((ratePlan) => (
+                      <TableRow key={ratePlan.id}>
+                        <TableCell className="font-medium">{ratePlan.name}</TableCell>
+                        <TableCell>{ratePlan.code}</TableCell>
+                        <TableCell>{ratePlan.currency}</TableCell>
+                        <TableCell>
+                          <Badge variant={ratePlan.is_active ? 'default' : 'secondary'}>
+                            {ratePlan.is_active ? 'Active' : 'Inactive'}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-right space-x-2">
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => openDialog("ratePlan", ratePlan)}
+                            onClick={() => openDialog("edit", "ratePlan", ratePlan)}
                           >
                             <Edit className="h-4 w-4" />
                           </Button>
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => handleDelete("rate plan", ratePlan)}
+                            onClick={() => handleDelete("ratePlan", ratePlan)}
                           >
                             <Trash2 className="h-4 w-4" />
                           </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
                 </TableBody>
               </Table>
             </CardContent>
           </Card>
         </TabsContent>
 
-        {/* Users Tab */}
         <TabsContent value="users" className="space-y-4">
+          <div className="flex justify-between items-center">
+            <div>
+              <h3 className="text-lg font-medium">Hotel Staff</h3>
+              <p className="text-sm text-muted-foreground">
+                Manage user access and permissions for your hotel.
+              </p>
+            </div>
+          </div>
+          
           <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <Users className="mr-2 h-5 w-5" />
-                Users & Roles
-              </CardTitle>
-              <CardDescription>
-                Manage user access and permissions
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
+            <CardContent className="p-0">
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -692,37 +671,35 @@ export default function Settings() {
                     <TableHead>Email</TableHead>
                     <TableHead>Role</TableHead>
                     <TableHead>Status</TableHead>
-                    <TableHead>Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {mockUsers.map((user) => (
-                    <TableRow key={user.id}>
-                      <TableCell className="font-medium">{user.name}</TableCell>
-                      <TableCell>{user.email}</TableCell>
-                      <TableCell>
-                        <Badge variant={getRoleBadgeVariant(user.role)}>
-                          {user.role}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant={user.isActive ? "default" : "secondary"}>
-                          {user.isActive ? "Active" : "Inactive"}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center space-x-2">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => openDialog("user", user)}
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                        </div>
+                  {usersLoading ? (
+                    <TableRow>
+                      <TableCell colSpan={4} className="text-center">Loading users...</TableCell>
+                    </TableRow>
+                  ) : users?.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={4} className="text-center text-muted-foreground">
+                        No users found.
                       </TableCell>
                     </TableRow>
-                  ))}
+                  ) : (
+                    users?.map((user) => (
+                      <TableRow key={user.id}>
+                        <TableCell className="font-medium">{user.name}</TableCell>
+                        <TableCell>{user.email}</TableCell>
+                        <TableCell>
+                          <Badge variant={getRoleBadgeVariant('staff')}>
+                            staff
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="default">Active</Badge>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
                 </TableBody>
               </Table>
             </CardContent>
@@ -730,48 +707,53 @@ export default function Settings() {
         </TabsContent>
       </Tabs>
 
-      {/* Generic Dialog for all forms */}
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="max-w-2xl">
+      {/* Dynamic Dialog */}
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
             <DialogTitle>
-              {editingItem ? "Edit" : "Create"} {dialogType === "roomType" ? "Room Type" : 
-               dialogType === "ratePlan" ? "Rate Plan" : dialogType.charAt(0).toUpperCase() + dialogType.slice(1)}
+              {dialogType === "create" ? "Create" : "Edit"} {
+                currentEntity === "roomType" ? "Room Type" :
+                currentEntity === "ratePlan" ? "Rate Plan" : "Item"
+              }
             </DialogTitle>
+            <DialogDescription>
+              {dialogType === "create" ? "Add a new" : "Update the"} {
+                currentEntity === "roomType" ? "room type" :
+                currentEntity === "ratePlan" ? "rate plan" : "item"
+              }.
+            </DialogDescription>
           </DialogHeader>
-          
-          {dialogType === "roomType" && (
+
+          {currentEntity === "roomType" && (
             <Form {...roomTypeForm}>
               <form onSubmit={roomTypeForm.handleSubmit(onSubmitRoomType)} className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <FormField
-                    control={roomTypeForm.control}
-                    name="name"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Name</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Standard Room" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={roomTypeForm.control}
-                    name="code"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Code</FormLabel>
-                        <FormControl>
-                          <Input placeholder="STD" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-                
+                <FormField
+                  control={roomTypeForm.control}
+                  name="name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Name</FormLabel>
+                      <FormControl>
+                        <Input placeholder="e.g., Deluxe Suite" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={roomTypeForm.control}
+                  name="code"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Code</FormLabel>
+                      <FormControl>
+                        <Input placeholder="e.g., DLX" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
                 <FormField
                   control={roomTypeForm.control}
                   name="description"
@@ -779,26 +761,24 @@ export default function Settings() {
                     <FormItem>
                       <FormLabel>Description</FormLabel>
                       <FormControl>
-                        <Textarea {...field} />
+                        <Textarea placeholder="Room type description..." {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
-                
                 <div className="grid grid-cols-2 gap-4">
                   <FormField
                     control={roomTypeForm.control}
-                    name="capacityAdults"
+                    name="capacity_adults"
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Adult Capacity</FormLabel>
                         <FormControl>
                           <Input 
                             type="number" 
-                            min="1"
-                            {...field}
-                            onChange={(e) => field.onChange(parseInt(e.target.value) || 1)}
+                            {...field} 
+                            onChange={(e) => field.onChange(Number(e.target.value))}
                           />
                         </FormControl>
                         <FormMessage />
@@ -807,16 +787,15 @@ export default function Settings() {
                   />
                   <FormField
                     control={roomTypeForm.control}
-                    name="capacityChildren"
+                    name="capacity_children"
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Child Capacity</FormLabel>
                         <FormControl>
                           <Input 
                             type="number" 
-                            min="0"
-                            {...field}
-                            onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                            {...field} 
+                            onChange={(e) => field.onChange(Number(e.target.value))}
                           />
                         </FormControl>
                         <FormMessage />
@@ -824,125 +803,48 @@ export default function Settings() {
                     )}
                   />
                 </div>
-                
                 <DialogFooter>
-                  <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
+                  <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
                     Cancel
                   </Button>
-                  <Button type="submit">
-                    {editingItem ? "Update" : "Create"}
+                  <Button type="submit" disabled={createRoomType.isPending || updateRoomType.isPending}>
+                    {(createRoomType.isPending || updateRoomType.isPending) ? "Processing..." : 
+                     (dialogType === "create" ? "Create Room Type" : "Update Room Type")}
                   </Button>
                 </DialogFooter>
               </form>
             </Form>
           )}
 
-          {dialogType === "room" && (
-            <Form {...roomForm}>
-              <form onSubmit={roomForm.handleSubmit(onSubmitRoom)} className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <FormField
-                    control={roomForm.control}
-                    name="number"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Room Number</FormLabel>
-                        <FormControl>
-                          <Input placeholder="101" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={roomForm.control}
-                    name="floor"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Floor</FormLabel>
-                        <FormControl>
-                          <Input 
-                            type="number" 
-                            placeholder="1"
-                            {...field}
-                            onChange={(e) => field.onChange(parseInt(e.target.value) || undefined)}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-                
+          {currentEntity === "ratePlan" && (
+            <Form {...ratePlanForm}>
+              <form onSubmit={ratePlanForm.handleSubmit(onSubmitRatePlan)} className="space-y-4">
                 <FormField
-                  control={roomForm.control}
-                  name="roomTypeId"
+                  control={ratePlanForm.control}
+                  name="name"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Room Type</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select room type" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {mockRoomTypes.map((roomType) => (
-                            <SelectItem key={roomType.id} value={roomType.id}>
-                              {roomType.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                      <FormLabel>Name</FormLabel>
+                      <FormControl>
+                        <Input placeholder="e.g., Best Available Rate" {...field} />
+                      </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
-                
-                <DialogFooter>
-                  <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
-                    Cancel
-                  </Button>
-                  <Button type="submit">
-                    {editingItem ? "Update" : "Create"}
-                  </Button>
-                </DialogFooter>
-              </form>
-            </Form>
-          )}
-
-          {dialogType === "ratePlan" && (
-            <Form {...ratePlanForm}>
-              <form onSubmit={ratePlanForm.handleSubmit(onSubmitRatePlan)} className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <FormField
-                    control={ratePlanForm.control}
-                    name="name"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Name</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Best Available Rate" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={ratePlanForm.control}
-                    name="code"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Code</FormLabel>
-                        <FormControl>
-                          <Input placeholder="BAR" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-                
+                <FormField
+                  control={ratePlanForm.control}
+                  name="code"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Code</FormLabel>
+                      <FormControl>
+                        <Input placeholder="e.g., BAR" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
                 <FormField
                   control={ratePlanForm.control}
                   name="description"
@@ -950,13 +852,12 @@ export default function Settings() {
                     <FormItem>
                       <FormLabel>Description</FormLabel>
                       <FormControl>
-                        <Textarea {...field} />
+                        <Textarea placeholder="Rate plan description..." {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
-                
                 <FormField
                   control={ratePlanForm.control}
                   name="currency"
@@ -966,26 +867,26 @@ export default function Settings() {
                       <Select onValueChange={field.onChange} defaultValue={field.value}>
                         <FormControl>
                           <SelectTrigger>
-                            <SelectValue />
+                            <SelectValue placeholder="Select currency" />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="USD">USD</SelectItem>
-                          <SelectItem value="EUR">EUR</SelectItem>
-                          <SelectItem value="GBP">GBP</SelectItem>
+                          <SelectItem value="USD">USD - US Dollar</SelectItem>
+                          <SelectItem value="EUR">EUR - Euro</SelectItem>
+                          <SelectItem value="GBP">GBP - British Pound</SelectItem>
                         </SelectContent>
                       </Select>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
-                
                 <DialogFooter>
-                  <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
+                  <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
                     Cancel
                   </Button>
-                  <Button type="submit">
-                    {editingItem ? "Update" : "Create"}
+                  <Button type="submit" disabled={createRatePlan.isPending || updateRatePlan.isPending}>
+                    {(createRatePlan.isPending || updateRatePlan.isPending) ? "Processing..." : 
+                     (dialogType === "create" ? "Create Rate Plan" : "Update Rate Plan")}
                   </Button>
                 </DialogFooter>
               </form>

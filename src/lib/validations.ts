@@ -145,18 +145,81 @@ export const validateRoomAvailability = async (
   checkOut: Date,
   excludeReservationId?: string
 ): Promise<{ available: boolean; message?: string }> => {
-  // This would integrate with your actual inventory system
-  // For now, we'll simulate availability check
-  
-  const random = Math.random();
-  if (random < 0.1) { // 10% chance of no availability
-    return {
-      available: false,
-      message: 'No rooms available for selected dates. Would you like to add to waitlist?'
-    };
+  try {
+    // Import supabase here to avoid circular dependency
+    const { supabase } = await import('@/integrations/supabase/client');
+    
+    const checkinStr = checkIn.toISOString().split('T')[0];
+    const checkoutStr = checkOut.toISOString().split('T')[0];
+    
+    // Get inventory allotment for the date range
+    const { data: inventoryData, error: invError } = await supabase
+      .from('inventory')
+      .select('allotment, stop_sell')
+      .eq('room_type_id', roomTypeId)
+      .gte('date', checkinStr)
+      .lt('date', checkoutStr);
+    
+    if (invError) {
+      console.error('Inventory check error:', invError);
+      return { available: false, message: 'Unable to check availability' };
+    }
+    
+    // If no inventory data, get physical room count as fallback
+    if (!inventoryData || inventoryData.length === 0) {
+      const { data: roomCount } = await supabase
+        .from('rooms')
+        .select('id')
+        .eq('room_type_id', roomTypeId);
+      
+      if (!roomCount || roomCount.length === 0) {
+        return { available: false, message: 'No rooms of this type available' };
+      }
+    } else {
+      // Check for stop-sell dates
+      const stopSellDates = inventoryData.filter(inv => inv.stop_sell);
+      if (stopSellDates.length > 0) {
+        return { available: false, message: 'Room type closed for selected dates' };
+      }
+      
+      // Get minimum allotment for the period
+      const minAllotment = Math.min(...inventoryData.map(inv => inv.allotment));
+      if (minAllotment <= 0) {
+        return { available: false, message: 'No inventory available for selected dates' };
+      }
+    }
+    
+    // Check existing reservations that overlap
+    let reservationQuery = supabase
+      .from('reservations')
+      .select('id')
+      .eq('room_type_id', roomTypeId)
+      .lt('check_in', checkoutStr)
+      .gt('check_out', checkinStr)
+      .neq('status', 'cancelled');
+    
+    if (excludeReservationId) {
+      reservationQuery = reservationQuery.neq('id', excludeReservationId);
+    }
+    
+    const { data: conflictingReservations } = await reservationQuery;
+    
+    const conflictCount = conflictingReservations?.length || 0;
+    const availableAllotment = inventoryData?.[0]?.allotment || 1;
+    
+    if (conflictCount >= availableAllotment) {
+      return {
+        available: false,
+        message: 'No rooms available for selected dates. Would you like to add to waitlist?'
+      };
+    }
+    
+    return { available: true };
+    
+  } catch (error) {
+    console.error('Availability validation error:', error);
+    return { available: false, message: 'Unable to check availability' };
   }
-  
-  return { available: true };
 };
 
 // Financial calculations

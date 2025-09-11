@@ -2666,6 +2666,7 @@ export type Database = {
           description: string | null
           hotel_id: string
           id: string
+          is_active: boolean | null
           name: string
         }
         Insert: {
@@ -2675,6 +2676,7 @@ export type Database = {
           description?: string | null
           hotel_id: string
           id?: string
+          is_active?: boolean | null
           name: string
         }
         Update: {
@@ -2684,6 +2686,7 @@ export type Database = {
           description?: string | null
           hotel_id?: string
           id?: string
+          is_active?: boolean | null
           name?: string
         }
         Relationships: [
