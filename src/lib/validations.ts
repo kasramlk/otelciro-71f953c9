@@ -211,11 +211,22 @@ export const validateRoomAvailability = async (
     }
     
     const { data: conflictingReservations } = await reservationQuery;
+    console.log('Conflicting reservations found:', conflictingReservations);
     
     const conflictCount = conflictingReservations?.length || 0;
-    const availableAllotment = inventoryData?.[0]?.allotment || 1;
     
-    if (conflictCount >= availableAllotment) {
+    // Get minimum allotment across all dates in the stay period
+    const minAllotment = inventoryData && inventoryData.length > 0 
+      ? Math.min(...inventoryData.map(inv => inv.allotment))
+      : 1;
+    
+    console.log('Availability calculation:', { 
+      conflictCount, 
+      minAllotment, 
+      available: conflictCount < minAllotment 
+    });
+    
+    if (conflictCount >= minAllotment) {
       return {
         available: false,
         message: 'No rooms available for selected dates. Would you like to add to waitlist?'

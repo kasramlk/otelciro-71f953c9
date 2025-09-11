@@ -185,19 +185,27 @@ export const NewReservationModal = ({ open, onClose }: NewReservationModalProps)
             }
           }
           
-          // Room availability check - only run if all required fields are filled
-          if (formData.checkIn && formData.checkOut && formData.roomType && 
-              !availabilityChecked && 
-              !errors.checkIn && !errors.checkOut) {
-            try {
-              const availability = await validateRoomAvailability(
-                formData.roomType,
-                formData.checkIn,
-                formData.checkOut
-              );
-              
-              if (!availability.available) {
-                errors.roomType = availability.message || 'Room not available';
+           // Room availability check - only run if all required fields are filled
+           if (formData.checkIn && formData.checkOut && formData.roomType && 
+               !availabilityChecked && 
+               !errors.checkIn && !errors.checkOut) {
+             try {
+               console.log('Running availability check with:', {
+                 roomType: formData.roomType,
+                 checkIn: formData.checkIn,
+                 checkOut: formData.checkOut
+               });
+               
+               const availability = await validateRoomAvailability(
+                 formData.roomType,
+                 formData.checkIn,
+                 formData.checkOut
+               );
+               
+               console.log('Availability result:', availability);
+               
+               if (!availability.available) {
+                 errors.roomType = availability.message || 'Room not available';
                 // Offer waitlist option
                 showConfirmation({
                   title: 'Room Not Available',
