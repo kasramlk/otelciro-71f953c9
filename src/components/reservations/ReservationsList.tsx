@@ -2,6 +2,7 @@ import { useState, useMemo, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { useHotelContext } from "@/hooks/use-hotel-context";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -131,6 +132,7 @@ const getLoyaltyBadge = (tier: string) => {
 
 export const ReservationsList = ({ filterStatus }: ReservationsListProps) => {
   const navigate = useNavigate();
+  const { selectedHotelId } = useHotelContext();
   const [selectedReservations, setSelectedReservations] = useState<string[]>([]);
   const [currentPage, setCurrentPage] = useState(0);
   const [reservations, setReservations] = useState<any[]>([]);
@@ -151,6 +153,13 @@ export const ReservationsList = ({ filterStatus }: ReservationsListProps) => {
 
   // Load reservations from Supabase
   const loadReservations = async () => {
+    if (!selectedHotelId) {
+      setLoading(false);
+      setReservations([]);
+      handleDataLoad([], false);
+      return;
+    }
+
     const result = await handleAsyncOperation(
       async () => {
         setLoading(true);
@@ -164,6 +173,7 @@ export const ReservationsList = ({ filterStatus }: ReservationsListProps) => {
             room_types(name),
             rate_plans(name)
           `)
+          .eq('hotel_id', selectedHotelId)
           .order('created_at', { ascending: false });
 
         if (error) throw error;
@@ -187,10 +197,12 @@ export const ReservationsList = ({ filterStatus }: ReservationsListProps) => {
 
   useEffect(() => {
     loadReservations();
-  }, [handleAsyncOperation, handleDataLoad]);
+  }, [handleAsyncOperation, handleDataLoad, selectedHotelId]);
 
   // Set up real-time subscription for reservations
   useEffect(() => {
+    if (!selectedHotelId) return;
+
     const reservationsChannel = supabase
       .channel('reservations-realtime')
       .on(
@@ -199,6 +211,7 @@ export const ReservationsList = ({ filterStatus }: ReservationsListProps) => {
           event: '*',
           schema: 'public',
           table: 'reservations',
+          filter: `hotel_id=eq.${selectedHotelId}`,
         },
         (payload) => {
           console.log('Reservations change detected:', payload);
@@ -223,7 +236,7 @@ export const ReservationsList = ({ filterStatus }: ReservationsListProps) => {
     return () => {
       supabase.removeChannel(reservationsChannel);
     };
-  }, [toast]);
+  }, [toast, selectedHotelId]);
   const handleReservationAction = (action: string, reservationId: string) => {
     console.log('Action clicked:', action, 'for reservation:', reservationId);
     const reservation = paginatedReservations.find(r => r.id === reservationId);
