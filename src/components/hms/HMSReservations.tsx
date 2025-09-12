@@ -37,9 +37,24 @@ export const HMSReservations = () => {
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [isRoomMoveModalOpen, setIsRoomMoveModalOpen] = useState(false);
 
-  // Filter reservations
+  // Early return if no hotel is selected
+  if (!selectedHotelId) {
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="space-y-6 p-6"
+      >
+        <div className="text-center py-12">
+          <p className="text-muted-foreground">Please select a hotel to view reservations.</p>
+        </div>
+      </motion.div>
+    );
+  }
+
+  // Filter reservations based on filterStatus
   const filteredReservations = useMemo(() => {
-    if (!reservations || reservations.length === 0) return [];
+    if (!reservations || reservations.length === 0 || isLoading) return [];
     
     return reservations.filter(reservation => {
       // Get guest name from guests relationship or fallback
@@ -56,7 +71,7 @@ export const HMSReservations = () => {
       
       return matchesSearch && matchesStatus && matchesSource;
     });
-  }, [reservations, searchQuery, statusFilter, sourceFilter]);
+  }, [reservations, searchQuery, statusFilter, sourceFilter, isLoading]);
 
   // Stats
   const stats = useMemo(() => {
@@ -370,6 +385,19 @@ export const HMSReservations = () => {
           <CardTitle>Reservations ({filteredReservations.length})</CardTitle>
         </CardHeader>
         <CardContent>
+          {isLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+            </div>
+          ) : filteredReservations.length === 0 ? (
+            <div className="text-center py-12">
+              <p className="text-muted-foreground mb-4">No reservations found</p>
+              <Button onClick={() => setIsNewReservationOpen(true)}>
+                <Plus className="h-4 w-4 mr-2" />
+                Create First Reservation
+              </Button>
+            </div>
+          ) : (
           <div className="overflow-x-auto">
             <Table>
               <TableHeader>
@@ -455,14 +483,15 @@ export const HMSReservations = () => {
                             <Trash2 className="mr-2 h-4 w-4" />
                             Cancel
                           </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
+                  </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
         </CardContent>
       </Card>
 
