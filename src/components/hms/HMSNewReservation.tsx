@@ -43,7 +43,7 @@ interface HMSNewReservationProps {
 export const HMSNewReservation = ({ onClose, onSave }: HMSNewReservationProps = {} as HMSNewReservationProps) => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { addReservation, rooms, addAuditEntry, selectedHotelId } = useHMSStore();
+  const { addReservation, addAuditEntry, selectedHotelId } = useHMSStore();
 
   // Get current hotel
   const { data: currentHotel } = useQuery({
@@ -104,10 +104,28 @@ export const HMSNewReservation = ({ onClose, onSave }: HMSNewReservationProps = 
     enabled: !!currentHotel?.id
   });
 
+  // Load rooms from database instead of store
+  const { data: rooms = [] } = useQuery({
+    queryKey: ['rooms', currentHotel?.id],
+    queryFn: async () => {
+      if (!currentHotel?.id) return [];
+      const { data, error } = await supabase
+        .from('rooms')
+        .select('id, number, status, room_type_id, floor')
+        .eq('hotel_id', currentHotel.id);
+      if (error) throw error;
+      // Map database field to match expected interface
+      return data.map(room => ({
+        ...room,
+        roomTypeId: room.room_type_id
+      }));
+    },
+    enabled: !!currentHotel?.id
+  });
+
   const selectedRoomType = roomTypes.find(rt => rt.id === watchedValues.roomTypeId);
   const availableRooms = rooms.filter(r => 
-    r.roomTypeId === watchedValues.roomTypeId && 
-    (r.status === 'clean' || r.status === 'dirty')
+    r.roomTypeId === watchedValues.roomTypeId
   );
 
   // Mock document upload
