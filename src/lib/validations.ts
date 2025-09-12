@@ -152,55 +152,83 @@ export const validateRoomAvailability = async (
     const checkinStr = checkIn.toISOString().split('T')[0];
     const checkoutStr = checkOut.toISOString().split('T')[0];
     
-    // Get inventory allotment for the date range
-    console.log('Checking availability for:', { roomTypeId, checkinStr, checkoutStr });
+    console.log('🔍 Availability Check Started:', { roomTypeId, checkinStr, checkoutStr });
     
+    // Calculate number of nights (hotel industry standard)
+    const nights = Math.ceil((checkOut.getTime() - checkIn.getTime()) / (1000 * 60 * 60 * 24));
+    console.log('🔍 Nights calculation:', nights);
+    
+    // Generate array of dates for each night of stay
+    const stayDates: string[] = [];
+    for (let i = 0; i < nights; i++) {
+      const date = new Date(checkIn);
+      date.setDate(date.getDate() + i);
+      stayDates.push(date.toISOString().split('T')[0]);
+    }
+    console.log('🔍 Stay dates required:', stayDates);
+    
+    // Get inventory for all nights of the stay
     const { data: inventoryData, error: invError } = await supabase
       .from('inventory')
-      .select('allotment, stop_sell')
+      .select('date, allotment, stop_sell')
       .eq('room_type_id', roomTypeId)
-      .gte('date', checkinStr)
-      .lt('date', checkoutStr);
+      .in('date', stayDates);
     
-    console.log('Inventory query result:', { inventoryData, invError });
+    console.log('🔍 Inventory query result:', { inventoryData, invError, stayDates });
     
     if (invError) {
-      console.error('Inventory check error:', invError);
+      console.error('❌ Inventory check error:', invError);
       return { available: false, message: 'Unable to check availability' };
     }
     
-    // If no inventory data, get physical room count as fallback
-    if (!inventoryData || inventoryData.length === 0) {
-      console.log('No inventory data found, checking physical rooms for room type:', roomTypeId);
+    // Check if we have inventory for all required dates
+    const inventoryByDate = new Map(inventoryData?.map(inv => [inv.date, inv]) || []);
+    const missingDates = stayDates.filter(date => !inventoryByDate.has(date));
+    
+    console.log('🔍 Inventory analysis:', { 
+      inventoryByDate: Object.fromEntries(inventoryByDate), 
+      missingDates 
+    });
+    
+    // If missing inventory for any date, check physical room count as fallback
+    if (missingDates.length > 0) {
+      console.log('⚠️ Missing inventory for dates:', missingDates, '- checking physical rooms');
       
       const { data: roomCount } = await supabase
         .from('rooms')
         .select('id')
         .eq('room_type_id', roomTypeId);
       
-      console.log('Physical rooms found:', roomCount);
+      console.log('🔍 Physical rooms found:', roomCount?.length || 0);
       
       if (!roomCount || roomCount.length === 0) {
-        return { available: false, message: 'No rooms of this type available' };
-      }
-    } else {
-      // Check for stop-sell dates
-      const stopSellDates = inventoryData.filter(inv => inv.stop_sell);
-      if (stopSellDates.length > 0) {
-        return { available: false, message: 'Room type closed for selected dates' };
+        return { available: false, message: 'No rooms of this type exist' };
       }
       
-      // Get minimum allotment for the period
-      const minAllotment = Math.min(...inventoryData.map(inv => inv.allotment));
-      if (minAllotment <= 0) {
-        return { available: false, message: 'No inventory available for selected dates' };
+      // Use physical room count as default allotment for missing dates
+      const physicalRoomCount = roomCount.length;
+      for (const missingDate of missingDates) {
+        inventoryByDate.set(missingDate, { 
+          date: missingDate, 
+          allotment: physicalRoomCount, 
+          stop_sell: false 
+        });
       }
+      
+      console.log('🔍 Updated inventory with physical rooms:', Object.fromEntries(inventoryByDate));
     }
     
-    // Check existing reservations that overlap
+    // Check for stop-sell dates
+    const stopSellDates = Array.from(inventoryByDate.values()).filter(inv => inv.stop_sell);
+    if (stopSellDates.length > 0) {
+      console.log('❌ Stop-sell found for dates:', stopSellDates.map(d => d.date));
+      return { available: false, message: 'Room type closed for selected dates' };
+    }
+    
+    // Get existing overlapping reservations
     let reservationQuery = supabase
       .from('reservations')
-      .select('id')
+      .select('id, check_in, check_out')
       .eq('room_type_id', roomTypeId)
       .lt('check_in', checkoutStr)
       .gt('check_out', checkinStr)
@@ -210,29 +238,44 @@ export const validateRoomAvailability = async (
       reservationQuery = reservationQuery.neq('id', excludeReservationId);
     }
     
-    const { data: conflictingReservations } = await reservationQuery;
-    console.log('Conflicting reservations found:', conflictingReservations);
+    const { data: conflictingReservations, error: resError } = await reservationQuery;
     
-    const conflictCount = conflictingReservations?.length || 0;
-    
-    // Get minimum allotment across all dates in the stay period
-    const minAllotment = inventoryData && inventoryData.length > 0 
-      ? Math.min(...inventoryData.map(inv => inv.allotment))
-      : 1;
-    
-    console.log('Availability calculation:', { 
-      conflictCount, 
-      minAllotment, 
-      available: conflictCount < minAllotment 
-    });
-    
-    if (conflictCount >= minAllotment) {
-      return {
-        available: false,
-        message: 'No rooms available for selected dates. Would you like to add to waitlist?'
-      };
+    if (resError) {
+      console.error('❌ Reservation check error:', resError);
+      return { available: false, message: 'Unable to check existing reservations' };
     }
     
+    console.log('🔍 Conflicting reservations:', conflictingReservations);
+    
+    // For each night, check if we have enough rooms
+    for (const date of stayDates) {
+      const inventory = inventoryByDate.get(date);
+      if (!inventory) continue;
+      
+      // Count reservations that include this specific night
+      const reservationsForDate = conflictingReservations?.filter(res => {
+        const resCheckIn = res.check_in;
+        const resCheckOut = res.check_out;
+        return date >= resCheckIn && date < resCheckOut;
+      }).length || 0;
+      
+      const availableRooms = inventory.allotment - reservationsForDate;
+      
+      console.log(`🔍 Date ${date}:`, {
+        allotment: inventory.allotment,
+        reservations: reservationsForDate,
+        available: availableRooms
+      });
+      
+      if (availableRooms <= 0) {
+        return {
+          available: false,
+          message: `No rooms available for ${date}. ${reservationsForDate} of ${inventory.allotment} rooms already booked.`
+        };
+      }
+    }
+    
+    console.log('✅ Availability check passed for all dates');
     return { available: true };
     
   } catch (error) {
