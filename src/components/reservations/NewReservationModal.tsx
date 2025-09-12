@@ -5,8 +5,7 @@ import { useToast } from "@/hooks/use-toast";
 import { 
   getDateValidationError, 
   sanitizeObject, 
-  completeReservationSchema,
-  validateRoomAvailability 
+  completeReservationSchema
 } from "@/lib/validations";
 import { useAuditLogger } from "@/lib/audit-logger";
 import { useErrorHandler } from "@/lib/error-handler";
@@ -69,7 +68,6 @@ export const NewReservationModal = ({ open, onClose }: NewReservationModalProps)
   const [currentStep, setCurrentStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
-  const [availabilityChecked, setAvailabilityChecked] = useState(false);
   const [roomTypes, setRoomTypes] = useState<any[]>([]);
   const [ratePlans, setRatePlans] = useState<any[]>([]);
   const { toast } = useToast();
@@ -121,11 +119,6 @@ export const NewReservationModal = ({ open, onClose }: NewReservationModalProps)
         delete newErrors[field];
         return newErrors;
       });
-    }
-    
-    // Reset availability check if dates change
-    if (field === 'checkIn' || field === 'checkOut' || field === 'roomType') {
-      setAvailabilityChecked(false);
     }
   };
 
@@ -185,68 +178,6 @@ export const NewReservationModal = ({ open, onClose }: NewReservationModalProps)
             const dateError = getDateValidationError(formData.checkIn, formData.checkOut);
             if (dateError) {
               errors.checkOut = dateError;
-            }
-          }
-          
-           // Room availability check - only run if all required fields are filled
-           console.log('🔍 NewReservationModal - Checking availability conditions:', {
-             hasCheckIn: !!formData.checkIn,
-             hasCheckOut: !!formData.checkOut,
-             hasRoomType: !!formData.roomType,
-             availabilityChecked,
-             hasDateErrors: !!(errors.checkIn || errors.checkOut),
-             checkInValue: formData.checkIn,
-             checkOutValue: formData.checkOut,
-             roomTypeValue: formData.roomType,
-             checkInISO: formData.checkIn?.toISOString(),
-             checkOutISO: formData.checkOut?.toISOString()
-           });
-           
-           if (formData.checkIn && formData.checkOut && formData.roomType && 
-               !availabilityChecked && 
-               !errors.checkIn && !errors.checkOut) {
-             try {
-               console.log('🚀 NewReservationModal - Running availability check with:', {
-                 roomType: formData.roomType,
-                 checkIn: formData.checkIn,
-                 checkOut: formData.checkOut,
-                 checkInFormatted: formData.checkIn.toISOString().split('T')[0],
-                 checkOutFormatted: formData.checkOut.toISOString().split('T')[0],
-                 typeof_checkIn: typeof formData.checkIn,
-                 typeof_checkOut: typeof formData.checkOut,
-                 typeof_roomType: typeof formData.roomType
-               });
-               
-               const availability = await validateRoomAvailability(
-                 formData.roomType,
-                 formData.checkIn,
-                 formData.checkOut
-               );
-               
-               console.log('✅ NewReservationModal - Availability result:', availability);
-               
-               if (!availability.available) {
-                 errors.roomType = availability.message || 'Room not available';
-                // Offer waitlist option
-                showConfirmation({
-                  title: 'Room Not Available',
-                  description: availability.message + ' Would you like to add this guest to the waitlist instead?',
-                  confirmText: 'Add to Waitlist',
-                  onConfirm: () => {
-                    // Handle waitlist addition
-                    toast({
-                      title: "Added to Waitlist",
-                      description: "Guest has been added to the waitlist for these dates.",
-                    });
-                    onClose();
-                  }
-                });
-              } else {
-                setAvailabilityChecked(true);
-              }
-            } catch (error) {
-              console.error('Availability check failed:', error);
-              // Don't block the user if availability check fails
             }
           }
           
