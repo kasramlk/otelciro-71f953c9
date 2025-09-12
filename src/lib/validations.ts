@@ -169,7 +169,7 @@ export const validateRoomAvailability = async (
     
     // Get inventory for all nights of the stay
     const { data: inventoryData, error: invError } = await supabase
-      .from('inventory')
+      .from('room_inventory')
       .select('date, allotment, stop_sell')
       .eq('room_type_id', roomTypeId)
       .in('date', stayDates);
