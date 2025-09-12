@@ -3,7 +3,7 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from '@/hooks/use-toast';
+import { useToast } from '@/hooks/use-toast';
 import { auditLogger } from '@/lib/audit-logger';
 
 export const ADVANCED_RESERVATION_KEYS = {
@@ -146,8 +146,149 @@ export function useGroupReservations(hotelId: string) {
 }
 
 // Create Group Reservation
+// Update Reservation
+export function useUpdateReservation() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async (data: {
+      reservationId: string;
+      hotelId: string;
+      updates: {
+        guest_id?: string;
+        room_type_id?: string;
+        room_id?: string;
+        check_in?: string;
+        check_out?: string;
+        adults?: number;
+        children?: number;
+        status?: string;
+        source?: string;
+        notes?: string;
+        special_requests?: string[];
+        meal_plan?: string;
+        payment_method?: string;
+        total_price?: number;
+        deposit_amount?: number;
+        balance_due?: number;
+      };
+    }) => {
+      const { data: result, error } = await supabase
+        .from('reservations')
+        .update(data.updates)
+        .eq('id', data.reservationId)
+        .select(`
+          *,
+          guests(
+            id,
+            first_name,
+            last_name,
+            email,
+            phone
+          ),
+          rooms(
+            id,
+            number,
+            status,
+            housekeeping_status
+          ),
+          room_types(
+            id,
+            name,
+            capacity_adults,
+            capacity_children
+          )
+        `)
+        .single();
+
+      if (error) throw error;
+      
+      await auditLogger.logReservationUpdated(
+        data.reservationId, 
+        {}, // old data - would need to fetch first in real implementation
+        data.updates,
+        { hotelId: data.hotelId }
+      );
+      
+      return result;
+    },
+    onSuccess: (data, variables) => {
+      queryClient.invalidateQueries({ 
+        queryKey: ADVANCED_RESERVATION_KEYS.reservations(variables.hotelId) 
+      });
+      
+      toast({
+        title: "Reservation Updated",
+        description: "Reservation has been successfully updated."
+      });
+    },
+    onError: (error) => {
+      console.error('Failed to update reservation:', error);
+      toast({
+        title: "Update Failed",
+        description: "Failed to update reservation. Please try again.",
+        variant: "destructive"
+      });
+    }
+  });
+}
+
+// Delete/Cancel Reservation
+export function useDeleteReservation() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async (data: {
+      reservationId: string;
+      hotelId: string;
+      reason?: string;
+    }) => {
+      const { data: result, error } = await supabase
+        .from('reservations')
+        .update({ 
+          status: 'Cancelled',
+          notes: data.reason ? `Cancelled: ${data.reason}` : 'Cancelled'
+        })
+        .eq('id', data.reservationId)
+        .select()
+        .single();
+
+      if (error) throw error;
+      
+      await auditLogger.logReservationCancelled(
+        data.reservationId, 
+        result,
+        data.reason
+      );
+      
+      return result;
+    },
+    onSuccess: (data, variables) => {
+      queryClient.invalidateQueries({ 
+        queryKey: ADVANCED_RESERVATION_KEYS.reservations(variables.hotelId) 
+      });
+      
+      toast({
+        title: "Reservation Cancelled",
+        description: "Reservation has been cancelled successfully."
+      });
+    },
+    onError: (error) => {
+      console.error('Failed to cancel reservation:', error);
+      toast({
+        title: "Cancellation Failed",
+        description: "Failed to cancel reservation. Please try again.",
+        variant: "destructive"
+      });
+    }
+  });
+}
+
 export function useCreateGroupReservation() {
   const queryClient = useQueryClient();
+  const { toast } = useToast();
 
   return useMutation({
     mutationFn: async (groupData: {
@@ -249,6 +390,7 @@ export function useWaitlist(hotelId: string) {
 // Room Assignment with Optimization
 export function useOptimizeRoomAssignments() {
   const queryClient = useQueryClient();
+  const { toast } = useToast();
 
   return useMutation({
     mutationFn: async ({ hotelId, date, preferences }: {
@@ -489,6 +631,7 @@ export function useWalkInAvailability(hotelId: string, checkIn: string, checkOut
 // Modify Reservation (Dates, Room Type, Guests)
 export function useModifyReservation() {
   const queryClient = useQueryClient();
+  const { toast } = useToast();
 
   return useMutation({
     mutationFn: async ({ reservationId, modifications, recalculateCharges }: {

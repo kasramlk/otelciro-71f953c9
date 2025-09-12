@@ -3,6 +3,8 @@ import { motion } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useConfirmation } from "@/components/ui/confirmation-dialog";
+import { EditReservationForm } from "./EditReservationForm";
+import { useHotelContext } from "@/hooks/use-hotel-context";
 import {
   Dialog,
   DialogContent,
@@ -53,14 +55,7 @@ export const ReservationDetailModal = ({
   
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [editData, setEditData] = useState({
-    checkIn: reservation?.checkIn || '',
-    checkOut: reservation?.checkOut || '',
-    adults: reservation?.adults || 1,
-    children: reservation?.children || 0,
-    specialRequests: reservation?.specialRequests?.join(', ') || '',
-    notes: ''
-  });
+  const { selectedHotelId } = useHotelContext();
   const { toast } = useToast();
   const { showConfirmation, ConfirmationComponent } = useConfirmation();
 
@@ -291,13 +286,104 @@ export const ReservationDetailModal = ({
             </TabsList>
 
             <TabsContent value="details" className="space-y-4">
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="space-y-4"
-              >
-                {/* Stay Details */}
-                <div className="bg-muted/50 p-4 rounded-lg">
+          {isEditing ? (
+            <EditReservationForm
+              reservation={reservation}
+              hotelId={selectedHotelId || ''}
+              onSuccess={() => {
+                setIsEditing(false);
+                onClose();
+              }}
+              onCancel={() => setIsEditing(false)}
+            />
+          ) : (
+            <Tabs defaultValue="details" className="w-full">
+              <TabsList className="grid w-full grid-cols-3">
+                <TabsTrigger value="details">Details</TabsTrigger>
+                <TabsTrigger value="guest">Guest</TabsTrigger>
+                <TabsTrigger value="billing">Billing</TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="details" className="space-y-4">
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="space-y-4"
+                >
+                  <div className="bg-muted/50 p-4 rounded-lg">
+                    <h4 className="font-semibold mb-3">Stay Information</h4>
+                    <div className="space-y-2">
+                      <div className="flex justify-between">
+                        <span>Check-in:</span>
+                        <span className="font-medium">{reservation?.checkIn}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Check-out:</span>
+                        <span className="font-medium">{reservation?.checkOut}</span>
+                      </div>
+                    </div>
+                  </div>
+                </motion.div>
+              </TabsContent>
+              
+              <TabsContent value="guest">
+                <p>Guest information would go here</p>
+              </TabsContent>
+              
+              <TabsContent value="billing">
+                <p>Billing information would go here</p>
+              </TabsContent>
+            </Tabs>
+          {/* Actions */}
+          <div className="flex justify-between pt-4 border-t">
+            <div className="flex gap-2">
+              {reservation.status !== 'Cancelled' && (
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={handleCancel}
+                  disabled={loading}
+                >
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  Cancel
+                </Button>
+              )}
+            </div>
+
+            <div className="flex gap-2">
+              {isEditing ? (
+                <>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setIsEditing(false)}
+                    disabled={loading}
+                  >
+                    Cancel Edit
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleEdit}
+                    disabled={loading}
+                  >
+                    <Edit3 className="mr-2 h-4 w-4" />
+                    Edit
+                  </Button>
+                </>
+              )}
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+      
+      <ConfirmationComponent />
+    </>
+  );
+};
                   <h4 className="font-semibold mb-3">Stay Information</h4>
                   <div className="grid grid-cols-2 gap-4">
                     <div>

@@ -11,7 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
-import { useAdvancedReservations, useGroupReservations, useOptimizeRoomAssignments } from '@/hooks/use-advanced-reservations';
+import { useAdvancedReservations, useGroupReservations, useOptimizeRoomAssignments, useUpdateReservation, useDeleteReservation } from '@/hooks/use-advanced-reservations';
 import { useHotelContext } from '@/hooks/use-hotel-context';
 import { HMSNewReservation } from './HMSNewReservation';
 import { ReservationDetailModal } from '@/components/reservations/ReservationDetailModal';
@@ -27,6 +27,8 @@ export const HMSReservations = () => {
   const { data: reservations = [], isLoading } = useAdvancedReservations(selectedHotelId || '');
   const { data: groupReservations = [] } = useGroupReservations(selectedHotelId || '');
   const optimizeRoomsMutation = useOptimizeRoomAssignments();
+  const updateReservationMutation = useUpdateReservation();
+  const deleteReservationMutation = useDeleteReservation();
   const { toast } = useToast();
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
@@ -120,20 +122,27 @@ export const HMSReservations = () => {
     setIsRoomMoveModalOpen(true);
   };
 
-  const handleEditReservation = (reservation: any) => {
-    console.log("Edit reservation:", reservation);
-    toast({
-      title: "Edit Reservation",
-      description: "Edit functionality will be implemented soon.",
-    });
+  const handleEditReservation = async (reservation: any) => {
+    if (!selectedHotelId) return;
+    
+    // For now, let's just open the detail modal for editing
+    // In a real implementation, you'd have a separate edit form
+    setSelectedReservation(reservation);
+    setIsDetailModalOpen(true);
   };
 
-  const handleCancelReservation = (reservation: any) => {
-    console.log("Cancel reservation:", reservation);
-    toast({
-      title: "Cancel functionality not implemented",
-      description: "Reservation cancellation will be implemented in the next update.",
-    });
+  const handleCancelReservation = async (reservation: any) => {
+    if (!selectedHotelId) return;
+    
+    try {
+      await deleteReservationMutation.mutateAsync({
+        reservationId: reservation.id,
+        hotelId: selectedHotelId,
+        reason: 'Cancelled via HMS'
+      });
+    } catch (error) {
+      console.error('Failed to cancel reservation:', error);
+    }
   };
 
   const handleOptimizeRooms = async () => {
