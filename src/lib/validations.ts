@@ -30,12 +30,27 @@ export const isValidDateRange = (checkIn: Date, checkOut: Date): boolean => {
 };
 
 export const getDateValidationError = (checkIn: Date | undefined, checkOut: Date | undefined): string | null => {
+  console.log('🔍 getDateValidationError called with:', {
+    checkIn,
+    checkOut,
+    checkInType: typeof checkIn,
+    checkOutType: typeof checkOut,
+    checkInISO: checkIn?.toISOString(),
+    checkOutISO: checkOut?.toISOString()
+  });
+
   if (!checkIn || !checkOut) {
+    console.log('❌ Date validation: Missing dates');
     return 'Both check-in and check-out dates are required';
   }
   
   const today = new Date();
   today.setHours(0, 0, 0, 0);
+  
+  console.log('🔍 Today date for comparison:', {
+    today,
+    todayISO: today.toISOString()
+  });
   
   const checkinDate = new Date(checkIn);
   checkinDate.setHours(0, 0, 0, 0);
@@ -43,21 +58,42 @@ export const getDateValidationError = (checkIn: Date | undefined, checkOut: Date
   const checkoutDate = new Date(checkOut);
   checkoutDate.setHours(0, 0, 0, 0);
   
+  console.log('🔍 Normalized dates for comparison:', {
+    checkinDate,
+    checkoutDate,
+    checkinDateISO: checkinDate.toISOString(),
+    checkoutDateISO: checkoutDate.toISOString(),
+    todayTime: today.getTime(),
+    checkinTime: checkinDate.getTime(),
+    isPast: checkinDate < today
+  });
+  
   if (checkinDate < today) {
+    console.log('❌ Date validation: Check-in is in the past');
     return 'Check-in date cannot be in the past';
   }
   
   if (checkoutDate <= checkinDate) {
+    console.log('❌ Date validation: Check-out not after check-in');
     return 'Check-out date must be after check-in date';
   }
   
   // Maximum stay validation (e.g., 30 days)
   const maxDays = 30;
   const daysDiff = Math.ceil((checkoutDate.getTime() - checkinDate.getTime()) / (1000 * 60 * 60 * 24));
+  
+  console.log('🔍 Stay days calculation:', {
+    daysDiff,
+    maxDays,
+    isExceeded: daysDiff > maxDays
+  });
+  
   if (daysDiff > maxDays) {
+    console.log('❌ Date validation: Stay too long');
     return `Maximum stay is ${maxDays} days`;
   }
   
+  console.log('✅ Date validation passed');
   return null;
 };
 
@@ -152,7 +188,15 @@ export const validateRoomAvailability = async (
     const checkinStr = checkIn.toISOString().split('T')[0];
     const checkoutStr = checkOut.toISOString().split('T')[0];
     
-    console.log('🔍 Availability Check Started:', { roomTypeId, checkinStr, checkoutStr });
+    console.log('🔍 Availability Check Started:', { 
+      roomTypeId, 
+      checkinStr, 
+      checkoutStr,
+      checkInOriginal: checkIn,
+      checkOutOriginal: checkOut,
+      typeof_checkIn: typeof checkIn,
+      typeof_checkOut: typeof checkOut
+    });
     
     // Calculate number of nights (hotel industry standard)
     const nights = Math.ceil((checkOut.getTime() - checkIn.getTime()) / (1000 * 60 * 60 * 24));
