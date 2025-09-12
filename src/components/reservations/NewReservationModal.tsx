@@ -189,22 +189,32 @@ export const NewReservationModal = ({ open, onClose }: NewReservationModalProps)
           }
           
            // Room availability check - only run if all required fields are filled
-           console.log('🔍 Checking availability conditions:', {
+           console.log('🔍 NewReservationModal - Checking availability conditions:', {
              hasCheckIn: !!formData.checkIn,
              hasCheckOut: !!formData.checkOut,
              hasRoomType: !!formData.roomType,
              availabilityChecked,
-             hasDateErrors: !!(errors.checkIn || errors.checkOut)
+             hasDateErrors: !!(errors.checkIn || errors.checkOut),
+             checkInValue: formData.checkIn,
+             checkOutValue: formData.checkOut,
+             roomTypeValue: formData.roomType,
+             checkInISO: formData.checkIn?.toISOString(),
+             checkOutISO: formData.checkOut?.toISOString()
            });
            
            if (formData.checkIn && formData.checkOut && formData.roomType && 
                !availabilityChecked && 
                !errors.checkIn && !errors.checkOut) {
              try {
-               console.log('Running availability check with:', {
+               console.log('🚀 NewReservationModal - Running availability check with:', {
                  roomType: formData.roomType,
                  checkIn: formData.checkIn,
-                 checkOut: formData.checkOut
+                 checkOut: formData.checkOut,
+                 checkInFormatted: formData.checkIn.toISOString().split('T')[0],
+                 checkOutFormatted: formData.checkOut.toISOString().split('T')[0],
+                 typeof_checkIn: typeof formData.checkIn,
+                 typeof_checkOut: typeof formData.checkOut,
+                 typeof_roomType: typeof formData.roomType
                });
                
                const availability = await validateRoomAvailability(
@@ -213,7 +223,7 @@ export const NewReservationModal = ({ open, onClose }: NewReservationModalProps)
                  formData.checkOut
                );
                
-               console.log('Availability result:', availability);
+               console.log('✅ NewReservationModal - Availability result:', availability);
                
                if (!availability.available) {
                  errors.roomType = availability.message || 'Room not available';
