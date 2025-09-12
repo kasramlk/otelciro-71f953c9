@@ -29,6 +29,8 @@ export function useAdvancedReservations(hotelId: string, filters?: {
   return useQuery({
     queryKey: ADVANCED_RESERVATION_KEYS.reservations(hotelId, filters),
     queryFn: async () => {
+      if (!hotelId) return [];
+      
       let query = supabase
         .from('reservations')
         .select(`
@@ -38,13 +40,7 @@ export function useAdvancedReservations(hotelId: string, filters?: {
             first_name,
             last_name,
             email,
-            phone,
-            guest_profiles(
-              vip_status,
-              loyalty_tier,
-              loyalty_points,
-              special_requests
-            )
+            phone
           ),
           rooms(
             id,
@@ -57,30 +53,6 @@ export function useAdvancedReservations(hotelId: string, filters?: {
             name,
             capacity_adults,
             capacity_children
-          ),
-          reservation_groups(
-            id,
-            name,
-            group_code,
-            group_type
-          ),
-          companies(
-            id,
-            name,
-            credit_limit,
-            current_balance
-          ),
-          reservation_charges(
-            id,
-            amount,
-            description,
-            voided_at
-          ),
-          payments(
-            id,
-            amount,
-            payment_method,
-            status
           )
         `)
         .eq('hotel_id', hotelId);
@@ -117,16 +89,7 @@ export function useAdvancedReservations(hotelId: string, filters?: {
 
       // Transform data with computed fields
       return data?.map(reservation => {
-        const charges = Array.isArray(reservation.reservation_charges) 
-          ? reservation.reservation_charges.filter(c => !c.voided_at) 
-          : [];
-        const payments = Array.isArray(reservation.payments) 
-          ? reservation.payments.filter(p => p.status === 'completed') 
-          : [];
-        
-        const totalCharges = charges.reduce((sum, charge) => sum + charge.amount, 0);
-        const totalPayments = payments.reduce((sum, payment) => sum + payment.amount, 0);
-        const balance = totalCharges - totalPayments;
+        const balance = reservation.balance_due || 0;
 
         return {
           ...reservation,
@@ -159,33 +122,23 @@ export function useGroupReservations(hotelId: string) {
   return useQuery({
     queryKey: ADVANCED_RESERVATION_KEYS.groupReservations(hotelId),
     queryFn: async () => {
+      if (!hotelId) return [];
+      
       const { data, error } = await supabase
         .from('reservation_groups')
-        .select(`
-          *,
-          reservations(
-            id,
-            status,
-            total_amount,
-            guests(first_name, last_name)
-          )
-        `)
+        .select(`*`)
         .eq('hotel_id', hotelId)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
 
-      return data?.map(group => {
-        const reservations = Array.isArray(group.reservations) ? group.reservations : [];
-        
-        return {
-          ...group,
-          totalReservations: reservations.length,
-          confirmedReservations: reservations.filter(r => r.status === 'Confirmed').length,
-          totalRevenue: reservations.reduce((sum, r) => sum + (r.total_amount || 0), 0),
-          roomsPickedUp: reservations.filter(r => r.status !== 'Cancelled').length
-        };
-      });
+      return data?.map(group => ({
+        ...group,
+        totalReservations: 0, // Will be calculated when we have proper relationships
+        confirmedReservations: 0,
+        totalRevenue: 0,
+        roomsPickedUp: 0
+      })) || [];
     },
     enabled: !!hotelId,
     staleTime: 5 * 60 * 1000
@@ -254,6 +207,8 @@ export function useWaitlist(hotelId: string) {
   return useQuery({
     queryKey: ADVANCED_RESERVATION_KEYS.waitlist(hotelId),
     queryFn: async () => {
+      if (!hotelId) return [];
+      
       // For now, we'll simulate waitlist with reservations that couldn't be assigned rooms
       const { data, error } = await supabase
         .from('reservations')
@@ -263,8 +218,7 @@ export function useWaitlist(hotelId: string) {
             first_name,
             last_name,
             email,
-            phone,
-            guest_profiles(vip_status, loyalty_tier)
+            phone
           ),
           room_types(name)
         `)
@@ -285,7 +239,7 @@ export function useWaitlist(hotelId: string) {
         waitingDays: Math.floor(
           (new Date().getTime() - new Date(reservation.created_at).getTime()) / (1000 * 60 * 60 * 24)
         )
-      }));
+      })) || [];
     },
     enabled: !!hotelId,
     staleTime: 2 * 60 * 1000
