@@ -150,44 +150,80 @@ export const ReservationsList = ({ filterStatus }: ReservationsListProps) => {
   const itemsPerPage = 10;
 
   // Load reservations from Supabase
+  const loadReservations = async () => {
+    const result = await handleAsyncOperation(
+      async () => {
+        setLoading(true);
+        setError(null);
+        
+        const { data, error } = await supabase
+          .from('reservations')
+          .select(`
+            *,
+            guests(first_name, last_name, email, phone, nationality),
+            room_types(name),
+            rate_plans(name)
+          `)
+          .order('created_at', { ascending: false });
+
+        if (error) throw error;
+        return data || [];
+      },
+      { component: 'ReservationsList', action: 'load_reservations' }
+    );
+
+    if (result !== null) {
+      setReservations(result);
+      handleDataLoad(result, false);
+    } else {
+      // Error occurred - show error state
+      setReservations([]);
+      setError('Unable to load reservations from database.');
+      handleDataLoad([], false, 'Database connection failed');
+    }
+    
+    setLoading(false);
+  };
+
   useEffect(() => {
-    const loadReservations = async () => {
-      const result = await handleAsyncOperation(
-        async () => {
-          setLoading(true);
-          setError(null);
-          
-          const { data, error } = await supabase
-            .from('reservations')
-            .select(`
-              *,
-              guests(first_name, last_name, email, phone, nationality),
-              room_types(name),
-              rate_plans(name)
-            `)
-            .order('created_at', { ascending: false });
-
-          if (error) throw error;
-          return data || [];
-        },
-        { component: 'ReservationsList', action: 'load_reservations' }
-      );
-
-      if (result !== null) {
-        setReservations(result);
-        handleDataLoad(result, false);
-      } else {
-        // Error occurred - show error state
-        setReservations([]);
-        setError('Unable to load reservations from database.');
-        handleDataLoad([], false, 'Database connection failed');
-      }
-      
-      setLoading(false);
-    };
-
     loadReservations();
   }, [handleAsyncOperation, handleDataLoad]);
+
+  // Set up real-time subscription for reservations
+  useEffect(() => {
+    const reservationsChannel = supabase
+      .channel('reservations-realtime')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'reservations',
+        },
+        (payload) => {
+          console.log('Reservations change detected:', payload);
+          // Reload reservations when changes occur
+          loadReservations();
+          
+          if (payload.eventType === 'INSERT') {
+            toast({
+              title: 'New Reservation',
+              description: 'A new reservation has been created',
+            });
+          } else if (payload.eventType === 'UPDATE') {
+            toast({
+              title: 'Reservation Updated', 
+              description: 'A reservation has been modified',
+            });
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(reservationsChannel);
+    };
+  }, [toast]);
   const handleReservationAction = (action: string, reservationId: string) => {
     console.log('Action clicked:', action, 'for reservation:', reservationId);
     const reservation = paginatedReservations.find(r => r.id === reservationId);
