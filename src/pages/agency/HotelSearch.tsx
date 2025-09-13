@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { useEnhancedHotels } from "@/hooks/use-enhanced-hotels";
+import { useRealtimeInventory } from "@/hooks/use-realtime-inventory";
 import { checkRealTimeAvailability, getRealTimeRates } from "@/lib/services/booking-service";
 import { 
   Search, 
@@ -23,7 +24,9 @@ import {
   Shield,
   Filter,
   SlidersHorizontal,
-  Loader2
+  Loader2,
+  AlertCircle,
+  CheckCircle2
 } from "lucide-react";
 
 const HotelSearch = () => {
@@ -40,6 +43,9 @@ const HotelSearch = () => {
   
   const { toast } = useToast();
   const { data: hotels = [], isLoading: hotelsLoading, error } = useEnhancedHotels(searchFilters);
+  
+  // Setup real-time inventory updates
+  const { isConnected } = useRealtimeInventory(searchFilters.city ? undefined : hotels[0]?.id);
 
   const amenityIcons = {
     "Wifi": Wifi,
