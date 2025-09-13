@@ -2,14 +2,14 @@ import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import BookingFlowModal from "@/components/agency/BookingFlowModal";
+import AdvancedSearchFilters from "@/components/agency/AdvancedSearchFilters";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { useEnhancedHotels } from "@/hooks/use-enhanced-hotels";
-import { useRealtimeInventory } from "@/hooks/use-realtime-inventory";
-import { checkRealTimeAvailability, getRealTimeRates } from "@/lib/services/booking-service";
+import { useEnhancedHotelSearch, SearchFilters, SearchParams, EnrichedHotel } from "@/hooks/use-enhanced-hotel-search";
 import { 
   Search, 
   MapPin, 
@@ -31,21 +31,38 @@ import {
 
 const HotelSearch = () => {
   const [searchQuery, setSearchQuery] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [searchFilters, setSearchFilters] = useState({
-    city: "Istanbul",
+  const [searchParams, setSearchParams] = useState<SearchParams>({
+    destination: "Istanbul",
     checkIn: new Date().toISOString().split('T')[0],
     checkOut: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
     adults: 2,
-    children: 0
+    children: 0,
+    rooms: 1
   });
-  const [enrichedHotels, setEnrichedHotels] = useState<any[]>([]);
+  const [filters, setFilters] = useState<SearchFilters>({
+    priceRange: [0, 1000],
+    starRating: [],
+    amenities: [],
+    roomTypes: [],
+    distance: 50,
+    guestRating: 0,
+    propertyTypes: [],
+    mealPlans: []
+  });
+  const [sortBy, setSortBy] = useState("price-low");
+  const [showFilters, setShowFilters] = useState(false);
+  const [searchResults, setSearchResults] = useState<EnrichedHotel[]>([]);
   
   const { toast } = useToast();
-  const { data: hotels = [], isLoading: hotelsLoading, error } = useEnhancedHotels(searchFilters);
-  
-  // Setup real-time inventory updates
-  const { isConnected } = useRealtimeInventory(searchFilters.city ? undefined : hotels[0]?.id);
+  const { 
+    search, 
+    isSearching, 
+    searchHistory, 
+    favoriteHotels, 
+    toggleFavorite, 
+    sortHotels,
+    error 
+  } = useEnhancedHotelSearch(searchParams, filters);
 
   const amenityIcons = {
     "Wifi": Wifi,
@@ -58,157 +75,36 @@ const HotelSearch = () => {
     "Business Center": Coffee
   };
 
-  const [selectedHotel, setSelectedHotel] = useState<any>(null);
+  const [selectedHotel, setSelectedHotel] = useState<EnrichedHotel | null>(null);
   const [bookingAction, setBookingAction] = useState<'book' | 'quote' | 'view' | null>(null);
 
-  const handleBookHotel = (hotel: any) => {
+  const handleBookHotel = (hotel: EnrichedHotel) => {
     setSelectedHotel(hotel);
     setBookingAction('book');
   };
 
-  const handleViewDetails = (hotel: any) => {
+  const handleViewDetails = (hotel: EnrichedHotel) => {
     setSelectedHotel(hotel);
     setBookingAction('view');
   };
 
-  const handleRequestQuote = (hotel: any) => {
+  const handleRequestQuote = (hotel: EnrichedHotel) => {
     setSelectedHotel(hotel);
     setBookingAction('quote');
   };
 
-  // Enrich hotels with real-time availability and rates
+  // Perform search and apply filters
   useEffect(() => {
-    const enrichHotelsWithRealTimeData = async () => {
-      if (!hotels.length || !searchFilters.checkIn || !searchFilters.checkOut) return;
-      
-      setLoading(true);
-      try {
-        // Process hotels in smaller batches to avoid overwhelming the API
-        const batchSize = 3;
-        const batches = [];
-        
-        for (let i = 0; i < hotels.length; i += batchSize) {
-          batches.push(hotels.slice(i, i + batchSize));
-        }
-
-        let allEnrichedData = [];
-
-        // Process batches sequentially with delay to prevent rate limiting
-        for (let batchIndex = 0; batchIndex < batches.length; batchIndex++) {
-          const batch = batches[batchIndex];
-          
-          const batchEnriched = await Promise.all(
-            batch.map(async (hotel) => {
-              try {
-                const enrichedRoomTypes = await Promise.all(
-                  (hotel.room_types || []).map(async (roomType: any) => {
-                    const [availability, rates] = await Promise.all([
-                      checkRealTimeAvailability(hotel.id, roomType.id, searchFilters.checkIn, searchFilters.checkOut).catch(() => ({ available: true, availableRooms: 5 })),
-                      getRealTimeRates(hotel.id, roomType.id, searchFilters.checkIn, searchFilters.checkOut).catch(() => ({ averageRate: 150, totalAmount: 300, nights: 2 }))
-                    ]);
-
-                    return {
-                      id: roomType.id,
-                      type: roomType.name,
-                      description: roomType.description,
-                      price: Math.round(rates.averageRate),
-                      available: availability.availableRooms,
-                      currency: "USD"
-                    };
-                  })
-                );
-
-                // Filter out unavailable room types
-                const availableRooms = enrichedRoomTypes.filter(room => room.available > 0);
-
-                return {
-                  id: hotel.id,
-                  name: hotel.name,
-                  location: `${hotel.city}, ${hotel.country}`,
-                  stars: 4, // Default rating
-                  rating: 4.5 + Math.random() * 0.5,
-                  reviews: Math.floor(1000 + Math.random() * 2000),
-                  image: "/placeholder.svg",
-                  amenities: ["Wifi", "Restaurant", "Reception", "Concierge"],
-                  rooms: availableRooms,
-                  distance: `${(Math.random() * 3 + 0.1).toFixed(1)} km to city center`,
-                  address: hotel.address
-                };
-              } catch (error) {
-                console.error(`Error enriching hotel ${hotel.name}:`, error);
-                // Return basic hotel data on error
-                return {
-                  id: hotel.id,
-                  name: hotel.name,
-                  location: `${hotel.city}, ${hotel.country}`,
-                  stars: 4,
-                  rating: 4.5,
-                  reviews: 1500,
-                  image: "/placeholder.svg",
-                  amenities: ["Wifi", "Restaurant"],
-                  rooms: [{
-                    id: 'fallback-room',
-                    type: 'Standard Room',
-                    description: 'Comfortable accommodation',
-                    price: 150,
-                    available: 5,
-                    currency: "USD"
-                  }],
-                  distance: "1.2 km to city center",
-                  address: hotel.address
-                };
-              }
-            })
-          );
-
-          allEnrichedData = [...allEnrichedData, ...batchEnriched];
-          
-          // Add delay between batches to prevent rate limiting
-          if (batchIndex < batches.length - 1) {
-            await new Promise(resolve => setTimeout(resolve, 200));
-          }
-        }
-
-        // Filter hotels that have available rooms
-        const availableHotels = allEnrichedData.filter(hotel => hotel.rooms.length > 0);
-        setEnrichedHotels(availableHotels);
-      } catch (error) {
-        console.error('Error enriching hotel data:', error);
-        toast({
-          title: "Search Error",
-          description: "Failed to load real-time rates and availability. Showing cached results.",
-          variant: "destructive"
-        });
-        
-        // Fallback to basic hotel data
-        const fallbackHotels = hotels.slice(0, 5).map(hotel => ({
-          id: hotel.id,
-          name: hotel.name,
-          location: `${hotel.city}, ${hotel.country}`,
-          stars: 4,
-          rating: 4.5,
-          reviews: 1500,
-          image: "/placeholder.svg",
-          amenities: ["Wifi", "Restaurant"],
-          rooms: [{
-            id: 'fallback-room',
-            type: 'Standard Room',
-            description: 'Comfortable accommodation',
-            price: 150,
-            available: 5,
-            currency: "USD"
-          }],
-          distance: "1.2 km to city center",
-          address: hotel.address
-        }));
-        setEnrichedHotels(fallbackHotels);
-      } finally {
-        setLoading(false);
-      }
+    const performSearch = async () => {
+      const results = await search();
+      const sortedResults = sortHotels(results, sortBy);
+      setSearchResults(sortedResults);
     };
 
-    enrichHotelsWithRealTimeData();
-  }, [hotels, searchFilters, toast]);
+    if (searchParams.destination) {
+      performSearch();
+    }
+  }, [search, searchParams, filters, sortBy, sortHotels]);
 
   const handleSearch = async () => {
     if (!searchQuery.trim()) {
@@ -220,9 +116,8 @@ const HotelSearch = () => {
       return;
     }
 
-    setLoading(true);
     try {
-      // Parse natural language query and update filters
+      // Parse natural language query and update search parameters
       const lowerQuery = searchQuery.toLowerCase();
       
       // Extract city/destination
@@ -236,9 +131,9 @@ const HotelSearch = () => {
         const match = lowerQuery.match(pattern);
         if (match) {
           const city = match[1].trim();
-          setSearchFilters(prev => ({ 
+          setSearchParams(prev => ({ 
             ...prev, 
-            city: city.split(' ').map(word => 
+            destination: city.split(' ').map(word => 
               word.charAt(0).toUpperCase() + word.slice(1)
             ).join(' ')
           }));
@@ -250,7 +145,7 @@ const HotelSearch = () => {
       const guestPattern = /(\d+)\s+(?:adult|guest|people|person)/;
       const guestMatch = lowerQuery.match(guestPattern);
       if (guestMatch) {
-        setSearchFilters(prev => ({ 
+        setSearchParams(prev => ({ 
           ...prev, 
           adults: parseInt(guestMatch[1])
         }));
@@ -260,16 +155,15 @@ const HotelSearch = () => {
       const childPattern = /(\d+)\s+(?:child|children|kid)/;
       const childMatch = lowerQuery.match(childPattern);
       if (childMatch) {
-        setSearchFilters(prev => ({ 
+        setSearchParams(prev => ({ 
           ...prev, 
           children: parseInt(childMatch[1])
         }));
       }
       
-      console.log('AI Search Query processed:', searchQuery);
       toast({
         title: "Search Updated",
-        description: "Hotel search filters have been updated based on your query.",
+        description: "Hotel search has been updated based on your query.",
       });
       
     } catch (error) {
@@ -279,9 +173,15 @@ const HotelSearch = () => {
         description: "Failed to process search query. Please try again.",
         variant: "destructive"
       });
-    } finally {
-      setLoading(false);
     }
+  };
+
+  const handleFiltersApply = () => {
+    // Filters are automatically applied via useEffect
+    toast({
+      title: "Filters Applied",
+      description: `Search results updated with your preferences.`,
+    });
   };
 
   return (
@@ -308,18 +208,18 @@ const HotelSearch = () => {
                   className="text-lg py-6"
                 />
               </div>
-              <Button 
-            onClick={() => handleSearch()}
-            disabled={loading}
-            className="px-8 py-6 bg-gradient-to-r from-green-500 to-blue-500 hover:opacity-90"
-          >
-                {loading ? (
-                  <motion.div
-                    animate={{ rotate: 360 }}
-                    transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                    className="w-5 h-5 border-2 border-white border-t-transparent rounded-full"
-                  />
-                ) : (
+            <Button 
+              onClick={() => handleSearch()}
+              disabled={isSearching}
+              className="px-8 py-6 bg-gradient-to-r from-green-500 to-blue-500 hover:opacity-90"
+            >
+              {isSearching ? (
+                <motion.div
+                  animate={{ rotate: 360 }}
+                  transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                  className="w-5 h-5 border-2 border-white border-t-transparent rounded-full"
+                />
+              ) : (
                   <>
                     <Search className="mr-2 h-5 w-5" />
                     Search
@@ -341,7 +241,7 @@ const HotelSearch = () => {
                 <Users className="h-4 w-4 text-muted-foreground" />
                 <span>Guests</span>
               </div>
-              <Button variant="outline" size="sm">
+              <Button variant="outline" size="sm" onClick={() => setShowFilters(true)}>
                 <SlidersHorizontal className="mr-2 h-4 w-4" />
                 Advanced Filters
               </Button>
@@ -350,16 +250,44 @@ const HotelSearch = () => {
         </Card>
       </motion.div>
 
+      {/* Advanced Filters Modal */}
+      <AdvancedSearchFilters
+        isOpen={showFilters}
+        onClose={() => setShowFilters(false)}
+        filters={filters}
+        onFiltersChange={setFilters}
+        onApplyFilters={handleFiltersApply}
+      />
+
+      {/* Sorting and Results Controls */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <Select value={sortBy} onValueChange={setSortBy}>
+            <SelectTrigger className="w-48">
+              <SelectValue placeholder="Sort by" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="price-low">Price: Low to High</SelectItem>
+              <SelectItem value="price-high">Price: High to Low</SelectItem>
+              <SelectItem value="rating">Guest Rating</SelectItem>
+              <SelectItem value="stars">Star Rating</SelectItem>
+              <SelectItem value="distance">Distance</SelectItem>
+              <SelectItem value="popularity">Popularity</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
       {/* Search Results */}
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <h2 className="text-2xl font-bold">Search Results</h2>
           <div className="flex items-center gap-2">
             <Badge variant="secondary">
-              {loading ? (
+              {isSearching ? (
                 <Loader2 className="mr-2 h-3 w-3 animate-spin" />
               ) : null}
-              {enrichedHotels.length} hotels found
+              {searchResults.length} hotels found
             </Badge>
             <Button variant="outline" size="sm">
               <Filter className="mr-2 h-4 w-4" />
@@ -377,7 +305,7 @@ const HotelSearch = () => {
         )}
 
         <div className="grid gap-6">
-          {enrichedHotels.map((hotel, index) => (
+          {searchResults.map((hotel, index) => (
             <motion.div
               key={hotel.id}
               initial={{ opacity: 0, y: 20 }}
