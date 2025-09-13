@@ -1,54 +1,50 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { TrendingUp, TrendingDown, DollarSign, Calendar, Users, Globe } from "lucide-react";
+import { TrendingUp, TrendingDown, DollarSign, Calendar, Users, Globe, Loader2 } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from "recharts";
+import { useAgencyAnalytics } from "@/hooks/use-agency-analytics";
 
 const AgencyAnalytics = () => {
-  const monthlyData = [
-    { month: "Jan", bookings: 45, commission: 8450, revenue: 127500 },
-    { month: "Feb", bookings: 52, commission: 9800, revenue: 148200 },
-    { month: "Mar", bookings: 38, commission: 7200, revenue: 108000 },
-    { month: "Apr", bookings: 67, commission: 12600, revenue: 189900 },
-    { month: "May", bookings: 71, commission: 13400, revenue: 201600 },
-    { month: "Jun", bookings: 89, commission: 16800, revenue: 252700 },
-  ];
-
-  const topDestinations = [
-    { city: "Barcelona", bookings: 89, revenue: 134000, growth: 12.5 },
-    { city: "Madrid", bookings: 67, revenue: 98500, growth: 8.3 },
-    { city: "Santorini", bookings: 45, revenue: 112000, growth: -3.2 },
-    { city: "Rome", bookings: 52, revenue: 89600, growth: 15.7 },
-  ];
+  const { currentStats, monthlyData, topHotels, isLoading } = useAgencyAnalytics();
+  
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <span className="ml-2 text-muted-foreground">Loading analytics...</span>
+      </div>
+    );
+  }
 
   const kpiStats = [
     {
       title: "Total Bookings",
-      value: "362",
-      change: "+23.5%",
-      trend: "up",
+      value: currentStats?.totalBookings.toString() || "0",
+      change: `${currentStats?.bookingsGrowth >= 0 ? '+' : ''}${currentStats?.bookingsGrowth.toFixed(1)}%`,
+      trend: (currentStats?.bookingsGrowth || 0) >= 0 ? "up" : "down",
       icon: Calendar,
       color: "text-blue-600"
     },
     {
       title: "Commission Earned",
-      value: "$68,250",
-      change: "+18.2%", 
-      trend: "up",
+      value: `$${currentStats?.totalCommission.toFixed(0) || '0'}`,
+      change: `${currentStats?.commissionGrowth >= 0 ? '+' : ''}${currentStats?.commissionGrowth.toFixed(1)}%`, 
+      trend: (currentStats?.commissionGrowth || 0) >= 0 ? "up" : "down",
       icon: DollarSign,
       color: "text-green-600"
     },
     {
       title: "Average Booking Value",
-      value: "$1,870",
-      change: "-4.1%",
-      trend: "down",
+      value: `$${currentStats?.averageBookingValue.toFixed(0) || '0'}`,
+      change: "0%",
+      trend: "up",
       icon: Users,
       color: "text-orange-600"
     },
     {
-      title: "Active Destinations",
-      value: "28",
-      change: "+12.0%",
+      title: "Partner Hotels",
+      value: topHotels?.length.toString() || "0",
+      change: "+0%",
       trend: "up", 
       icon: Globe,
       color: "text-purple-600"
@@ -99,7 +95,7 @@ const AgencyAnalytics = () => {
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={monthlyData}>
+              <LineChart data={monthlyData || []}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="month" />
                 <YAxis />
@@ -111,40 +107,38 @@ const AgencyAnalytics = () => {
           </CardContent>
         </Card>
 
-        {/* Top Destinations */}
+        {/* Top Hotels */}
         <Card>
           <CardHeader>
-            <CardTitle>Top Destinations</CardTitle>
-            <CardDescription>Best performing cities this month</CardDescription>
+            <CardTitle>Top Partner Hotels</CardTitle>
+            <CardDescription>Best performing hotels this month</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {topDestinations.map((destination, index) => (
-                <div key={destination.city} className="flex items-center justify-between">
+              {topHotels?.slice(0, 5).map((hotel, index) => (
+                <div key={hotel.hotelId} className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-green-500 rounded-full flex items-center justify-center text-white text-sm font-medium">
                       {index + 1}
                     </div>
                     <div>
-                      <p className="font-medium">{destination.city}</p>
-                      <p className="text-sm text-muted-foreground">{destination.bookings} bookings</p>
+                      <p className="font-medium">{hotel.hotelName}</p>
+                      <p className="text-sm text-muted-foreground">{hotel.bookings} bookings • {hotel.city}</p>
                     </div>
                   </div>
                   <div className="text-right">
-                    <p className="font-medium">${destination.revenue.toLocaleString()}</p>
-                    <div className="flex items-center gap-1">
-                      {destination.growth > 0 ? (
-                        <TrendingUp className="h-3 w-3 text-green-500" />
-                      ) : (
-                        <TrendingDown className="h-3 w-3 text-red-500" />
-                      )}
-                      <span className={`text-xs ${destination.growth > 0 ? 'text-green-500' : 'text-red-500'}`}>
-                        {Math.abs(destination.growth)}%
-                      </span>
-                    </div>
+                    <p className="font-medium">${hotel.commission.toFixed(0)}</p>
+                    <p className="text-xs text-muted-foreground">commission</p>
                   </div>
                 </div>
               ))}
+              {(!topHotels || topHotels.length === 0) && (
+                <div className="text-center py-8 text-muted-foreground">
+                  <Globe className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                  <p>No performance data yet</p>
+                  <p className="text-sm">Start making bookings to see analytics</p>
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -157,7 +151,7 @@ const AgencyAnalytics = () => {
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={200}>
-              <BarChart data={monthlyData}>
+              <BarChart data={monthlyData || []}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="month" />
                 <YAxis />

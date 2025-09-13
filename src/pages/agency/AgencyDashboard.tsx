@@ -12,58 +12,62 @@ import {
   Building2,
   Users,
   Clock,
-  ArrowUpRight
+  ArrowUpRight,
+  Loader2
 } from "lucide-react";
+import { useAgencyAnalytics } from "@/hooks/use-agency-analytics";
+import { useRecentBookings } from "@/hooks/use-agency-bookings";
+import { format } from "date-fns";
 
 const AgencyDashboard = () => {
   const navigate = useNavigate();
+  
+  // Fetch real analytics data
+  const { currentStats, topHotels, isLoading: analyticsLoading } = useAgencyAnalytics();
+  const { data: recentBookings, isLoading: bookingsLoading } = useRecentBookings(5);
+  
+  if (analyticsLoading || bookingsLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <span className="ml-2 text-muted-foreground">Loading dashboard...</span>
+      </div>
+    );
+  }
+
   const stats = [
     {
       title: "Total Bookings",
-      value: "247",
-      change: "+12%",
-      changeType: "positive",
+      value: currentStats?.totalBookings.toString() || "0",
+      change: `${currentStats?.bookingsGrowth >= 0 ? '+' : ''}${currentStats?.bookingsGrowth.toFixed(1)}%`,
+      changeType: (currentStats?.bookingsGrowth || 0) >= 0 ? "positive" : "negative",
       icon: Calendar,
       description: "This month"
     },
     {
       title: "Commission Earned",
-      value: "$18,249",
-      change: "+8.2%", 
-      changeType: "positive",
+      value: `$${currentStats?.totalCommission.toFixed(0) || '0'}`,
+      change: `${currentStats?.commissionGrowth >= 0 ? '+' : ''}${currentStats?.commissionGrowth.toFixed(1)}%`, 
+      changeType: (currentStats?.commissionGrowth || 0) >= 0 ? "positive" : "negative",
       icon: DollarSign,
       description: "Last 30 days"
     },
     {
-      title: "Active Hotels", 
-      value: "89",
-      change: "+3",
+      title: "Partner Hotels", 
+      value: topHotels?.length.toString() || "0",
+      change: "+0%",
       changeType: "positive", 
       icon: Building2,
-      description: "Partner properties"
+      description: "Active properties"
     },
     {
-      title: "Average ADR",
-      value: "$156.80",
-      change: "-2.1%",
-      changeType: "negative",
+      title: "Avg Booking Value",
+      value: `$${currentStats?.averageBookingValue.toFixed(0) || '0'}`,
+      change: "0%",
+      changeType: "positive",
       icon: TrendingUp,
-      description: "Weighted average"
+      description: "Per reservation"
     }
-  ];
-
-  const recentSearches = [
-    { query: "5-star hotel in Istanbul with pool", timestamp: "2 minutes ago", results: 24 },
-    { query: "Beach resort in Antalya for families", timestamp: "15 minutes ago", results: 18 },
-    { query: "Business hotel near airport", timestamp: "1 hour ago", results: 31 },
-    { query: "Luxury spa hotel in Cappadocia", timestamp: "2 hours ago", results: 12 }
-  ];
-
-  const topPerformingHotels = [
-    { name: "Grand Hyatt Istanbul", bookings: 28, commission: "$4,200", city: "Istanbul" },
-    { name: "Swissotel Ankara", bookings: 22, commission: "$3,150", city: "Ankara" },
-    { name: "Hilton Antalya", bookings: 19, commission: "$2,890", city: "Antalya" },
-    { name: "Raffles Istanbul", bookings: 16, commission: "$2,540", city: "Istanbul" }
   ];
 
   return (
@@ -129,7 +133,7 @@ const AgencyDashboard = () => {
       </div>
 
       <div className="grid lg:grid-cols-2 gap-6">
-        {/* Recent Searches */}
+        {/* Recent Bookings */}
         <motion.div
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
@@ -139,25 +143,32 @@ const AgencyDashboard = () => {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Clock className="h-5 w-5 text-primary" />
-                Recent AI Searches
+                Recent Bookings
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              {recentSearches.map((search, index) => (
-                <div key={index} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+              {recentBookings?.map((booking, index) => (
+                <div key={booking.id} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
                   <div className="flex-1">
-                    <p className="font-medium text-sm">{search.query}</p>
-                    <p className="text-xs text-muted-foreground">{search.timestamp}</p>
+                    <p className="font-medium text-sm">{booking.hotelName}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {booking.guestName} • {format(new Date(booking.checkIn), 'MMM dd')} - {format(new Date(booking.checkOut), 'MMM dd')}
+                    </p>
                   </div>
-                  <Badge variant="outline">{search.results} results</Badge>
+                  <div className="text-right">
+                    <Badge variant={booking.status === 'confirmed' ? 'default' : 'outline'}>
+                      {booking.status}
+                    </Badge>
+                    <p className="text-xs text-muted-foreground mt-1">${booking.totalAmount}</p>
+                  </div>
                 </div>
               ))}
               <Button 
                 variant="outline" 
                 className="w-full"
-                onClick={() => navigate('/agency/searches')}
+                onClick={() => navigate('/agency/bookings')}
               >
-                View All Searches
+                View All Bookings
               </Button>
             </CardContent>
           </Card>
@@ -177,12 +188,12 @@ const AgencyDashboard = () => {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              {topPerformingHotels.map((hotel, index) => (
-                <div key={index} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+              {topHotels?.slice(0, 4).map((hotel, index) => (
+                <div key={hotel.hotelId} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
                   <div className="flex-1">
                     <div className="flex items-center gap-2">
                       <Building2 className="h-4 w-4 text-muted-foreground" />
-                      <p className="font-medium text-sm">{hotel.name}</p>
+                      <p className="font-medium text-sm">{hotel.hotelName}</p>
                     </div>
                     <div className="flex items-center gap-4 mt-1">
                       <div className="flex items-center gap-1">
@@ -196,11 +207,18 @@ const AgencyDashboard = () => {
                     </div>
                   </div>
                   <div className="text-right">
-                    <p className="font-semibold text-green-600">{hotel.commission}</p>
+                    <p className="font-semibold text-green-600">${hotel.commission.toFixed(0)}</p>
                     <p className="text-xs text-muted-foreground">commission</p>
                   </div>
                 </div>
               ))}
+              {(!topHotels || topHotels.length === 0) && (
+                <div className="text-center py-8 text-muted-foreground">
+                  <Building2 className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                  <p>No hotel partnerships yet</p>
+                  <p className="text-sm">Start making bookings to see performance data</p>
+                </div>
+              )}
               <Button 
                 variant="outline" 
                 className="w-full"
