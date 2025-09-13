@@ -43,18 +43,75 @@ export const useAgencyAuthData = ({ userId }: UseAgencyAuthDataProps) => {
     queryFn: async () => {
       if (!userId) return [];
       
-      const { data, error } = await supabase
+      // First check if user has an agency, if not create a default one
+      const { data: existingMemberships, error: checkError } = await supabase
         .from('agency_users')
         .select(`
           *,
-          agency:agencies(*)
+          agencies(*)
         `)
         .eq('user_id', userId)
-        .eq('is_active', true)
-        .order('role', { ascending: true }); // Owner first, then admin, etc.
+        .eq('is_active', true);
 
-      if (error) throw error;
-      return data;
+      if (checkError) {
+        console.error('Error checking agency memberships:', checkError);
+        throw checkError;
+      }
+
+      // If no agencies exist for this user, create a default one
+      if (!existingMemberships || existingMemberships.length === 0) {
+        console.log('Creating default agency for user:', userId);
+        
+        try {
+          // Create default agency
+          const { data: newAgency, error: agencyError } = await supabase
+            .from('agencies')
+            .insert({
+              name: 'My Travel Agency',
+              type: 'OTA',
+              org_id: '550e8400-e29b-41d4-a716-446655440000',
+            })
+            .select()
+            .single();
+
+          if (agencyError) throw agencyError;
+
+          // Create agency user relationship
+          const { error: membershipError } = await supabase
+            .from('agency_users')
+            .insert({
+              user_id: userId,
+              agency_id: newAgency.id,
+              role: 'owner',
+              joined_at: new Date().toISOString(),
+            });
+
+          if (membershipError) throw membershipError;
+
+          // Return the new membership
+          return [{
+            id: newAgency.id,
+            user_id: userId,
+            agency_id: newAgency.id,
+            role: 'owner',
+            is_active: true,
+            agencies: newAgency,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+            invited_by: null,
+            invited_at: null,
+            joined_at: new Date().toISOString(),
+          }];
+        } catch (error) {
+          console.error('Error creating default agency:', error);
+          return [];
+        }
+      }
+
+      return existingMemberships.sort((a, b) => {
+        const roleOrder = { 'owner': 0, 'admin': 1, 'manager': 2, 'agent': 3 };
+        return roleOrder[a.role] - roleOrder[b.role];
+      });
     },
     enabled: !!userId,
   });

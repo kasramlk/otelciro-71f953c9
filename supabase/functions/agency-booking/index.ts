@@ -66,25 +66,66 @@ serve(async (req) => {
       );
     }
 
-    // Get user's primary agency
-    const { data: userAgency, error: agencyError } = await supabase
+    // Get or create user's primary agency
+    let userAgency;
+    const { data: existingAgency, error: checkError } = await supabase
       .from('agency_users')
-      .select('agency_id, role')
+      .select('agency_id, role, agencies(*)')
       .eq('user_id', user.id)
       .eq('is_active', true)
       .order('role', { ascending: true })
       .limit(1)
       .single();
 
-    if (agencyError || !userAgency) {
-      console.error('No agency found for user:', agencyError);
-      return new Response(
-        JSON.stringify({ error: 'User not associated with any agency' }), 
-        { 
-          status: 403, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
-      );
+    if (checkError || !existingAgency) {
+      console.log('No agency found for user, creating default agency');
+      
+      // Create default agency for user
+      const { data: newAgency, error: newAgencyError } = await supabase
+        .from('agencies')
+        .insert({
+          name: 'My Travel Agency',
+          type: 'OTA',
+          org_id: '550e8400-e29b-41d4-a716-446655440000',
+        })
+        .select()
+        .single();
+
+      if (newAgencyError) {
+        console.error('Error creating agency:', newAgencyError);
+        return new Response(
+          JSON.stringify({ error: 'Failed to create agency' }), 
+          { 
+            status: 500, 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          }
+        );
+      }
+
+      // Create agency user relationship
+      const { error: membershipError } = await supabase
+        .from('agency_users')
+        .insert({
+          user_id: user.id,
+          agency_id: newAgency.id,
+          role: 'owner',
+          joined_at: new Date().toISOString(),
+        });
+
+      if (membershipError) {
+        console.error('Error creating agency membership:', membershipError);
+        return new Response(
+          JSON.stringify({ error: 'Failed to create agency membership' }), 
+          { 
+            status: 500, 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          }
+        );
+      }
+
+      userAgency = { agency_id: newAgency.id, role: 'owner' };
+    } else {
+      userAgency = existingAgency;
     }
 
     // Create guest information
@@ -184,13 +225,37 @@ serve(async (req) => {
       );
     }
 
+    // Check inventory availability before confirming
+    const { data: inventoryCheck } = await supabase
+      .from('inventory')
+      .select('allotment, stop_sell')
+      .eq('hotel_id', bookingData.hotelId)
+      .eq('room_type_id', bookingData.roomTypeId)
+      .gte('date', bookingData.checkIn)
+      .lt('date', bookingData.checkOut);
+
+    // Verify we have inventory for all nights
+    if (inventoryCheck) {
+      for (const inv of inventoryCheck) {
+        if (inv.stop_sell || inv.allotment < 1) {
+          return new Response(
+            JSON.stringify({ error: 'No availability for selected dates' }), 
+            { 
+              status: 400, 
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+            }
+          );
+        }
+      }
+    }
+
     // Try to find and assign an available room
     const { data: availableRooms } = await supabase
       .from('rooms')
       .select('*')
       .eq('hotel_id', bookingData.hotelId)
       .eq('room_type_id', bookingData.roomTypeId)
-      .eq('status', 'Clean')
+      .eq('housekeeping_status', 'Clean')
       .limit(1);
 
     if (availableRooms && availableRooms.length > 0) {

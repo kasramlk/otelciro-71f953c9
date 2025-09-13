@@ -1979,30 +1979,45 @@ export type Database = {
       inventory: {
         Row: {
           allotment: number
+          closed_to_arrival: boolean | null
+          closed_to_departure: boolean | null
           created_at: string
           date: string
           hotel_id: string
           id: string
+          max_stay: number | null
+          min_stay: number | null
           room_type_id: string
           stop_sell: boolean
+          updated_at: string | null
         }
         Insert: {
           allotment?: number
+          closed_to_arrival?: boolean | null
+          closed_to_departure?: boolean | null
           created_at?: string
           date: string
           hotel_id: string
           id?: string
+          max_stay?: number | null
+          min_stay?: number | null
           room_type_id: string
           stop_sell?: boolean
+          updated_at?: string | null
         }
         Update: {
           allotment?: number
+          closed_to_arrival?: boolean | null
+          closed_to_departure?: boolean | null
           created_at?: string
           date?: string
           hotel_id?: string
           id?: string
+          max_stay?: number | null
+          min_stay?: number | null
           room_type_id?: string
           stop_sell?: boolean
+          updated_at?: string | null
         }
         Relationships: [
           {

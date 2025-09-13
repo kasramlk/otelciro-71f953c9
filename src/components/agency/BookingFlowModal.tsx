@@ -74,17 +74,25 @@ const BookingFlowModal = ({ open, onClose, hotel, action }: BookingFlowModalProp
       return;
     }
 
+    if (!bookingData.selectedRoom) {
+      toast({
+        title: "No Room Selected", 
+        description: "Please select a room type.",
+        variant: "destructive"
+      });
+      return;
+    }
+
     const confirmed = await showConfirmation({
       title: "Confirm Booking",
-      description: `Create HMS reservation for ${bookingData.guestName} at ${hotel.name}?`,
+      description: `Create reservation for ${bookingData.guestName} at ${hotel.name}?`,
       confirmText: "Create Reservation",
       onConfirm: async () => {
         setLoading(true);
         try {
-          // Use booking service to create actual HMS reservation
           const bookingResult = await createAgencyBooking({
             hotelId: hotel.id,
-            roomTypeId: bookingData.selectedRoom?.id || hotel.rooms?.[0]?.id,
+            roomTypeId: bookingData.selectedRoom.id,
             guestName: bookingData.guestName,
             guestEmail: bookingData.guestEmail,
             guestPhone: bookingData.guestPhone,
@@ -93,19 +101,19 @@ const BookingFlowModal = ({ open, onClose, hotel, action }: BookingFlowModalProp
             adults: bookingData.adults,
             children: bookingData.children,
             specialRequests: bookingData.specialRequests,
-            agencyId: 'agency-sample-id', // TODO: Get from auth context
+            agencyId: 'will-be-determined-by-edge-function',
             rateQuoted: totalAmount
           });
 
           if (bookingResult.success) {
             toast({
               title: "Reservation Created Successfully!",
-              description: `HMS Reservation: ${bookingResult.bookingReference}`,
+              description: `Confirmation: ${bookingResult.bookingReference}`,
               action: (
                 <Button variant="outline" size="sm" onClick={() => {
                   console.log('View reservation:', bookingResult.reservationId);
                 }}>
-                  View in HMS
+                  View Details
                 </Button>
               )
             });
@@ -117,7 +125,7 @@ const BookingFlowModal = ({ open, onClose, hotel, action }: BookingFlowModalProp
           console.error('Booking error:', error);
           toast({
             title: "Reservation Failed",
-            description: error instanceof Error ? error.message : "Unable to create HMS reservation. Please try again.",
+            description: error instanceof Error ? error.message : "Unable to create reservation. Please try again.",
             variant: "destructive"
           });
         } finally {
