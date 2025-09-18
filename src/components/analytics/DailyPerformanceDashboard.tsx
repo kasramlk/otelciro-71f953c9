@@ -16,6 +16,7 @@ import {
 import { DateRange } from "react-day-picker";
 import { format, startOfDay } from "date-fns";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from "recharts";
+import { useDailyPerformance } from "@/hooks/use-daily-performance";
 
 interface DailyPerformanceDashboardProps {
   dateRange?: DateRange;
@@ -23,52 +24,8 @@ interface DailyPerformanceDashboardProps {
 }
 
 export const DailyPerformanceDashboard = ({ dateRange, selectedHotel }: DailyPerformanceDashboardProps) => {
-  // Today's performance metrics
-  const { data: todayMetrics } = useQuery({
-    queryKey: ["todayMetrics", selectedHotel],
-    queryFn: async () => {
-      // Using mock data for today's performance since relations need setup
-      const mockTodayMetrics = {
-        totalReservations: 18,
-        totalRevenue: 7200,
-        avgDailyRate: 400,
-        reservations: [
-          {
-            id: '1',
-            guests: { first_name: 'John', last_name: 'Smith' },
-            check_in: new Date().toISOString(),
-            check_out: new Date(Date.now() + 86400000 * 3).toISOString(),
-            source: 'Direct',
-            balance_due: 450
-          },
-          {
-            id: '2', 
-            guests: { first_name: 'Sarah', last_name: 'Johnson' },
-            check_in: new Date().toISOString(),
-            check_out: new Date(Date.now() + 86400000 * 2).toISOString(),
-            source: 'Booking.com',
-            balance_due: 320
-          },
-          {
-            id: '3',
-            guests: { first_name: 'Michael', last_name: 'Brown' },
-            check_in: new Date().toISOString(), 
-            check_out: new Date(Date.now() + 86400000 * 4).toISOString(),
-            source: 'Expedia',
-            balance_due: 380
-          }
-        ],
-        bySource: {
-          'Direct': { count: 8, revenue: 3600 },
-          'Booking.com': { count: 6, revenue: 1920 },
-          'Expedia': { count: 4, revenue: 1680 }
-        }
-      };
-
-      return mockTodayMetrics;
-    },
-    refetchInterval: 30000, // Refresh every 30 seconds for real-time data
-  });
+  // Get today's performance metrics with real-time data
+  const { data: todayMetrics, isLoading } = useDailyPerformance(selectedHotel, new Date());
 
   // Performance trend data
   const { data: trendData } = useQuery({
@@ -116,7 +73,7 @@ export const DailyPerformanceDashboard = ({ dateRange, selectedHotel }: DailyPer
     },
     {
       title: "Occupancy Rate",
-      value: "87.5%",
+      value: `${todayMetrics?.occupancyRate?.toFixed(1) || 0}%`,
       icon: Percent,
       change: "+3.2%",
       changeType: "positive" as const,
@@ -281,15 +238,15 @@ export const DailyPerformanceDashboard = ({ dateRange, selectedHotel }: DailyPer
                   <TableCell>
                     {format(new Date(reservation.check_in), 'MMM dd')}
                   </TableCell>
-                  <TableCell>
-                    {format(new Date(reservation.check_out), 'MMM dd')}
-                  </TableCell>
                    <TableCell>
-                     <Badge variant="outline">
-                       {reservation.source || 'Direct'}
-                     </Badge>
+                     {format(new Date(reservation.check_out), 'MMM dd')}
                    </TableCell>
-                  <TableCell>Standard</TableCell>
+                    <TableCell>
+                      <Badge variant="outline">
+                        {reservation.source || 'Direct'}
+                      </Badge>
+                    </TableCell>
+                   <TableCell>{reservation.room_types?.name || 'Standard'}</TableCell>
                   <TableCell className="text-right font-medium">
                     ${reservation.balance_due?.toLocaleString()}
                   </TableCell>
