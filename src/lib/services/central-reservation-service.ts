@@ -1,6 +1,32 @@
 import { supabase } from '@/integrations/supabase/client';
-import { ReservationService, CreateReservationData } from './reservation-service';
 import { z } from 'zod';
+
+// Local types to avoid circular dependencies
+interface CreateReservationData {
+  hotel_id: string;
+  guest_id: string;
+  room_type_id: string;
+  rate_plan_id?: string;
+  check_in: string;
+  check_out: string;
+  adults: number;
+  children: number;
+  total_price: number;
+  source?: string;
+  booking_reference?: string;
+  confirmation_number?: string;
+  notes?: string;
+  special_requests?: string[];
+  total_amount: number;
+  balance_due: number;
+}
+
+interface ReservationResult {
+  success: boolean;
+  data?: { id: string; code: string };
+  errors?: string[];
+  warnings?: string[];
+}
 
 // Channel booking request schema
 export const ChannelBookingSchema = z.object({
@@ -120,49 +146,42 @@ export class CentralReservationService {
           validData.booking_data.rate_plan_code || 'default'
         );
 
-        // Create HMS reservation
-        const reservationData: CreateReservationData = {
-          hotel_id: channel.hotel_id,
-          guest_id: guestId,
-          room_type_id: roomTypeId,
-          rate_plan_id: ratePlanId,
-          check_in: validData.booking_data.check_in,
-          check_out: validData.booking_data.check_out,
-          adults: validData.booking_data.adults,
-          children: validData.booking_data.children,
-          total_price: validData.booking_data.total_amount,
-          source: channel.channel_name,
-          booking_reference: validData.booking_data.booking_reference,
-          confirmation_number: validData.booking_data.confirmation_number || validData.channel_reservation_id,
-          notes: validData.booking_data.notes,
-          special_requests: validData.booking_data.special_requests,
-          total_amount: validData.booking_data.total_amount,
-          balance_due: validData.booking_data.total_amount,
-        };
+        // Create HMS reservation using direct supabase call to avoid circular dependency
+        const reservationCode = `RES-${Date.now()}-${Math.random().toString(36).substr(2, 6).toUpperCase()}`;
+        
+        const { data: newReservation, error: reservationError } = await supabase
+          .from('reservations')
+          .insert({
+            code: reservationCode,
+            hotel_id: channel.hotel_id,
+            guest_id: guestId,
+            room_type_id: roomTypeId,
+            rate_plan_id: ratePlanId,
+            check_in: validData.booking_data.check_in,
+            check_out: validData.booking_data.check_out,
+            adults: validData.booking_data.adults,
+            children: validData.booking_data.children,
+            total_price: validData.booking_data.total_amount,
+            balance_due: validData.booking_data.total_amount,
+            source: channel.channel_name,
+            booking_reference: validData.booking_data.booking_reference,
+            confirmation_number: validData.booking_data.confirmation_number || validData.channel_reservation_id,
+            notes: validData.booking_data.notes,
+            special_requests: validData.booking_data.special_requests,
+            status: 'Confirmed'
+          })
+          .select('id, code')
+          .single();
 
-        const reservationResult = await ReservationService.createReservation(
-          reservationData,
-          {
-            allowOverbooking: false,
-            maxAdvanceBookingDays: 365,
-            minStayLength: 1,
-            maxStayLength: 30,
-            requireDeposit: false,
-            depositPercentage: 0,
-            cancellationDeadlineHours: 24,
-            noShowTimeHours: 6
-          }
-        );
-
-        if (!reservationResult.success) {
-          throw new Error(`Failed to create reservation: ${reservationResult.errors?.join(', ')}`);
+        if (reservationError) {
+          throw new Error(`Failed to create reservation: ${reservationError.message}`);
         }
 
         // Update inbound reservation with success
         await supabase
           .from('inbound_reservations')
           .update({
-            reservation_id: reservationResult.data.id,
+            reservation_id: newReservation.id,
             processing_status: 'processed',
             processed_at: new Date().toISOString()
           })
@@ -170,10 +189,9 @@ export class CentralReservationService {
 
         return {
           success: true,
-          reservation_id: reservationResult.data.id,
-          hms_code: reservationResult.data.code,
-          inbound_reservation_id: inboundReservation.id,
-          warnings: reservationResult.warnings
+          reservation_id: newReservation.id,
+          hms_code: newReservation.code,
+          inbound_reservation_id: inboundReservation.id
         };
 
       } catch (processingError) {
@@ -352,13 +370,14 @@ export class CentralReservationService {
     dateTo: string
   ): Promise<{ success: boolean; errors?: string[] }> {
     try {
-      // Get all active channels for this hotel
-      const { data: channels, error: channelsError } = await supabase
+      // Get all active channels for this hotel - simplified query
+      const channelsQuery = supabase
         .from('channel_connections')
-        .select('*')
+        .select('id, hotel_id, channel_name')
         .eq('hotel_id', hotelId)
-        .eq('connection_status', 'active')
-        .eq('push_inventory', true);
+        .eq('connection_status', 'active');
+      
+      const { data: channels, error: channelsError } = await channelsQuery;
 
       if (channelsError) throw channelsError;
 
