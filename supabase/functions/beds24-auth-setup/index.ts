@@ -1,0 +1,189 @@
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.55.0';
+
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
+
+interface SetupRequest {
+  organizationId: string;
+  inviteCode: string;
+  deviceName?: string;
+}
+
+interface Beds24SetupResponse {
+  token: string;
+  expiresIn: number;
+  refreshToken: string;
+}
+
+// Simple encryption using built-in crypto
+async function encrypt(text: string, key: string): Promise<string> {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(text);
+  const keyData = encoder.encode(key.padEnd(32, '0').slice(0, 32));
+  
+  const cryptoKey = await crypto.subtle.importKey(
+    'raw',
+    keyData,
+    { name: 'AES-GCM' },
+    false,
+    ['encrypt']
+  );
+  
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const encrypted = await crypto.subtle.encrypt(
+    { name: 'AES-GCM', iv },
+    cryptoKey,
+    data
+  );
+  
+  // Combine iv and encrypted data
+  const combined = new Uint8Array(iv.length + encrypted.byteLength);
+  combined.set(iv);
+  combined.set(new Uint8Array(encrypted), iv.length);
+  
+  return btoa(String.fromCharCode(...combined));
+}
+
+export default async function handler(req: Request): Promise<Response> {
+  // Handle CORS preflight requests
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { headers: corsHeaders });
+  }
+
+  if (req.method !== 'POST') {
+    return new Response(JSON.stringify({ error: 'Method not allowed' }), {
+      status: 405,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+  }
+
+  try {
+    const { organizationId, inviteCode, deviceName }: SetupRequest = await req.json();
+
+    if (!organizationId || !inviteCode) {
+      return new Response(JSON.stringify({ error: 'Missing required fields' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // Create Supabase client
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    );
+
+    // Call Beds24 authentication setup
+    const beds24BaseUrl = Deno.env.get('BEDS24_BASE_URL') || 'https://api.beds24.com/v2';
+    const setupHeaders: Record<string, string> = {
+      'code': inviteCode,
+      'Content-Type': 'application/json',
+    };
+
+    if (deviceName) {
+      setupHeaders['deviceName'] = deviceName;
+    }
+
+    console.log('Calling Beds24 setup with headers:', { ...setupHeaders, code: '[REDACTED]' });
+
+    const beds24Response = await fetch(`${beds24BaseUrl}/authentication/setup`, {
+      method: 'GET',
+      headers: setupHeaders,
+    });
+
+    if (!beds24Response.ok) {
+      const errorText = await beds24Response.text();
+      console.error('Beds24 setup failed:', beds24Response.status, errorText);
+      return new Response(JSON.stringify({ 
+        error: 'Beds24 authentication failed',
+        details: errorText 
+      }), {
+        status: beds24Response.status,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    const beds24Data: Beds24SetupResponse = await beds24Response.json();
+    console.log('Beds24 setup successful, expires in:', beds24Data.expiresIn);
+
+    // Create or update integration record
+    const { data: integration, error: integrationError } = await supabase
+      .from('integrations')
+      .upsert({
+        organization_id: organizationId,
+        provider: 'beds24',
+        status: 'active',
+      }, {
+        onConflict: 'organization_id,provider'
+      })
+      .select()
+      .single();
+
+    if (integrationError) {
+      console.error('Failed to create integration:', integrationError);
+      return new Response(JSON.stringify({ error: 'Failed to save integration' }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // Calculate token expiry
+    const tokenExpiresAt = new Date(Date.now() + (beds24Data.expiresIn * 1000));
+    const encryptionKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')?.slice(0, 32) || 'default-key-32-chars-long-here';
+
+    // Encrypt and store credentials
+    const credentials = [
+      {
+        integration_id: integration.id,
+        key: 'access_token',
+        value_encrypted: await encrypt(beds24Data.token, encryptionKey),
+      },
+      {
+        integration_id: integration.id,
+        key: 'refresh_token',
+        value_encrypted: await encrypt(beds24Data.refreshToken, encryptionKey),
+      },
+      {
+        integration_id: integration.id,
+        key: 'token_expires_at',
+        value_encrypted: await encrypt(tokenExpiresAt.toISOString(), encryptionKey),
+      },
+    ];
+
+    const { error: credentialsError } = await supabase
+      .from('integration_credentials')
+      .upsert(credentials, {
+        onConflict: 'integration_id,key'
+      });
+
+    if (credentialsError) {
+      console.error('Failed to store credentials:', credentialsError);
+      return new Response(JSON.stringify({ error: 'Failed to store credentials' }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    console.log('Beds24 integration setup completed successfully');
+
+    return new Response(JSON.stringify({
+      success: true,
+      integrationId: integration.id,
+      expiresAt: tokenExpiresAt.toISOString(),
+    }), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+
+  } catch (error) {
+    console.error('Setup error:', error);
+    return new Response(JSON.stringify({ 
+      error: 'Internal server error',
+      details: error.message 
+    }), {
+      status: 500,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+  }
+}

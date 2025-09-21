@@ -2050,6 +2050,100 @@ export type Database = {
           },
         ]
       }
+      integration_credentials: {
+        Row: {
+          id: string
+          integration_id: string
+          key: string
+          updated_at: string
+          value_encrypted: string
+        }
+        Insert: {
+          id?: string
+          integration_id: string
+          key: string
+          updated_at?: string
+          value_encrypted: string
+        }
+        Update: {
+          id?: string
+          integration_id?: string
+          key?: string
+          updated_at?: string
+          value_encrypted?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "integration_credentials_integration_id_fkey"
+            columns: ["integration_id"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      integration_usage: {
+        Row: {
+          captured_at: string
+          id: string
+          integration_id: string
+          x_five_min_remaining: number | null
+          x_five_min_resets_in: number | null
+          x_request_cost: number | null
+        }
+        Insert: {
+          captured_at?: string
+          id?: string
+          integration_id: string
+          x_five_min_remaining?: number | null
+          x_five_min_resets_in?: number | null
+          x_request_cost?: number | null
+        }
+        Update: {
+          captured_at?: string
+          id?: string
+          integration_id?: string
+          x_five_min_remaining?: number | null
+          x_five_min_resets_in?: number | null
+          x_request_cost?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "integration_usage_integration_id_fkey"
+            columns: ["integration_id"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      integrations: {
+        Row: {
+          created_at: string
+          id: string
+          organization_id: string
+          provider: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          organization_id: string
+          provider: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          organization_id?: string
+          provider?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       inventory: {
         Row: {
           allotment: number
