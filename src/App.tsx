@@ -87,6 +87,7 @@ import AdvancedAnalytics from "./pages/AdvancedAnalytics";
 import MobileDashboard from "./pages/MobileDashboard";  
 import AIInsightsV2Page from "./pages/AIInsightsV2";
 import PerformancePage from "./pages/Performance";
+import Beds24AuthTest from "./pages/Beds24AuthTest";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -445,6 +446,11 @@ const AppContent = () => {
                 <PerformancePage />
               </HMSLayout>
             </HotelProvider>
+          } />
+          <Route path="/beds24-auth-test" element={
+            <HMSLayout>
+              <Beds24AuthTest />
+            </HMSLayout>
           } />
           
           {/* Hotel Management Routes */}
