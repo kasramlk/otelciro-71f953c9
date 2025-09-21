@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { 
   beds24Fetch, 
   setupBeds24Integration, 
@@ -41,10 +41,53 @@ interface AuthState {
  */
 export function useBeds24Auth({ organizationId }: UseBeds24AuthOptions) {
   const [authState, setAuthState] = useState<AuthState>({
-    isLoading: false,
+    isLoading: true,
     isAuthenticated: false,
     error: null,
   });
+
+  // Auto-check authentication status on mount and periodically refresh
+  useEffect(() => {
+    let mounted = true;
+    let refreshInterval: NodeJS.Timeout;
+
+    const checkAuthStatus = async () => {
+      if (!mounted) return;
+      
+      try {
+        const details = await getBeds24AuthDetails(organizationId);
+        if (mounted) {
+          setAuthState(prev => ({ 
+            ...prev, 
+            isLoading: false,
+            isAuthenticated: true,
+            rateLimits: details.rateLimits,
+            error: null 
+          }));
+        }
+      } catch (error) {
+        if (mounted) {
+          setAuthState(prev => ({ 
+            ...prev, 
+            isLoading: false, 
+            isAuthenticated: false,
+            error: error instanceof Beds24AuthError ? error.message : null
+          }));
+        }
+      }
+    };
+
+    // Initial check
+    checkAuthStatus();
+
+    // Set up periodic token refresh (every 20 minutes)
+    refreshInterval = setInterval(checkAuthStatus, 20 * 60 * 1000);
+
+    return () => {
+      mounted = false;
+      if (refreshInterval) clearInterval(refreshInterval);
+    };
+  }, [organizationId]);
 
   /**
    * Setup Beds24 integration with invite code
@@ -116,7 +159,8 @@ export function useBeds24Auth({ organizationId }: UseBeds24AuthOptions) {
         ...prev, 
         isLoading: false,
         rateLimits: result.rateLimits,
-        error: null 
+        error: null,
+        isAuthenticated: true
       }));
       
       return result.data;
@@ -127,7 +171,24 @@ export function useBeds24Auth({ organizationId }: UseBeds24AuthOptions) {
       if (error instanceof Beds24AuthError) {
         errorMessage = error.message;
         if (error.status === 401) {
+          // Authentication failed - try to refresh auth details
           setAuthState(prev => ({ ...prev, isAuthenticated: false }));
+          try {
+            await getBeds24AuthDetails(organizationId);
+            // If successful, retry the original call
+            const retryResult = await beds24Fetch<T>(path, { organizationId, ...options });
+            setAuthState(prev => ({ 
+              ...prev, 
+              isLoading: false,
+              isAuthenticated: true,
+              rateLimits: retryResult.rateLimits,
+              error: null 
+            }));
+            return retryResult.data;
+          } catch (retryError) {
+            // Re-authentication failed
+            setAuthState(prev => ({ ...prev, isAuthenticated: false }));
+          }
         }
       } else if (error instanceof Beds24RateLimitError) {
         errorMessage = `Rate limit exceeded. Retry in ${error.retryAfter} seconds`;
