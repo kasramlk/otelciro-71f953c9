@@ -52,6 +52,67 @@ export default async function handler(req: Request): Promise<Response> {
     return new Response(null, { headers: corsHeaders });
   }
 
+  // Handle DELETE requests for clearing integration
+  if (req.method === 'DELETE') {
+    try {
+      const { organizationId } = await req.json();
+
+      if (!organizationId) {
+        return new Response(JSON.stringify({ error: 'Missing organizationId' }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      // Initialize Supabase client
+      const supabase = createClient(
+        Deno.env.get('SUPABASE_URL') ?? '',
+        Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+      );
+
+      // Delete integration and its credentials
+      const { data: integrations } = await supabase
+        .from('integrations')
+        .select('id')
+        .eq('organization_id', organizationId)
+        .eq('provider', 'beds24');
+
+      if (integrations && integrations.length > 0) {
+        const integrationId = integrations[0].id;
+
+        // Delete credentials first
+        await supabase
+          .from('integration_credentials')
+          .delete()
+          .eq('integration_id', integrationId);
+
+        // Delete integration
+        await supabase
+          .from('integrations')
+          .delete()
+          .eq('id', integrationId);
+      }
+
+      console.log('Beds24 integration disconnected successfully');
+
+      return new Response(JSON.stringify({ success: true }), {
+        status: 200,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+
+    } catch (error) {
+      console.error('Delete integration error:', error);
+      return new Response(JSON.stringify({ 
+        error: 'Failed to delete integration',
+        details: error.message 
+      }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+  }
+
+  // Handle POST requests for setting up integration
   if (req.method !== 'POST') {
     return new Response(JSON.stringify({ error: 'Method not allowed' }), {
       status: 405,
@@ -77,6 +138,28 @@ export default async function handler(req: Request): Promise<Response> {
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
+
+    // Clear any existing integrations first
+    const { data: existingIntegrations } = await supabase
+      .from('integrations')
+      .select('id')
+      .eq('organization_id', organizationId)
+      .eq('provider', 'beds24');
+
+    if (existingIntegrations && existingIntegrations.length > 0) {
+      for (const integration of existingIntegrations) {
+        await supabase
+          .from('integration_credentials')
+          .delete()
+          .eq('integration_id', integration.id);
+        
+        await supabase
+          .from('integrations')
+          .delete()
+          .eq('id', integration.id);
+      }
+      console.log('🔧 Cleared existing integrations');
+    }
 
     // Call Beds24 authentication setup according to official docs
     // Reference: https://wiki.beds24.com/index.php/API_Authentication#Step_2:_If_using_an_invite_code.2C_get_a_refresh_token

@@ -260,15 +260,36 @@ export function useBeds24Auth({ organizationId }: UseBeds24AuthOptions) {
   }, [organizationId]);
 
   /**
-   * Clear authentication state
+   * Clear authentication state and delete integration
    */
-  const clearAuth = useCallback(() => {
+  const clearAuth = useCallback(async () => {
+    setAuthState(prev => ({ ...prev, isLoading: true, error: null }));
+    
+    try {
+      // Call edge function to delete the integration
+      const response = await fetch(`https://zldcotumxouasgzdsvmh.supabase.co/functions/v1/beds24-auth-setup`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpsZGNvdHVteG91YXNnemRzdm1oIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU2NjY5NDEsImV4cCI6MjA3MTI0Mjk0MX0.tMMHzRMpmm4lLvRq27M1O7rcOsUnYr2bFEki3TdqFeQ`
+        },
+        body: JSON.stringify({ organizationId })
+      });
+
+      if (response.ok) {
+        toast.success('Integration disconnected successfully');
+      }
+    } catch (error) {
+      console.warn('Failed to delete integration from server:', error);
+      // Continue with local state clear even if server deletion fails
+    }
+
     setAuthState({
       isLoading: false,
       isAuthenticated: false,
       error: null,
     });
-  }, []);
+  }, [organizationId]);
 
   return {
     authState,

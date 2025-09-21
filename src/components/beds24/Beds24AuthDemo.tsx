@@ -24,6 +24,7 @@ export function Beds24AuthDemo({ organizationId }: Beds24AuthDemoProps) {
   const [inviteCode, setInviteCode] = useState('');
   const [deviceName, setDeviceName] = useState('OtelCiro Demo');
   const [apiResults, setApiResults] = useState<any>(null);
+  const [operationStatus, setOperationStatus] = useState<string>('');
 
   const { 
     authState, 
@@ -36,28 +37,42 @@ export function Beds24AuthDemo({ organizationId }: Beds24AuthDemoProps) {
   const handleSetup = async () => {
     if (!inviteCode.trim()) return;
     
+    setOperationStatus('Setting up Beds24 integration...');
     const success = await setupIntegration(inviteCode, deviceName);
+    setOperationStatus('');
+    
     if (success) {
       setInviteCode('');
     }
   };
 
   const handleGetProperties = async () => {
+    setOperationStatus('Fetching properties from Beds24...');
     const properties = await makeApiCall('/properties');
     setApiResults(properties);
+    setOperationStatus('');
   };
 
   const handleGetAuthDetails = async () => {
+    setOperationStatus('Getting authentication details...');
     const details = await getAuthDetails();
     setApiResults(details);
+    setOperationStatus('');
+  };
+
+  const handleDisconnect = async () => {
+    setOperationStatus('Disconnecting from Beds24...');
+    await clearAuth();
+    setApiResults(null);
+    setOperationStatus('');
   };
 
   const getStatusBadge = () => {
-    if (authState.isLoading) {
+    if (authState.isLoading || operationStatus) {
       return (
         <Badge variant="secondary" className="gap-1">
           <Loader2 className="h-3 w-3 animate-spin" />
-          Loading
+          {operationStatus || 'Loading'}
         </Badge>
       );
     }
@@ -99,19 +114,26 @@ export function Beds24AuthDemo({ organizationId }: Beds24AuthDemoProps) {
           <CardDescription>
             Secure integration with Beds24 API using invite codes and auto-refresh tokens
           </CardDescription>
+          {operationStatus && (
+            <div className="text-sm text-blue-600 bg-blue-50 dark:bg-blue-950/20 p-2 rounded">
+              {operationStatus}
+            </div>
+          )}
         </CardHeader>
         <CardContent className="space-y-4">
-          {!authState.isAuthenticated && (
-            <div className="space-y-4">
-               <div className="space-y-2">
-                <Label htmlFor="inviteCode">Invite Code *</Label>
-                <Input
-                  id="inviteCode"
-                  placeholder="Enter your Beds24 invite code"
-                  value={inviteCode}
-                  onChange={(e) => setInviteCode(e.target.value)}
-                  className="font-mono"
-                />
+          {/* Always show setup form, but disable if authenticated */}
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="inviteCode">Invite Code *</Label>
+              <Input
+                id="inviteCode"
+                placeholder="Enter your Beds24 invite code"
+                value={inviteCode}
+                onChange={(e) => setInviteCode(e.target.value)}
+                className="font-mono"
+                disabled={authState.isAuthenticated || authState.isLoading}
+              />
+              {!authState.isAuthenticated && (
                 <div className="text-xs text-muted-foreground bg-blue-50/50 dark:bg-blue-950/20 p-3 rounded border">
                   <p className="font-medium mb-2">📋 Need an invite code?</p>
                   <ol className="list-decimal list-inside space-y-1 mb-2">
@@ -133,28 +155,43 @@ export function Beds24AuthDemo({ organizationId }: Beds24AuthDemoProps) {
                     </a>
                   </p>
                 </div>
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="deviceName">Device Name (Optional)</Label>
-                <Input
-                  id="deviceName"
-                  placeholder="e.g., OtelCiro Production"
-                  value={deviceName}
-                  onChange={(e) => setDeviceName(e.target.value)}
-                />
-              </div>
-
-              <Button 
-                onClick={handleSetup} 
-                disabled={!inviteCode.trim() || authState.isLoading}
-                className="w-full"
-              >
-                {authState.isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Setup Integration
-              </Button>
+              )}
             </div>
-          )}
+            
+            <div className="space-y-2">
+              <Label htmlFor="deviceName">Device Name (Optional)</Label>
+              <Input
+                id="deviceName"
+                placeholder="e.g., OtelCiro Production"
+                value={deviceName}
+                onChange={(e) => setDeviceName(e.target.value)}
+                disabled={authState.isAuthenticated || authState.isLoading}
+              />
+            </div>
+
+            <div className="flex gap-2">
+              {!authState.isAuthenticated ? (
+                <Button 
+                  onClick={handleSetup} 
+                  disabled={!inviteCode.trim() || authState.isLoading || !!operationStatus}
+                  className="flex-1"
+                >
+                  {(authState.isLoading || operationStatus) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  Setup Integration
+                </Button>
+              ) : (
+                <Button 
+                  onClick={handleDisconnect} 
+                  variant="destructive"
+                  disabled={authState.isLoading || !!operationStatus}
+                  className="flex-1"
+                >
+                  {(authState.isLoading || operationStatus) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  Disconnect & Reset
+                </Button>
+              )}
+            </div>
+          </div>
 
           {authState.error && (
             <div className="p-3 bg-destructive/10 border border-destructive/20 rounded-md">
@@ -202,26 +239,20 @@ export function Beds24AuthDemo({ organizationId }: Beds24AuthDemoProps) {
             <div className="flex gap-2 flex-wrap">
               <Button
                 onClick={handleGetProperties}
-                disabled={authState.isLoading}
+                disabled={authState.isLoading || !!operationStatus}
                 variant="outline"
               >
+                {(authState.isLoading || operationStatus) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Get Properties
               </Button>
               
               <Button
                 onClick={handleGetAuthDetails}
-                disabled={authState.isLoading}
+                disabled={authState.isLoading || !!operationStatus}
                 variant="outline"
               >
+                {(authState.isLoading || operationStatus) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Get Auth Details
-              </Button>
-              
-              <Button
-                onClick={clearAuth}
-                variant="destructive"
-                size="sm"
-              >
-                Clear Auth
               </Button>
             </div>
 
