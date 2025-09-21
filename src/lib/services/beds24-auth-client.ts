@@ -307,19 +307,47 @@ export async function setupBeds24Integration(params: {
  * ```
  */
 export async function getBeds24AuthDetails(organizationId: string): Promise<any> {
+  // Use query parameters for GET request
   const response = await supabase.functions.invoke('beds24-auth-details', {
-    body: { organizationId }
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+    }
   });
   
-  if (response.error) {
+  // Since Supabase functions.invoke doesn't support query params directly,
+  // we need to construct the URL manually
+  const supabaseUrl = 'https://zldcotumxouasgzdsvmh.supabase.co';
+  const functionUrl = `${supabaseUrl}/functions/v1/beds24-auth-details?organizationId=${encodeURIComponent(organizationId)}`;
+  
+  try {
+    const response = await fetch(functionUrl, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`,
+        'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpsZGNvdHVteG91YXNnemRzdm1oIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU2NjY5NDEsImV4cCI6MjA3MTI0Mjk0MX0.tMMHzRMpmm4lLvRq27M1O7rcOsUnYr2bFEki3TdqFeQ',
+        'Content-Type': 'application/json',
+      }
+    });
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Beds24AuthError(
+        'Failed to get auth details',
+        response.status,
+        errorText
+      );
+    }
+    
+    return await response.json();
+  } catch (error) {
+    console.error('🔧 Auth details error:', error);
     throw new Beds24AuthError(
       'Failed to get auth details',
       500,
-      response.error
+      error instanceof Error ? error.message : 'Unknown error'
     );
   }
-  
-  return response.data;
 }
 
 // Export error classes for error handling
