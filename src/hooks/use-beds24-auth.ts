@@ -55,7 +55,9 @@ export function useBeds24Auth({ organizationId }: UseBeds24AuthOptions) {
       if (!mounted) return;
       
       try {
+        console.log('🔍 Checking auth status for org:', organizationId);
         const details = await getBeds24AuthDetails(organizationId);
+        console.log('✅ Auth check successful:', !!details);
         if (mounted) {
           setAuthState(prev => ({ 
             ...prev, 
@@ -66,25 +68,42 @@ export function useBeds24Auth({ organizationId }: UseBeds24AuthOptions) {
           }));
         }
       } catch (error) {
+        console.log('❌ Auth check failed:', error.message);
         if (mounted) {
+          // Don't show error message for initial check if integration doesn't exist
+          const isNoIntegrationError = error instanceof Beds24AuthError && 
+            (error.message.includes('Integration not found') || error.status === 404);
+          
           setAuthState(prev => ({ 
             ...prev, 
             isLoading: false, 
             isAuthenticated: false,
-            error: error instanceof Beds24AuthError ? error.message : null
+            error: isNoIntegrationError ? null : (error instanceof Beds24AuthError ? error.message : null)
           }));
         }
       }
     };
 
-    // Initial check
-    checkAuthStatus();
+    // Initial check with a small delay to prevent UI flash
+    const timer = setTimeout(checkAuthStatus, 100);
 
-    // Set up periodic token refresh (every 20 minutes)
-    refreshInterval = setInterval(checkAuthStatus, 20 * 60 * 1000);
+    // Set up periodic token refresh (every 20 minutes) only if authenticated
+    const setupPeriodicRefresh = () => {
+      if (refreshInterval) clearInterval(refreshInterval);
+      refreshInterval = setInterval(async () => {
+        // Only refresh if currently authenticated
+        if (authState.isAuthenticated) {
+          await checkAuthStatus();
+        }
+      }, 20 * 60 * 1000);
+    };
+
+    // Setup refresh after first check
+    setTimeout(setupPeriodicRefresh, 1000);
 
     return () => {
       mounted = false;
+      if (timer) clearTimeout(timer);
       if (refreshInterval) clearInterval(refreshInterval);
     };
   }, [organizationId]);
