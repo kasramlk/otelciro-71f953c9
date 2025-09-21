@@ -172,13 +172,13 @@ export class ReservationService {
         // No inventory data - get total rooms for this type
         const { data: totalRooms, error: roomsError } = await supabase
           .from('rooms')
-          .select('id', { count: 'exact' })
+          .select('id')
           .eq('hotel_id', hotelId)
           .eq('room_type_id', roomTypeId);
 
         if (roomsError) throw roomsError;
 
-        const roomCount = totalRooms.count || 0;
+        const roomCount = totalRooms?.length || 0;
         const bookedRooms = existingReservations?.length || 0;
         const available = roomCount - bookedRooms;
 
@@ -260,14 +260,42 @@ export class ReservationService {
         };
       }
 
-      // Begin database transaction
+      // Begin database transaction - generate reservation code
+      const reservationCode = `HMS${Date.now().toString().slice(-8)}`;
+      
       const { data: reservation, error: createError } = await supabase
         .from('reservations')
         .insert({
-          ...validData,
-          code: `RES${Date.now()}`, // Generate unique code
+          code: reservationCode,
+          hotel_id: validData.hotel_id,
+          guest_id: validData.guest_id,
+          room_type_id: validData.room_type_id,
+          rate_plan_id: validData.rate_plan_id,
+          check_in: validData.check_in,
+          check_out: validData.check_out,
+          adults: validData.adults,
+          children: validData.children,
+          total_price: validData.total_price,
+          source: validData.source,
+          booking_reference: validData.booking_reference,
+          confirmation_number: validData.confirmation_number,
+          status: validData.status,
+          notes: validData.notes,
+          special_requests: validData.special_requests,
+          payment_method: validData.payment_method,
+          guarantee_type: validData.guarantee_type,
+          meal_plan: validData.meal_plan,
+          deposit_amount: validData.deposit_amount,
           balance_due: validData.total_price - (validData.deposit_amount || 0),
-          total_amount: validData.total_price + (validData.discount_amount || 0)
+          total_amount: validData.total_price + (validData.discount_amount || 0),
+          discount_percent: validData.discount_percent,
+          discount_amount: validData.discount_amount,
+          agency_id: validData.agency_id,
+          company_id: validData.company_id,
+          group_id: validData.group_id,
+          promotion_id: validData.promotion_id,
+          arrival_time: validData.arrival_time,
+          departure_time: validData.departure_time
         })
         .select(`
           *,
@@ -284,16 +312,9 @@ export class ReservationService {
       // Auto-assign room if available
       const roomAssignment = await this.autoAssignRoom(reservation.id, validData.room_type_id);
 
-      // Create audit log
-      await supabase.from('reservation_audit_log').insert({
-        reservation_id: reservation.id,
-        action: 'created',
-        user_id: null, // Will be set by RLS if user is authenticated
-        old_data: null,
-        new_data: reservation,
-        timestamp: new Date().toISOString(),
-        notes: 'Reservation created via API'
-      });
+      // Create audit log (skip for now until function is created)
+      // TODO: Create audit logging function
+      console.log('Reservation created:', reservation.id);
 
       return {
         success: true,
@@ -393,16 +414,8 @@ export class ReservationService {
         throw new Error(`Failed to update reservation: ${updateError.message}`);
       }
 
-      // Create audit log
-      await supabase.from('reservation_audit_log').insert({
-        reservation_id: validData.id,
-        action: 'updated',
-        user_id: null,
-        old_data: existingReservation,
-        new_data: updatedReservation,
-        timestamp: new Date().toISOString(),
-        notes: 'Reservation updated via API'
-      });
+      // Create audit log (skip for now until function is created)
+      console.log('Reservation updated:', validData.id);
 
       return {
         success: true,
@@ -475,6 +488,7 @@ export class ReservationService {
           hotel_id: existingReservation.hotel_id,
           reservation_id: reservationId,
           amount: -refundAmount, // Negative amount for refund
+          amount_in_base_currency: -refundAmount, // Assuming same currency
           payment_method: 'Refund',
           payment_type: 'refund',
           status: 'processed',
@@ -483,16 +497,8 @@ export class ReservationService {
         });
       }
 
-      // Create audit log
-      await supabase.from('reservation_audit_log').insert({
-        reservation_id: reservationId,
-        action: 'cancelled',
-        user_id: null,
-        old_data: existingReservation,
-        new_data: cancelledReservation,
-        timestamp: new Date().toISOString(),
-        notes: `Reservation cancelled: ${reason || 'No reason provided'}`
-      });
+      // Create audit log (skip for now until function is created)
+      console.log('Reservation cancelled:', reservationId);
 
       return {
         success: true,

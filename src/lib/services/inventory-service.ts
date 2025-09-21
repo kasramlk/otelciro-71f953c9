@@ -279,14 +279,14 @@ export class InventoryService {
 
       if (error) throw error;
 
-      // Calculate booking velocity (bookings per day)
-      const bookingsByDay = {};
-      historicalData?.forEach(reservation => {
-        const bookingDate = reservation.created_at.split('T')[0];
-        bookingsByDay[bookingDate] = (bookingsByDay[bookingDate] || 0) + 1;
-      });
+        const bookingsByDay: Record<string, number> = {};
+        historicalData?.forEach(reservation => {
+          const bookingDate = reservation.created_at.split('T')[0];
+          bookingsByDay[bookingDate] = (bookingsByDay[bookingDate] || 0) + 1;
+        });
 
-      const avgBookingsPerDay = Object.values(bookingsByDay).reduce((sum: number, count: number) => sum + count, 0) / Object.keys(bookingsByDay).length;
+        const totalBookings = Object.values(bookingsByDay).reduce((sum, count) => sum + count, 0);
+        const avgBookingsPerDay = totalBookings / Math.max(Object.keys(bookingsByDay).length, 1);
 
       // Get current inventory settings
       const currentInventory = await this.getInventoryStatus(

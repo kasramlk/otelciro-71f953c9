@@ -493,6 +493,70 @@ export type Database = {
           },
         ]
       }
+      channel_allocations: {
+        Row: {
+          allocated_rooms: number
+          allow_overbooking: boolean
+          channel_id: string
+          created_at: string
+          hotel_id: string
+          id: string
+          is_active: boolean
+          notes: string | null
+          priority: number
+          room_type_id: string
+          updated_at: string
+        }
+        Insert: {
+          allocated_rooms?: number
+          allow_overbooking?: boolean
+          channel_id: string
+          created_at?: string
+          hotel_id: string
+          id?: string
+          is_active?: boolean
+          notes?: string | null
+          priority?: number
+          room_type_id: string
+          updated_at?: string
+        }
+        Update: {
+          allocated_rooms?: number
+          allow_overbooking?: boolean
+          channel_id?: string
+          created_at?: string
+          hotel_id?: string
+          id?: string
+          is_active?: boolean
+          notes?: string | null
+          priority?: number
+          room_type_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "channel_allocations_channel_id_fkey"
+            columns: ["channel_id"]
+            isOneToOne: false
+            referencedRelation: "channel_connections"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "channel_allocations_hotel_id_fkey"
+            columns: ["hotel_id"]
+            isOneToOne: false
+            referencedRelation: "hotels"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "channel_allocations_room_type_id_fkey"
+            columns: ["room_type_id"]
+            isOneToOne: false
+            referencedRelation: "room_types"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       channel_connections: {
         Row: {
           api_credentials: Json
@@ -557,6 +621,7 @@ export type Database = {
           is_active: boolean | null
           markup_amount: number | null
           markup_percentage: number | null
+          rate_plan_id: string | null
           room_type_id: string
           updated_at: string
         }
@@ -569,6 +634,7 @@ export type Database = {
           is_active?: boolean | null
           markup_amount?: number | null
           markup_percentage?: number | null
+          rate_plan_id?: string | null
           room_type_id: string
           updated_at?: string
         }
@@ -581,6 +647,7 @@ export type Database = {
           is_active?: boolean | null
           markup_amount?: number | null
           markup_percentage?: number | null
+          rate_plan_id?: string | null
           room_type_id?: string
           updated_at?: string
         }
@@ -590,6 +657,13 @@ export type Database = {
             columns: ["channel_id"]
             isOneToOne: false
             referencedRelation: "channel_connections"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "channel_rate_mappings_rate_plan_id_fkey"
+            columns: ["rate_plan_id"]
+            isOneToOne: false
+            referencedRelation: "rate_plans"
             referencedColumns: ["id"]
           },
         ]
@@ -2847,6 +2921,50 @@ export type Database = {
             columns: ["channel_id"]
             isOneToOne: false
             referencedRelation: "channel_connections"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      reservation_audit_log: {
+        Row: {
+          action: string
+          created_at: string
+          id: string
+          new_data: Json | null
+          notes: string | null
+          old_data: Json | null
+          reservation_id: string
+          timestamp: string
+          user_id: string | null
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          id?: string
+          new_data?: Json | null
+          notes?: string | null
+          old_data?: Json | null
+          reservation_id: string
+          timestamp?: string
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          id?: string
+          new_data?: Json | null
+          notes?: string | null
+          old_data?: Json | null
+          reservation_id?: string
+          timestamp?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reservation_audit_log_reservation_id_fkey"
+            columns: ["reservation_id"]
+            isOneToOne: false
+            referencedRelation: "reservations"
             referencedColumns: ["id"]
           },
         ]

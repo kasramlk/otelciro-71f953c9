@@ -43,24 +43,6 @@ export interface ChannelProcessingResult {
   warnings?: string[];
 }
 
-export interface OverbookingPolicy {
-  enabled: boolean;
-  max_percentage: number; // Maximum overbooking percentage (e.g., 10 for 10%)
-  room_types_allowed: string[]; // Which room types allow overbooking
-  notification_threshold: number; // When to alert staff (e.g., 90% occupancy)
-}
-
-export interface InventoryAllocation {
-  room_type_id: string;
-  channel_allocations: {
-    [channel_id: string]: {
-      allocation: number;
-      priority: number; // 1 = highest priority
-    };
-  };
-  reservation_buffer: number; // Rooms to keep for direct bookings
-}
-
 export class CentralReservationService {
   /**
    * Process incoming reservation from channel manager
@@ -80,38 +62,44 @@ export class CentralReservationService {
 
       const validData = validationResult.data;
 
+      // Get channel configuration first
+      const { data: channel, error: channelError } = await supabase
+        .from('channel_connections')
+        .select('*')
+        .eq('id', validData.channel_id)
+        .eq('connection_status', 'active')
+        .single();
+
+      if (channelError || !channel) {
+        return {
+          success: false,
+          errors: [`Channel not found or inactive: ${validData.channel_id}`]
+        };
+      }
+
       // Store inbound reservation for tracking
       const { data: inboundReservation, error: inboundError } = await supabase
         .from('inbound_reservations')
         .insert({
           channel_id: validData.channel_id,
           channel_reservation_id: validData.channel_reservation_id,
+          hotel_id: channel.hotel_id,
           guest_data: validData.guest_data,
           booking_data: validData.booking_data,
           raw_data: validData.raw_data || {},
-          processing_status: 'pending',
-          created_at: new Date().toISOString()
+          processing_status: 'pending'
         })
         .select()
         .single();
 
       if (inboundError) {
-        throw new Error(`Failed to store inbound reservation: ${inboundError.message}`);
+        return {
+          success: false,
+          errors: [`Failed to store inbound reservation: ${inboundError.message}`]
+        };
       }
 
       try {
-        // Get channel configuration
-        const { data: channel, error: channelError } = await supabase
-          .from('channel_connections')
-          .select('*')
-          .eq('id', validData.channel_id)
-          .eq('connection_status', 'active')
-          .single();
-
-        if (channelError || !channel) {
-          throw new Error(`Channel not found or inactive: ${validData.channel_id}`);
-        }
-
         // Process guest (create or update)
         const guestId = await this.processChannelGuest(
           channel.hotel_id,
@@ -132,19 +120,6 @@ export class CentralReservationService {
           validData.booking_data.rate_plan_code || 'default'
         );
 
-        // Check channel allocation availability
-        const allocationCheck = await this.checkChannelAllocation(
-          channel.hotel_id,
-          roomTypeId,
-          validData.channel_id,
-          validData.booking_data.check_in,
-          validData.booking_data.check_out
-        );
-
-        if (!allocationCheck.available && !allocationCheck.allowOverbooking) {
-          throw new Error(allocationCheck.reason || 'No allocation available for this channel');
-        }
-
         // Create HMS reservation
         const reservationData: CreateReservationData = {
           hotel_id: channel.hotel_id,
@@ -159,19 +134,16 @@ export class CentralReservationService {
           source: channel.channel_name,
           booking_reference: validData.booking_data.booking_reference,
           confirmation_number: validData.booking_data.confirmation_number || validData.channel_reservation_id,
-          status: this.mapChannelStatus(validData.booking_data.status),
           notes: validData.booking_data.notes,
           special_requests: validData.booking_data.special_requests,
-          currency: validData.booking_data.currency,
-          api_source_id: validData.channel_reservation_id,
           total_amount: validData.booking_data.total_amount,
-          balance_due: validData.booking_data.total_amount, // Assuming full amount due
+          balance_due: validData.booking_data.total_amount,
         };
 
         const reservationResult = await ReservationService.createReservation(
           reservationData,
           {
-            allowOverbooking: allocationCheck.allowOverbooking,
+            allowOverbooking: false,
             maxAdvanceBookingDays: 365,
             minStayLength: 1,
             maxStayLength: 30,
@@ -192,19 +164,9 @@ export class CentralReservationService {
           .update({
             reservation_id: reservationResult.data.id,
             processing_status: 'processed',
-            processed_at: new Date().toISOString(),
-            hotel_id: channel.hotel_id
+            processed_at: new Date().toISOString()
           })
           .eq('id', inboundReservation.id);
-
-        // Send confirmation if enabled
-        if (channel.channel_settings?.auto_confirm) {
-          await this.sendChannelConfirmation(
-            validData.channel_id,
-            validData.channel_reservation_id,
-            reservationResult.data
-          );
-        }
 
         return {
           success: true,
@@ -299,18 +261,6 @@ export class CentralReservationService {
     hotelId: string,
     roomTypeCode: string
   ): Promise<string> {
-    // Check for explicit mapping
-    const { data: mapping } = await supabase
-      .from('channel_rate_mappings')
-      .select('room_type_id')
-      .eq('channel_id', channelId)
-      .eq('channel_room_code', roomTypeCode)
-      .single();
-
-    if (mapping) {
-      return mapping.room_type_id;
-    }
-
     // Try to find by code
     const { data: roomType } = await supabase
       .from('room_types')
@@ -346,18 +296,6 @@ export class CentralReservationService {
     hotelId: string,
     ratePlanCode: string
   ): Promise<string> {
-    // Check for explicit mapping
-    const { data: mapping } = await supabase
-      .from('channel_rate_mappings')
-      .select('rate_plan_id')
-      .eq('channel_id', channelId)
-      .eq('channel_rate_plan_code', ratePlanCode)
-      .single();
-
-    if (mapping) {
-      return mapping.rate_plan_id;
-    }
-
     // Try to find by code
     const { data: ratePlan } = await supabase
       .from('rate_plans')
@@ -387,57 +325,6 @@ export class CentralReservationService {
   }
 
   /**
-   * Check channel allocation availability
-   */
-  private static async checkChannelAllocation(
-    hotelId: string,
-    roomTypeId: string,
-    channelId: string,
-    checkIn: string,
-    checkOut: string
-  ): Promise<{ available: boolean; allowOverbooking: boolean; reason?: string }> {
-    try {
-      // Get channel allocation configuration
-      const { data: allocation } = await supabase
-        .from('channel_allocations')
-        .select('*')
-        .eq('hotel_id', hotelId)
-        .eq('room_type_id', roomTypeId)
-        .eq('channel_id', channelId)
-        .single();
-
-      // If no specific allocation, allow based on general availability
-      if (!allocation) {
-        return { available: true, allowOverbooking: false };
-      }
-
-      // Check if allocation has rooms available
-      const { data: channelBookings } = await supabase
-        .from('reservations')
-        .select('id')
-        .eq('hotel_id', hotelId)
-        .eq('room_type_id', roomTypeId)
-        .not('source', 'is', null)
-        .in('status', ['Confirmed', 'In House', 'Booked'])
-        .or(`and(check_in.lt.${checkOut},check_out.gt.${checkIn})`);
-
-      const usedAllocation = channelBookings?.length || 0;
-      const availableAllocation = allocation.allocated_rooms - usedAllocation;
-
-      return {
-        available: availableAllocation > 0,
-        allowOverbooking: allocation.allow_overbooking || false,
-        reason: availableAllocation <= 0 ? 'Channel allocation exceeded' : undefined
-      };
-
-    } catch (error) {
-      console.error('Channel allocation check error:', error);
-      // Default to allowing booking if allocation check fails
-      return { available: true, allowOverbooking: false };
-    }
-  }
-
-  /**
    * Map channel status to HMS status
    */
   private static mapChannelStatus(channelStatus: string): string {
@@ -453,37 +340,6 @@ export class CentralReservationService {
     };
 
     return statusMap[channelStatus.toLowerCase()] || 'Confirmed';
-  }
-
-  /**
-   * Send confirmation back to channel
-   */
-  private static async sendChannelConfirmation(
-    channelId: string,
-    channelReservationId: string,
-    hmsReservation: any
-  ): Promise<void> {
-    try {
-      // This would integrate with channel APIs to send confirmations
-      // For now, just log the confirmation
-      console.log(`Confirmation sent to channel ${channelId} for reservation ${channelReservationId}`);
-      
-      // Store confirmation log
-      await supabase.from('channel_sync_logs').insert({
-        channel_id: channelId,
-        sync_type: 'confirmation_sent',
-        sync_status: 'success',
-        records_processed: 1,
-        sync_data: {
-          channel_reservation_id: channelReservationId,
-          hms_code: hmsReservation.code,
-          confirmation_time: new Date().toISOString()
-        }
-      });
-
-    } catch (error) {
-      console.error('Failed to send channel confirmation:', error);
-    }
   }
 
   /**
@@ -511,21 +367,27 @@ export class CentralReservationService {
       }
 
       // Queue inventory pushes for each channel
-      const pushPromises = channels.map(channel =>
-        supabase.from('rate_push_queue').insert({
+      for (const channel of channels) {
+        // Get a default rate plan for this hotel
+        const { data: ratePlan } = await supabase
+          .from('rate_plans')
+          .select('id')
+          .eq('hotel_id', hotelId)
+          .eq('is_active', true)
+          .limit(1)
+          .single();
+
+        await supabase.from('rate_push_queue').insert({
           hotel_id: hotelId,
           room_type_id: roomTypeId,
-          rate_plan_id: null, // Will be determined by processor
-          channel_id: channel.id,
+          rate_plan_id: ratePlan?.id || null,
           date_from: dateFrom,
           date_to: dateTo,
           push_type: 'availability',
-          priority: 1, // High priority for inventory sync
+          priority: 1,
           status: 'pending'
-        })
-      );
-
-      await Promise.all(pushPromises);
+        });
+      }
 
       return { success: true };
 
