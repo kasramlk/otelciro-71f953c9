@@ -155,12 +155,13 @@ export default async function handler(req: Request): Promise<Response> {
 
     if (!needsRefresh && currentToken) {
       console.log('Returning cached token');
-      return new Response(JSON.stringify({
-        token: currentToken,
-        expiresAt: tokenExpiresAt.toISOString(),
-      }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
+    const expiresIn = Math.floor((tokenExpiresAt.getTime() - now.getTime()) / 1000);
+    return new Response(JSON.stringify({
+      token: currentToken,
+      expiresIn: expiresIn,
+    }), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
     }
 
     // Refresh token
@@ -178,6 +179,19 @@ export default async function handler(req: Request): Promise<Response> {
     if (!refreshResponse.ok) {
       const errorText = await refreshResponse.text();
       console.error('Token refresh failed:', refreshResponse.status, errorText);
+      
+      if (refreshResponse.status === 400) {
+        return new Response(JSON.stringify({
+          success: false,
+          type: "error",
+          code: 400,
+          error: errorText || "Bad request"
+        }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+      
       return new Response(JSON.stringify({ 
         error: 'Token refresh failed',
         details: errorText 
@@ -189,6 +203,14 @@ export default async function handler(req: Request): Promise<Response> {
 
     const refreshData: Beds24TokenResponse = await refreshResponse.json();
     const newExpiresAt = new Date(Date.now() + (refreshData.expires_in * 1000));
+    
+    // Extract rate limit headers
+    const rateLimitHeaders = {
+      'X-FiveMinCreditLimit': refreshResponse.headers.get('X-FiveMinCreditLimit'),
+      'X-FiveMinCreditLimit-ResetsIn': refreshResponse.headers.get('X-FiveMinCreditLimit-ResetsIn'),
+      'X-FiveMinCreditLimit-Remaining': refreshResponse.headers.get('X-FiveMinCreditLimit-Remaining'),
+      'X-RequestCost': refreshResponse.headers.get('X-RequestCost'),
+    };
 
     // Update stored credentials
     const updatedCredentials = [
@@ -220,11 +242,22 @@ export default async function handler(req: Request): Promise<Response> {
 
     console.log('Token refreshed successfully');
 
+    // Create response headers with rate limits
+    const responseHeaders = { 
+      ...corsHeaders, 
+      'Content-Type': 'application/json',
+    };
+    
+    // Add rate limit headers if present
+    Object.entries(rateLimitHeaders).forEach(([key, value]) => {
+      if (value) responseHeaders[key] = value;
+    });
+
     return new Response(JSON.stringify({
       token: refreshData.access_token,
-      expiresAt: newExpiresAt.toISOString(),
+      expiresIn: refreshData.expires_in,
     }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      headers: responseHeaders,
     });
 
   } catch (error) {

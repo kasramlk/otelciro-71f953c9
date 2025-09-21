@@ -64,8 +64,14 @@ export default async function handler(req: Request): Promise<Response> {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    // Get current token by calling the token endpoint
-    const tokenResponse = await fetch(`${req.url.replace('/beds24-auth-details', '/beds24-auth-token')}?organizationId=${organizationId}`);
+    // Get current token by calling the token endpoint using supabase client
+    const tokenUrl = `https://zldcotumxouasgzdsvmh.supabase.co/functions/v1/beds24-auth-token?organizationId=${organizationId}`;
+    const tokenResponse = await fetch(tokenUrl, {
+      headers: {
+        'Authorization': req.headers.get('Authorization') || '',
+        'apikey': req.headers.get('apikey') || '',
+      }
+    });
     
     if (!tokenResponse.ok) {
       const errorData = await tokenResponse.json();
@@ -91,6 +97,25 @@ export default async function handler(req: Request): Promise<Response> {
     if (!detailsResponse.ok) {
       const errorText = await detailsResponse.text();
       console.error('Auth details failed:', detailsResponse.status, errorText);
+      
+      if (detailsResponse.status === 400) {
+        let errorMessage = errorText;
+        try {
+          const errorJson = JSON.parse(errorText);
+          errorMessage = errorJson.error || errorText;
+        } catch {}
+        
+        return new Response(JSON.stringify({
+          success: false,
+          type: "error", 
+          code: 400,
+          error: errorMessage
+        }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+      
       return new Response(JSON.stringify({ 
         error: 'Failed to get auth details',
         details: errorText 
@@ -104,9 +129,10 @@ export default async function handler(req: Request): Promise<Response> {
 
     // Extract rate limit headers if present
     const rateLimitHeaders = {
-      fiveMinRemaining: detailsResponse.headers.get('x-five-min-limit-remaining'),
-      fiveMinResetsIn: detailsResponse.headers.get('x-five-min-limit-resets-in'),
-      requestCost: detailsResponse.headers.get('x-request-cost'),
+      fiveMinRemaining: detailsResponse.headers.get('X-FiveMinCreditLimit-Remaining'),
+      fiveMinResetsIn: detailsResponse.headers.get('X-FiveMinCreditLimit-ResetsIn'),
+      requestCost: detailsResponse.headers.get('X-RequestCost'),
+      fiveMinLimit: detailsResponse.headers.get('X-FiveMinCreditLimit'),
     };
 
     // Store usage data if rate limit headers are present
@@ -132,11 +158,23 @@ export default async function handler(req: Request): Promise<Response> {
 
     console.log('Auth details retrieved successfully');
 
+    // Create response headers with rate limits
+    const responseHeaders = { 
+      ...corsHeaders, 
+      'Content-Type': 'application/json',
+    };
+    
+    // Add rate limit headers if present
+    if (rateLimitHeaders.fiveMinLimit) responseHeaders['X-FiveMinCreditLimit'] = rateLimitHeaders.fiveMinLimit;
+    if (rateLimitHeaders.fiveMinResetsIn) responseHeaders['X-FiveMinCreditLimit-ResetsIn'] = rateLimitHeaders.fiveMinResetsIn;
+    if (rateLimitHeaders.fiveMinRemaining) responseHeaders['X-FiveMinCreditLimit-Remaining'] = rateLimitHeaders.fiveMinRemaining;
+    if (rateLimitHeaders.requestCost) responseHeaders['X-RequestCost'] = rateLimitHeaders.requestCost;
+
     return new Response(JSON.stringify({
       ...authDetails,
       rateLimits: rateLimitHeaders,
     }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      headers: responseHeaders,
     });
 
   } catch (error) {
