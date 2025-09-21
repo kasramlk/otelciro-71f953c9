@@ -88,6 +88,7 @@ import MobileDashboard from "./pages/MobileDashboard";
 import AIInsightsV2Page from "./pages/AIInsightsV2";
 import PerformancePage from "./pages/Performance";
 import Beds24AuthTest from "./pages/Beds24AuthTest";
+import Beds24IntegrationPage from "./pages/settings/integrations/Beds24Integration";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -410,6 +411,11 @@ const AppContent = () => {
           <Route path="/settings" element={
             <HMSLayout>
               <Settings />
+            </HMSLayout>
+          } />
+          <Route path="/settings/integrations/beds24" element={
+            <HMSLayout>
+              <Beds24IntegrationPage />
             </HMSLayout>
           } />
           <Route path="/audit-log" element={
