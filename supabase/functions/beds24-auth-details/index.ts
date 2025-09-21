@@ -84,13 +84,13 @@ export default async function handler(req: Request): Promise<Response> {
     const { token } = await tokenResponse.json();
 
     // Call Beds24 authentication details
-    const beds24BaseUrl = Deno.env.get('BEDS24_BASE_URL') || 'https://api.beds24.com/v2';
+    const beds24BaseUrl = Deno.env.get('BEDS24_BASE_URL') || 'https://beds24.com/api/v2';
     
     const detailsResponse = await fetch(`${beds24BaseUrl}/authentication/details`, {
       method: 'GET',
       headers: {
+        'accept': 'application/json',
         'token': token,
-        'Content-Type': 'application/json',
       },
     });
 

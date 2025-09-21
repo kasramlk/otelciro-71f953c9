@@ -10,8 +10,9 @@ interface TokenRequest {
 }
 
 interface Beds24TokenResponse {
-  access_token: string;
-  expires_in: number;
+  token: string;
+  expiresIn: number;
+  refreshToken?: string;
 }
 
 // Simple decryption using built-in crypto
@@ -166,13 +167,13 @@ export default async function handler(req: Request): Promise<Response> {
 
     // Refresh token
     console.log('Refreshing token using refresh token');
-    const beds24BaseUrl = Deno.env.get('BEDS24_BASE_URL') || 'https://api.beds24.com/v2';
+    const beds24BaseUrl = Deno.env.get('BEDS24_BASE_URL') || 'https://beds24.com/api/v2';
     
     const refreshResponse = await fetch(`${beds24BaseUrl}/authentication/token`, {
       method: 'GET',
       headers: {
+        'accept': 'application/json',
         'refreshToken': refreshToken,
-        'Content-Type': 'application/json',
       },
     });
 
@@ -202,7 +203,7 @@ export default async function handler(req: Request): Promise<Response> {
     }
 
     const refreshData: Beds24TokenResponse = await refreshResponse.json();
-    const newExpiresAt = new Date(Date.now() + (refreshData.expires_in * 1000));
+    const newExpiresAt = new Date(Date.now() + (refreshData.expiresIn * 1000));
     
     // Extract rate limit headers
     const rateLimitHeaders = {
@@ -217,7 +218,7 @@ export default async function handler(req: Request): Promise<Response> {
       {
         integration_id: integration.id,
         key: 'access_token',
-        value_encrypted: await encrypt(refreshData.access_token, encryptionKey),
+        value_encrypted: await encrypt(refreshData.token, encryptionKey),
       },
       {
         integration_id: integration.id,
@@ -225,6 +226,15 @@ export default async function handler(req: Request): Promise<Response> {
         value_encrypted: await encrypt(newExpiresAt.toISOString(), encryptionKey),
       },
     ];
+
+    // Store new refresh token if provided
+    if (refreshData.refreshToken) {
+      updatedCredentials.push({
+        integration_id: integration.id,
+        key: 'refresh_token',
+        value_encrypted: await encrypt(refreshData.refreshToken, encryptionKey),
+      });
+    }
 
     const { error: updateError } = await supabase
       .from('integration_credentials')
@@ -254,8 +264,8 @@ export default async function handler(req: Request): Promise<Response> {
     });
 
     return new Response(JSON.stringify({
-      token: refreshData.access_token,
-      expiresIn: refreshData.expires_in,
+      token: refreshData.token,
+      expiresIn: refreshData.expiresIn,
     }), {
       headers: responseHeaders,
     });
