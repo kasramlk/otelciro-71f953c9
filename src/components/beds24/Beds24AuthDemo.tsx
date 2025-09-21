@@ -103,14 +103,36 @@ export function Beds24AuthDemo({ organizationId }: Beds24AuthDemoProps) {
         <CardContent className="space-y-4">
           {!authState.isAuthenticated && (
             <div className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="inviteCode">Invite Code</Label>
+               <div className="space-y-2">
+                <Label htmlFor="inviteCode">Invite Code *</Label>
                 <Input
                   id="inviteCode"
                   placeholder="Enter your Beds24 invite code"
                   value={inviteCode}
                   onChange={(e) => setInviteCode(e.target.value)}
+                  className="font-mono"
                 />
+                <div className="text-xs text-muted-foreground bg-blue-50/50 dark:bg-blue-950/20 p-3 rounded border">
+                  <p className="font-medium mb-2">📋 Need an invite code?</p>
+                  <ol className="list-decimal list-inside space-y-1 mb-2">
+                    <li>Log into your <strong>Beds24 account</strong></li>
+                    <li>Go to <strong>Settings → API → Invite Codes</strong></li>
+                    <li>Click <strong>"Generate invite code"</strong></li>
+                    <li>Select required scopes (bookings, inventory, properties)</li>
+                    <li>Decide on linked properties access</li>
+                    <li>Copy the generated code and paste it above</li>
+                  </ol>
+                  <p>
+                    <a 
+                      href="https://wiki.beds24.com/index.php/API_Authentication#Invite_codes" 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="text-blue-600 hover:underline dark:text-blue-400"
+                    >
+                      📖 View official Beds24 documentation →
+                    </a>
+                  </p>
+                </div>
               </div>
               
               <div className="space-y-2">

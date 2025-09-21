@@ -78,18 +78,19 @@ export default async function handler(req: Request): Promise<Response> {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    // Call Beds24 authentication setup
+    // Call Beds24 authentication setup according to official docs
+    // Reference: https://wiki.beds24.com/index.php/API_Authentication#Step_2:_If_using_an_invite_code.2C_get_a_refresh_token
     const beds24BaseUrl = Deno.env.get('BEDS24_BASE_URL') || 'https://api.beds24.com/v2';
     const setupHeaders: Record<string, string> = {
       'code': inviteCode,
-      'Content-Type': 'application/json',
     };
 
     if (deviceName) {
       setupHeaders['deviceName'] = deviceName;
     }
 
-    console.log('🔧 Calling Beds24 setup with headers:', { ...setupHeaders, code: '[REDACTED]' });
+    console.log('🔧 Calling Beds24 /authentication/setup with headers:', { ...setupHeaders, code: `${inviteCode.slice(0, 4)}...` });
+    console.log('🔧 Full URL:', `${beds24BaseUrl}/authentication/setup`);
 
     const beds24Response = await fetch(`${beds24BaseUrl}/authentication/setup`, {
       method: 'GET',
@@ -97,13 +98,26 @@ export default async function handler(req: Request): Promise<Response> {
     });
 
     console.log('🔧 Beds24 response status:', beds24Response.status);
+    console.log('🔧 Beds24 response headers:', Object.fromEntries(beds24Response.headers.entries()));
 
     if (!beds24Response.ok) {
       const errorText = await beds24Response.text();
       console.error('🔧 Beds24 setup failed:', beds24Response.status, errorText);
+      
+      // Provide more helpful error messages based on common issues
+      let userMessage = 'Beds24 authentication failed';
+      if (beds24Response.status === 400) {
+        userMessage = 'Invalid invite code. Please verify the code was generated on the Beds24 platform.';
+      } else if (beds24Response.status === 401) {
+        userMessage = 'Unauthorized. The invite code may be expired or invalid.';
+      } else if (beds24Response.status === 403) {
+        userMessage = 'Access denied. Check your Beds24 account permissions.';
+      }
+      
       return new Response(JSON.stringify({ 
-        error: 'Beds24 authentication failed',
-        details: errorText 
+        error: userMessage,
+        details: errorText,
+        status: beds24Response.status
       }), {
         status: beds24Response.status,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
