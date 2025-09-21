@@ -84,14 +84,11 @@ export async function getWriteAccessToken(): Promise<string> {
   
   try {
     const response = await fetch(`${baseUrl}/authentication/token`, {
-      method: 'POST',
+      method: 'GET',
       headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
+        'accept': 'application/json',
+        'refreshToken': refreshToken,
       },
-      body: new URLSearchParams({
-        grant_type: 'refresh_token',
-        refresh_token: refreshToken,
-      }),
     })
 
     if (!response.ok) {
@@ -100,14 +97,14 @@ export async function getWriteAccessToken(): Promise<string> {
 
     const data = await response.json()
     
-    if (!data.access_token || !data.expires_in) {
+    if (!data.token || !data.expiresIn) {
       throw new Error('Invalid token response from Beds24')
     }
 
     // Cache the token and store in token manager
-    const expiresAt = Date.now() + (data.expires_in * 1000)
+    const expiresAt = Date.now() + (data.expiresIn * 1000)
     tokenCache.set(cacheKey, {
-      token: data.access_token,
+      token: data.token,
       expiresAt
     })
 
@@ -118,7 +115,7 @@ export async function getWriteAccessToken(): Promise<string> {
           action: 'store_token', 
           tokenType: 'write',
           tokenData: {
-            token: data.access_token,
+            token: data.token,
             expires_at: new Date(expiresAt).toISOString(),
             scopes: ['write:inventory', 'write:bookings-messages', 'write:channels'],
             properties_access: []
@@ -129,7 +126,7 @@ export async function getWriteAccessToken(): Promise<string> {
       console.warn('Failed to store token in token manager:', storeError);
     }
 
-    return data.access_token
+    return data.token
   } catch (error) {
     console.error('Error refreshing Beds24 write token:', error)
     throw new Error(`Failed to refresh write access token: ${error.message}`)
