@@ -710,6 +710,38 @@ export default function Settings() {
             </CardContent>
           </Card>
         </TabsContent>
+
+        <TabsContent value="integrations" className="space-y-4">
+          <div className="flex justify-between items-center">
+            <div>
+              <h3 className="text-lg font-medium">Integrations</h3>
+              <p className="text-sm text-muted-foreground">
+                Connect your hotel to external services and platforms.
+              </p>
+            </div>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <Card className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => window.location.href = '/settings/integrations/beds24'}>
+              <CardContent className="p-6">
+                <div className="flex items-start space-x-4">
+                  <div className="w-12 h-12 bg-blue-500 rounded-lg flex items-center justify-center">
+                    <Plug className="h-6 w-6 text-white" />
+                  </div>
+                  <div className="flex-1">
+                    <h4 className="font-semibold">Beds24</h4>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Channel management and booking sync
+                    </p>
+                    <Badge variant="outline" className="mt-2">
+                      Setup Required
+                    </Badge>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
       </Tabs>
 
       {/* Dynamic Dialog */}
@@ -900,38 +932,6 @@ export default function Settings() {
         </DialogContent>
       </Dialog>
 
-      {/* Integrations Tab Content */}
-      <TabsContent value="integrations" className="space-y-4">
-        <div className="flex justify-between items-center">
-          <div>
-            <h3 className="text-lg font-medium">Integrations</h3>
-            <p className="text-sm text-muted-foreground">
-              Connect your hotel to external services and platforms.
-            </p>
-          </div>
-        </div>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          <Card className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => window.location.href = '/settings/integrations/beds24'}>
-            <CardContent className="p-6">
-              <div className="flex items-start space-x-4">
-                <div className="w-12 h-12 bg-blue-500 rounded-lg flex items-center justify-center">
-                  <Plug className="h-6 w-6 text-white" />
-                </div>
-                <div className="flex-1">
-                  <h4 className="font-semibold">Beds24</h4>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    Channel management and booking sync
-                  </p>
-                  <Badge variant="outline" className="mt-2">
-                    Setup Required
-                  </Badge>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      </TabsContent>
     </div>
   );
 }
