@@ -262,19 +262,37 @@ export async function setupBeds24Integration(params: {
   inviteCode: string;
   deviceName?: string;
 }): Promise<{ success: boolean; integrationId: string; expiresAt: string }> {
-  const response = await supabase.functions.invoke('beds24-auth-setup', {
-    body: params
+  console.log('🔧 Setting up Beds24 integration with params:', { 
+    organizationId: params.organizationId, 
+    deviceName: params.deviceName,
+    inviteCodeLength: params.inviteCode?.length 
   });
   
-  if (response.error) {
-    throw new Beds24AuthError(
-      'Failed to setup Beds24 integration',
-      500,
-      response.error
-    );
+  try {
+    const response = await supabase.functions.invoke('beds24-auth-setup', {
+      body: params
+    });
+    
+    console.log('🔧 Supabase function response:', { 
+      data: response.data, 
+      error: response.error 
+    });
+    
+    if (response.error) {
+      console.error('🔧 Setup integration error:', response.error);
+      throw new Beds24AuthError(
+        'Failed to setup Beds24 integration',
+        500,
+        response.error
+      );
+    }
+    
+    console.log('🔧 Setup integration success:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('🔧 Setup integration exception:', error);
+    throw error;
   }
-  
-  return response.data;
 }
 
 /**

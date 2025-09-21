@@ -60,9 +60,12 @@ export default async function handler(req: Request): Promise<Response> {
   }
 
   try {
+    console.log('🔧 Beds24 auth setup started');
     const { organizationId, inviteCode, deviceName }: SetupRequest = await req.json();
+    console.log('🔧 Parsed request body:', { organizationId, inviteCodeLength: inviteCode?.length, deviceName });
 
     if (!organizationId || !inviteCode) {
+      console.log('🔧 Missing required fields:', { organizationId: !!organizationId, inviteCode: !!inviteCode });
       return new Response(JSON.stringify({ error: 'Missing required fields' }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -86,16 +89,18 @@ export default async function handler(req: Request): Promise<Response> {
       setupHeaders['deviceName'] = deviceName;
     }
 
-    console.log('Calling Beds24 setup with headers:', { ...setupHeaders, code: '[REDACTED]' });
+    console.log('🔧 Calling Beds24 setup with headers:', { ...setupHeaders, code: '[REDACTED]' });
 
     const beds24Response = await fetch(`${beds24BaseUrl}/authentication/setup`, {
       method: 'GET',
       headers: setupHeaders,
     });
 
+    console.log('🔧 Beds24 response status:', beds24Response.status);
+
     if (!beds24Response.ok) {
       const errorText = await beds24Response.text();
-      console.error('Beds24 setup failed:', beds24Response.status, errorText);
+      console.error('🔧 Beds24 setup failed:', beds24Response.status, errorText);
       return new Response(JSON.stringify({ 
         error: 'Beds24 authentication failed',
         details: errorText 
@@ -106,7 +111,7 @@ export default async function handler(req: Request): Promise<Response> {
     }
 
     const beds24Data: Beds24SetupResponse = await beds24Response.json();
-    console.log('Beds24 setup successful, expires in:', beds24Data.expiresIn);
+    console.log('🔧 Beds24 setup successful, expires in:', beds24Data.expiresIn);
 
     // Create or update integration record
     const { data: integration, error: integrationError } = await supabase

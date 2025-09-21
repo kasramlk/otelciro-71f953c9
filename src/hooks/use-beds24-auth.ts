@@ -53,14 +53,18 @@ export function useBeds24Auth({ organizationId }: UseBeds24AuthOptions) {
     inviteCode: string,
     deviceName?: string
   ): Promise<boolean> => {
+    console.log('🎯 Hook setupIntegration called with:', { inviteCode: inviteCode?.length, deviceName, organizationId });
     setAuthState(prev => ({ ...prev, isLoading: true, error: null }));
     
     try {
+      console.log('🎯 Calling setupBeds24Integration...');
       const result = await setupBeds24Integration({
         organizationId,
         inviteCode,
         deviceName,
       });
+      
+      console.log('🎯 Setup result:', result);
       
       setAuthState(prev => ({ 
         ...prev, 
@@ -73,6 +77,7 @@ export function useBeds24Auth({ organizationId }: UseBeds24AuthOptions) {
       return true;
       
     } catch (error) {
+      console.error('🎯 Setup error in hook:', error);
       const errorMessage = error instanceof Beds24AuthError 
         ? error.message 
         : 'Failed to setup integration';
