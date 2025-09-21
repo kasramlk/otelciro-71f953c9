@@ -46,6 +46,9 @@ export function useBeds24Auth({ organizationId }: UseBeds24AuthOptions) {
     error: null,
   });
 
+  // AbortController for cancelling operations
+  const [currentAbortController, setCurrentAbortController] = useState<AbortController | null>(null);
+
   // Auto-check authentication status on mount and periodically refresh
   useEffect(() => {
     let mounted = true;
@@ -116,6 +119,10 @@ export function useBeds24Auth({ organizationId }: UseBeds24AuthOptions) {
     deviceName?: string
   ): Promise<boolean> => {
     console.log('🎯 Hook setupIntegration called with:', { inviteCode: inviteCode?.length, deviceName, organizationId });
+    
+    // Create abort controller for this operation
+    const abortController = new AbortController();
+    setCurrentAbortController(abortController);
     setAuthState(prev => ({ ...prev, isLoading: true, error: null }));
     
     try {
@@ -126,6 +133,11 @@ export function useBeds24Auth({ organizationId }: UseBeds24AuthOptions) {
         deviceName,
       });
       
+      // Check if operation was cancelled
+      if (abortController.signal.aborted) {
+        return false;
+      }
+      
       console.log('🎯 Setup result:', result);
       
       setAuthState(prev => ({ 
@@ -135,10 +147,15 @@ export function useBeds24Auth({ organizationId }: UseBeds24AuthOptions) {
         error: null 
       }));
       
+      setCurrentAbortController(null);
       toast.success('Beds24 integration setup successfully');
       return true;
       
     } catch (error) {
+      if (abortController.signal.aborted) {
+        return false;
+      }
+      
       console.error('🎯 Setup error in hook:', error);
       const errorMessage = error instanceof Beds24AuthError 
         ? error.message 
@@ -150,6 +167,7 @@ export function useBeds24Auth({ organizationId }: UseBeds24AuthOptions) {
         error: errorMessage 
       }));
       
+      setCurrentAbortController(null);
       toast.error(errorMessage);
       return false;
     }
@@ -291,12 +309,68 @@ export function useBeds24Auth({ organizationId }: UseBeds24AuthOptions) {
     });
   }, [organizationId]);
 
+  /**
+   * Cancel current operation
+   */
+  const cancelOperation = useCallback(() => {
+    if (currentAbortController) {
+      currentAbortController.abort();
+      setCurrentAbortController(null);
+    }
+    setAuthState(prev => ({ 
+      ...prev, 
+      isLoading: false, 
+      error: 'Operation cancelled by user' 
+    }));
+    toast.info('Operation cancelled');
+  }, [currentAbortController]);
+
+  /**
+   * Restart/retry current authentication check
+   */
+  const restartAuth = useCallback(async () => {
+    setAuthState(prev => ({ 
+      ...prev, 
+      isLoading: true, 
+      error: null,
+      isAuthenticated: false 
+    }));
+    
+    try {
+      console.log('🔄 Restarting auth check for org:', organizationId);
+      const details = await getBeds24AuthDetails(organizationId);
+      console.log('✅ Restart successful:', !!details);
+      
+      setAuthState(prev => ({ 
+        ...prev, 
+        isLoading: false,
+        isAuthenticated: true,
+        rateLimits: details.rateLimits,
+        error: null 
+      }));
+      
+      toast.success('Authentication status refreshed');
+    } catch (error) {
+      console.log('❌ Restart failed:', error.message);
+      setAuthState(prev => ({ 
+        ...prev, 
+        isLoading: false, 
+        isAuthenticated: false,
+        error: error instanceof Beds24AuthError ? error.message : 'Restart failed'
+      }));
+      
+      toast.error('Failed to refresh authentication status');
+    }
+  }, [organizationId]);
+
   return {
     authState,
     setupIntegration,
     makeApiCall,
     getAuthDetails,
     clearAuth,
+    cancelOperation,
+    restartAuth,
   };
 }
 

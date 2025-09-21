@@ -31,7 +31,9 @@ export function Beds24AuthDemo({ organizationId }: Beds24AuthDemoProps) {
     setupIntegration, 
     makeApiCall, 
     getAuthDetails,
-    clearAuth 
+    clearAuth,
+    cancelOperation,
+    restartAuth
   } = useBeds24Auth({ organizationId });
 
   const handleSetup = async () => {
@@ -189,6 +191,26 @@ export function Beds24AuthDemo({ organizationId }: Beds24AuthDemoProps) {
                   {(authState.isLoading || operationStatus) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                   Disconnect & Reset
                 </Button>
+              )}
+              
+              {/* Cancel and Restart buttons when loading */}
+              {(authState.isLoading || operationStatus) && (
+                <>
+                  <Button 
+                    onClick={cancelOperation} 
+                    variant="outline"
+                    size="sm"
+                  >
+                    Cancel
+                  </Button>
+                  <Button 
+                    onClick={restartAuth} 
+                    variant="outline"
+                    size="sm"
+                  >
+                    Restart
+                  </Button>
+                </>
               )}
             </div>
           </div>
