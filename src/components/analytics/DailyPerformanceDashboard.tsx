@@ -17,8 +17,10 @@ import {
 import { DateRange } from "react-day-picker";
 import { format, startOfDay } from "date-fns";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from "recharts";
+import { useState } from "react";
 import { useDailyPerformance } from "@/hooks/use-daily-performance";
 import { useDailyBookingsCreated } from "@/hooks/use-daily-bookings-created";
+import { DailyReservationsModal } from "./DailyReservationsModal";
 
 interface DailyPerformanceDashboardProps {
   dateRange?: DateRange;
@@ -26,6 +28,9 @@ interface DailyPerformanceDashboardProps {
 }
 
 export const DailyPerformanceDashboard = ({ dateRange, selectedHotel }: DailyPerformanceDashboardProps) => {
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [showModal, setShowModal] = useState(false);
+  
   // Get today's performance metrics with real-time data
   const { data: todayMetrics, isLoading } = useDailyPerformance(selectedHotel, new Date());
   const dailyBookings = useDailyBookingsCreated(selectedHotel);
@@ -65,7 +70,12 @@ export const DailyPerformanceDashboard = ({ dateRange, selectedHotel }: DailyPer
       change: `${dailyBookings.trend > 0 ? '+' : ''}${dailyBookings.trend}%`,
       changeType: dailyBookings.trend > 0 ? "positive" as const : dailyBookings.trend < 0 ? "negative" as const : "neutral" as const,
       color: "secondary",
-      subtitle: `${dailyBookings.direct} direct, ${dailyBookings.channels} channels`
+      subtitle: `${dailyBookings.direct} direct, ${dailyBookings.channels} channels`,
+      clickable: true,
+      onClick: () => {
+        setSelectedDate(new Date());
+        setShowModal(true);
+      }
     },
     {
       title: "Today's Revenue",
@@ -96,7 +106,10 @@ export const DailyPerformanceDashboard = ({ dateRange, selectedHotel }: DailyPer
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: index * 0.1 }}
           >
-            <Card className="card-modern card-hover">
+            <Card 
+              className={`card-modern card-hover ${kpi.clickable ? 'cursor-pointer hover:shadow-lg transition-shadow' : ''}`}
+              onClick={kpi.onClick}
+            >
               <CardContent className="p-6">
                  <div className="flex items-center justify-between">
                    <div className="space-y-2">
@@ -289,6 +302,16 @@ export const DailyPerformanceDashboard = ({ dateRange, selectedHotel }: DailyPer
           </div>
         </CardContent>
       </Card>
+
+      {/* Daily Reservations Modal */}
+      {selectedDate && (
+        <DailyReservationsModal
+          isOpen={showModal}
+          onClose={() => setShowModal(false)}
+          date={selectedDate}
+          reservations={todayMetrics?.reservations || []}
+        />
+      )}
     </div>
   );
 };

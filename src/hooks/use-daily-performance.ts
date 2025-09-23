@@ -10,11 +10,14 @@ export interface DailyPerformanceData {
   occupancyRate: number;
   reservations: Array<{
     id: string;
+    code?: string;
     guests: { first_name: string; last_name: string };
     check_in: string;
     check_out: string;
     source: string;
+    status: string;
     balance_due: number;
+    total_amount?: number;
     room_types?: { name: string };
   }>;
   bySource: Record<string, { count: number; revenue: number }>;
@@ -42,10 +45,11 @@ export const useDailyPerformance = (hotelId: string, date: Date = new Date()) =>
       const dayEnd = format(endOfDay(date), 'yyyy-MM-dd');
 
       // Fetch today's reservations with guest and room type details
-      const { data: reservations } = await supabase
+      const { data: reservations, error } = await supabase
         .from('reservations')
         .select(`
           id,
+          code,
           check_in,
           check_out,
           total_amount,
@@ -67,11 +71,14 @@ export const useDailyPerformance = (hotelId: string, date: Date = new Date()) =>
       console.log('Daily Performance DEBUG:', {
         date: dayStart,
         hotelId,
+        query: `check_in.eq.${dayStart},and(check_in.lte.${dayStart},check_out.gt.${dayStart})`,
         totalReservationsFound: reservations?.length || 0,
+        reservationCodes: reservations?.map(r => r.code) || [],
         statusBreakdown: reservations?.reduce((acc, res) => {
           acc[res.status] = (acc[res.status] || 0) + 1;
           return acc;
-        }, {} as Record<string, number>)
+        }, {} as Record<string, number>),
+        error
       });
 
       // Get total rooms for occupancy calculation
@@ -115,11 +122,14 @@ export const useDailyPerformance = (hotelId: string, date: Date = new Date()) =>
       // Transform reservations for display
       const transformedReservations = reservations?.map(res => ({
         id: res.id,
+        code: res.code,
         guests: res.guests || { first_name: 'Unknown', last_name: 'Guest' },
         check_in: res.check_in,
         check_out: res.check_out,
         source: res.source || 'Direct',
+        status: res.status,
         balance_due: res.balance_due || 0,
+        total_amount: res.total_amount || 0,
         room_types: res.room_types
       })) || [];
 
