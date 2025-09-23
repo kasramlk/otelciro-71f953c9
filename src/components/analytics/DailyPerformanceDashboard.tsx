@@ -36,10 +36,18 @@ export const DailyPerformanceDashboard = ({ dateRange, selectedHotel }: DailyPer
   const { data: todayMetrics, isLoading } = useDailyPerformance(selectedHotel, new Date());
   
   // Get reservations for selected date when modal is opened
-  const { data: selectedDateReservations } = useDailyReservations(
+  const { data: selectedDateReservations, isLoading: isLoadingSelectedDate } = useDailyReservations(
     selectedHotel, 
     selectedDate || new Date()
   );
+  
+  console.log('🔍 Dashboard Debug:', {
+    selectedDate: selectedDate?.toISOString(),
+    hasSelectedDate: !!selectedDate,
+    selectedDateReservations,
+    isLoadingSelectedDate,
+    showModal
+  });
   
   const dailyBookings = useDailyBookingsCreated(selectedHotel);
 
@@ -241,6 +249,7 @@ export const DailyPerformanceDashboard = ({ dateRange, selectedHotel }: DailyPer
               Today's Reservations
               <button 
                 onClick={() => {
+                  console.log('🔘 Testing Sept 25 button clicked');
                   setSelectedDate(new Date(2025, 8, 25)); // Sept 25, 2025
                   setShowModal(true);
                 }}
@@ -325,6 +334,7 @@ export const DailyPerformanceDashboard = ({ dateRange, selectedHotel }: DailyPer
         <DailyReservationsModal
           isOpen={showModal}
           onClose={() => {
+            console.log('🚪 Closing modal');
             setShowModal(false);
             setSelectedDate(null);
           }}

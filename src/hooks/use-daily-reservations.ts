@@ -38,6 +38,7 @@ export const useDailyReservations = (hotelId: string, selectedDate: Date) => {
       console.log('🔍 Fetching reservations for:', { hotelId, date: dateStr });
 
       if (!hotelId) {
+        console.log('❌ No hotelId provided');
         return {
           reservations: [],
           totalCount: 0,
@@ -48,6 +49,8 @@ export const useDailyReservations = (hotelId: string, selectedDate: Date) => {
         };
       }
 
+      console.log('🔄 Making Supabase query...');
+      
       // Query for reservations that are active on the selected date
       const { data, error } = await supabase
         .from('reservations')
