@@ -29,13 +29,13 @@ export interface DailyReservationsData {
   statusBreakdown: Record<string, number>;
 }
 
-export const useDailyReservations = (hotelId: string, selectedDate: Date) => {
+export const useDailyReservations = (hotelId: string, selectedDate: Date, options?: { enabled?: boolean }) => {
   const dateStr = format(selectedDate, 'yyyy-MM-dd');
   
   return useQuery({
     queryKey: ['daily-reservations', hotelId, dateStr],
     queryFn: async (): Promise<DailyReservationsData> => {
-      console.log('🔍 Fetching reservations for:', { hotelId, date: dateStr });
+      console.log('🚀 HOOK STARTING - Fetching reservations for:', { hotelId, date: dateStr, selectedDate: selectedDate.toISOString() });
 
       if (!hotelId) {
         console.log('❌ No hotelId provided');
@@ -51,7 +51,29 @@ export const useDailyReservations = (hotelId: string, selectedDate: Date) => {
 
       console.log('🔄 Making Supabase query...');
       
-      // Query for reservations that are active on the selected date
+      // First, try a simple query without joins to test RLS
+      const { data: simpleData, error: simpleError } = await supabase
+        .from('reservations')
+        .select('id, code, check_in, check_out, status, source, total_amount, balance_due, guest_id, room_type_id')
+        .eq('hotel_id', hotelId)
+        .lte('check_in', dateStr)
+        .gt('check_out', dateStr)
+        .in('status', ['Booked', 'Confirmed', 'Checked In', 'Checked Out']);
+
+      console.log('🔍 Simple query result:', { 
+        simpleData, 
+        simpleError,
+        count: simpleData?.length || 0
+      });
+
+      if (simpleError) {
+        console.error('❌ Simple query error:', simpleError);
+        throw simpleError;
+      }
+
+      // If simple query works, now try with joins
+      console.log('🔗 Now trying with joins...');
+      
       const { data, error } = await supabase
         .from('reservations')
         .select(`
@@ -147,7 +169,8 @@ export const useDailyReservations = (hotelId: string, selectedDate: Date) => {
 
       return result;
     },
-    enabled: !!hotelId,
+    enabled: options?.enabled !== false && !!hotelId,
     staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes (renamed from cacheTime)
   });
 };

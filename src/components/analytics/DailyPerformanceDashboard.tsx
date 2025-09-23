@@ -35,10 +35,11 @@ export const DailyPerformanceDashboard = ({ dateRange, selectedHotel }: DailyPer
   // Get today's performance metrics with real-time data
   const { data: todayMetrics, isLoading } = useDailyPerformance(selectedHotel, new Date());
   
-  // Get reservations for selected date when modal is opened
-  const { data: selectedDateReservations, isLoading: isLoadingSelectedDate } = useDailyReservations(
+  // Get reservations for selected date when modal is opened  
+  const { data: selectedDateReservations, isLoading: isLoadingSelectedDate, error: selectedDateError } = useDailyReservations(
     selectedHotel, 
-    selectedDate || new Date()
+    selectedDate || new Date(),
+    { enabled: !!selectedDate && !!selectedHotel } // Only run when we have both hotel and selected date
   );
   
   console.log('🔍 Dashboard Debug:', {
@@ -46,7 +47,9 @@ export const DailyPerformanceDashboard = ({ dateRange, selectedHotel }: DailyPer
     hasSelectedDate: !!selectedDate,
     selectedDateReservations,
     isLoadingSelectedDate,
-    showModal
+    selectedDateError,
+    showModal,
+    selectedHotel
   });
   
   const dailyBookings = useDailyBookingsCreated(selectedHotel);
