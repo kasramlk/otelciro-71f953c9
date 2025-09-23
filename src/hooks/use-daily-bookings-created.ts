@@ -68,12 +68,12 @@ export const useDailyBookingsCreated = (hotelId: string) => {
         sourceCounts[source] = (sourceCounts[source] || 0) + 1;
 
         // Fix the logic: remove the !source check since source is never falsy here
-        if (source === 'Direct' || source === 'Walk-in') {
+        if (source === 'Direct' || source === 'Walk-in' || source === 'direct') {
           direct++;
-          console.log(`DEBUG: Counted as direct. Direct total: ${direct}`);
+          console.log(`DEBUG: Counted as direct (${source}). Direct total: ${direct}`);
         } else {
           channels++;
-          console.log(`DEBUG: Counted as channel. Channels total: ${channels}`);
+          console.log(`DEBUG: Counted as channel (${source}). Channels total: ${channels}`);
         }
       });
 
