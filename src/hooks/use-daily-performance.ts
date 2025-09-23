@@ -64,6 +64,16 @@ export const useDailyPerformance = (hotelId: string, date: Date = new Date()) =>
         .or(`check_in.eq.${dayStart},and(check_in.lte.${dayStart},check_out.gt.${dayStart})`)
         .in('status', ['Booked', 'Confirmed', 'Checked In', 'Checked Out']);
 
+      console.log('Daily Performance DEBUG:', {
+        date: dayStart,
+        hotelId,
+        totalReservationsFound: reservations?.length || 0,
+        statusBreakdown: reservations?.reduce((acc, res) => {
+          acc[res.status] = (acc[res.status] || 0) + 1;
+          return acc;
+        }, {} as Record<string, number>)
+      });
+
       // Get total rooms for occupancy calculation
       const { data: rooms } = await supabase
         .from('rooms')
