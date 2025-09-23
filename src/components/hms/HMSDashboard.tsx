@@ -70,20 +70,50 @@ export const HMSDashboard = () => {
 
     // Calculate metrics from real reservation data
     const totalRooms = rooms.length || 50;
-    const currentDate = new Date();
     const monthStart = new Date(selectedMonth.getFullYear(), selectedMonth.getMonth(), 1);
     const monthEnd = new Date(selectedMonth.getFullYear(), selectedMonth.getMonth() + 1, 0);
+    const daysInMonth = monthEnd.getDate();
 
-    // Filter reservations for selected month
+    // Filter reservations for selected month (active during any part of the month)
     const monthReservations = reservations.filter(res => {
       const checkIn = new Date(res.check_in);
       const checkOut = new Date(res.check_out);
-      return (checkIn >= monthStart && checkIn <= monthEnd) || 
-             (checkOut >= monthStart && checkOut <= monthEnd) ||
-             (checkIn <= monthStart && checkOut >= monthEnd);
+      return (checkIn < monthEnd && checkOut > monthStart) && 
+             ['Booked', 'Confirmed', 'Checked In', 'Checked Out'].includes(res.status);
     });
 
-    const totalRevenue = monthReservations.reduce((sum, res) => sum + (res.total_amount || 0), 0);
+    // Calculate room-nights: total nights each reservation occupied during the month
+    let totalRoomNights = 0;
+    let totalRoomRevenue = 0;
+    
+    monthReservations.forEach(res => {
+      const checkIn = new Date(res.check_in);
+      const checkOut = new Date(res.check_out);
+      
+      // Calculate overlap with the selected month
+      const stayStart = checkIn > monthStart ? checkIn : monthStart;
+      const stayEnd = checkOut < monthEnd ? checkOut : monthEnd;
+      
+      if (stayStart < stayEnd) {
+        const nightsInMonth = Math.ceil((stayEnd.getTime() - stayStart.getTime()) / (1000 * 60 * 60 * 24));
+        const totalNights = Math.ceil((checkOut.getTime() - checkIn.getTime()) / (1000 * 60 * 60 * 24));
+        
+        // Proportional revenue for nights in this month
+        const nightlyRevenue = totalNights > 0 ? (res.total_amount || 0) / totalNights : 0;
+        const monthRevenue = nightlyRevenue * nightsInMonth;
+        
+        totalRoomNights += nightsInMonth;
+        totalRoomRevenue += monthRevenue;
+      }
+    });
+
+    // Calculate accurate metrics
+    const totalAvailableRoomNights = totalRooms * daysInMonth;
+    const occupancyRate = totalAvailableRoomNights > 0 ? (totalRoomNights / totalAvailableRoomNights) : 0;
+    const avgADR = totalRoomNights > 0 ? totalRoomRevenue / totalRoomNights : 0;
+    const revPAR = totalAvailableRoomNights > 0 ? totalRoomRevenue / totalRooms : 0;
+
+    // Count arrivals and departures in the month
     const totalArrivals = monthReservations.filter(res => {
       const checkIn = new Date(res.check_in);
       return checkIn >= monthStart && checkIn <= monthEnd;
@@ -94,17 +124,12 @@ export const HMSDashboard = () => {
       return checkOut >= monthStart && checkOut <= monthEnd;
     }).length;
 
-    // Simple occupancy calculation (can be improved)
-    const occupancyRate = totalRooms > 0 ? Math.min(monthReservations.length / totalRooms, 1) : 0;
-    const avgADR = monthReservations.length > 0 ? totalRevenue / monthReservations.length : 0;
-    const revPAR = occupancyRate * avgADR;
-
     return {
       totalRooms,
-      avgOccupancy: occupancyRate * 100,
-      avgADR,
-      revPAR,
-      totalRevenue,
+      avgOccupancy: Math.round(occupancyRate * 10000) / 100, // Percentage with 2 decimal places
+      avgADR: Math.round(avgADR * 100) / 100,
+      revPAR: Math.round(revPAR * 100) / 100,
+      totalRevenue: Math.round(totalRoomRevenue * 100) / 100,
       totalArrivals,
       totalDepartures,
       availableRooms: Math.floor(totalRooms * (1 - occupancyRate)),

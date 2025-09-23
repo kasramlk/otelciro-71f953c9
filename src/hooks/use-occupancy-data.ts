@@ -50,7 +50,7 @@ export const useOccupancyData = (hotelId: string, selectedMonth: Date) => {
         `)
         .eq('hotel_id', hotelId)
         .or(`check_in.gte.${format(monthStart, 'yyyy-MM-dd')},check_out.lte.${format(monthEnd, 'yyyy-MM-dd')},and(check_in.lte.${format(monthStart, 'yyyy-MM-dd')},check_out.gte.${format(monthEnd, 'yyyy-MM-dd')})`)
-        .in('status', ['Confirmed', 'Checked In', 'Checked Out']);
+        .in('status', ['Booked', 'Confirmed', 'Checked In', 'Checked Out']);
 
       // Calculate occupancy for each day
       const occupancyData: OccupancyDataPoint[] = daysInMonth.map(date => {

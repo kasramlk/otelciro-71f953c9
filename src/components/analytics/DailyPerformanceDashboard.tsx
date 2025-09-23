@@ -51,32 +51,32 @@ export const DailyPerformanceDashboard = ({ dateRange, selectedHotel }: DailyPer
       title: "Today's Reservations",
       value: todayMetrics?.totalReservations || 0,
       icon: CalendarDays,
-      change: "+12%",
-      changeType: "positive" as const,
+      change: todayMetrics?.totalReservations > 0 ? "+12%" : "0%",
+      changeType: (todayMetrics?.totalReservations || 0) > 0 ? "positive" as const : "neutral" as const,
       color: "primary"
     },
     {
       title: "Today's Revenue",
       value: `$${todayMetrics?.totalRevenue?.toLocaleString() || 0}`,
       icon: DollarSign,
-      change: "+8.2%",
-      changeType: "positive" as const,
+      change: (todayMetrics?.totalRevenue || 0) > 0 ? "+8.2%" : "0%",
+      changeType: (todayMetrics?.totalRevenue || 0) > 0 ? "positive" as const : "neutral" as const,
       color: "secondary"
     },
     {
       title: "Average Daily Rate",
       value: `$${todayMetrics?.avgDailyRate?.toFixed(0) || 0}`,
       icon: TrendingUp,
-      change: "+5.1%",
-      changeType: "positive" as const,
+      change: (todayMetrics?.avgDailyRate || 0) > 0 ? "+5.1%" : "0%",
+      changeType: (todayMetrics?.avgDailyRate || 0) > 0 ? "positive" as const : "neutral" as const,
       color: "accent"
     },
     {
       title: "Occupancy Rate",
       value: `${todayMetrics?.occupancyRate?.toFixed(1) || 0}%`,
       icon: Percent,
-      change: "+3.2%",
-      changeType: "positive" as const,
+      change: (todayMetrics?.occupancyRate || 0) > 0 ? "+3.2%" : "0%",
+      changeType: (todayMetrics?.occupancyRate || 0) > 0 ? "positive" as const : "neutral" as const,
       color: "neutral"
     }
   ];
