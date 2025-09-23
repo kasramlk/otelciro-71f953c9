@@ -53,31 +53,19 @@ export const useDailyBookingsCreated = (hotelId: string) => {
       let direct = 0;
       let channels = 0;
 
-      console.log('DEBUG: Processing reservations:', currentReservations?.length || 0);
-      
       currentReservations?.forEach((reservation, index) => {
         const originalSource = reservation.source;
         const source = reservation.source || 'Direct';
-        
-        console.log(`DEBUG: Reservation ${index + 1}:`, {
-          originalSource,
-          processedSource: source,
-          id: reservation.id
-        });
         
         sourceCounts[source] = (sourceCounts[source] || 0) + 1;
 
         // Fix the logic: remove the !source check since source is never falsy here
         if (source === 'Direct' || source === 'Walk-in' || source === 'direct') {
           direct++;
-          console.log(`DEBUG: Counted as direct (${source}). Direct total: ${direct}`);
         } else {
           channels++;
-          console.log(`DEBUG: Counted as channel (${source}). Channels total: ${channels}`);
         }
       });
-
-      console.log('DEBUG: Final counts:', { total: currentReservations?.length || 0, direct, channels, sourceCounts });
 
       // Convert to breakdown array
       Object.entries(sourceCounts).forEach(([source, count]) => {
