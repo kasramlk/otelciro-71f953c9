@@ -162,6 +162,24 @@ export const DailyPerformanceDashboard = ({ dateRange, selectedHotel }: DailyPer
         ))}
       </div>
 
+      {/* Test Button - Prominent */}
+      <Card className="card-modern bg-gradient-to-r from-blue-500 to-purple-600 text-white">
+        <CardContent className="p-6 text-center">
+          <h3 className="text-lg font-semibold mb-2">🔧 Debug Test</h3>
+          <p className="text-sm opacity-90 mb-4">Test the Sept 25 reservations modal (should show 3 reservations)</p>
+          <button 
+            onClick={() => {
+              console.log('🔘 BIG TEST BUTTON CLICKED for Sept 25');
+              setSelectedDate(new Date(2025, 8, 25)); // Sept 25, 2025
+              setShowModal(true);
+            }}
+            className="bg-white text-blue-600 px-6 py-3 rounded-lg font-medium hover:bg-gray-100 transition-colors"
+          >
+            🎯 TEST SEPT 25 RESERVATIONS
+          </button>
+        </CardContent>
+      </Card>
+
       {/* Performance Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Revenue Trend */}
