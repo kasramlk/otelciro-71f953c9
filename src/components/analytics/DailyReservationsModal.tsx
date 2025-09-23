@@ -8,14 +8,14 @@ import { format } from 'date-fns';
 interface Reservation {
   id: string;
   code?: string;
-  guests: { first_name: string; last_name: string };
+  guest: { first_name: string; last_name: string };
   check_in: string;
   check_out: string;
   source: string;
   status: string;
   balance_due: number;
   total_amount?: number;
-  room_types?: { name: string };
+  room_type?: { name: string } | null;
 }
 
 interface DailyReservationsModalProps {
@@ -23,13 +23,17 @@ interface DailyReservationsModalProps {
   onClose: () => void;
   date: Date;
   reservations: Reservation[];
+  totalRevenue?: number;
+  avgDailyRate?: number;
 }
 
 export const DailyReservationsModal = ({ 
   isOpen, 
   onClose, 
   date, 
-  reservations 
+  reservations,
+  totalRevenue = 0,
+  avgDailyRate = 0
 }: DailyReservationsModalProps) => {
   const getStatusColor = (status: string) => {
     switch (status.toLowerCase()) {
@@ -42,7 +46,8 @@ export const DailyReservationsModal = ({
     }
   };
 
-  const totalRevenue = reservations.reduce((sum, res) => {
+  // Use passed-in revenue or calculate if not provided
+  const displayRevenue = totalRevenue || reservations.reduce((sum, res) => {
     const checkIn = new Date(res.check_in);
     const checkOut = new Date(res.check_out);
     const totalNights = Math.ceil((checkOut.getTime() - checkIn.getTime()) / (1000 * 60 * 60 * 24));
@@ -64,7 +69,7 @@ export const DailyReservationsModal = ({
             </span>
             <span className="flex items-center gap-1">
               <DollarSign className="h-4 w-4" />
-              ${totalRevenue.toFixed(2)} daily revenue
+              ${displayRevenue.toFixed(2)} daily revenue
             </span>
           </div>
         </DialogHeader>
@@ -103,7 +108,7 @@ export const DailyReservationsModal = ({
               <div className="bg-purple-50 p-4 rounded-lg">
                 <div className="text-sm text-purple-600 font-medium">Avg Rate</div>
                 <div className="text-2xl font-bold text-purple-900">
-                  ${reservations.length > 0 ? (totalRevenue / reservations.length).toFixed(0) : 0}
+                  ${avgDailyRate > 0 ? avgDailyRate.toFixed(0) : (reservations.length > 0 ? (displayRevenue / reservations.length).toFixed(0) : 0)}
                 </div>
               </div>
             </div>
@@ -132,7 +137,7 @@ export const DailyReservationsModal = ({
                     <TableCell>
                       <div className="flex items-center gap-2">
                         <User className="h-4 w-4 text-muted-foreground" />
-                        <span>{reservation.guests?.first_name} {reservation.guests?.last_name}</span>
+                        <span>{reservation.guest?.first_name} {reservation.guest?.last_name}</span>
                       </div>
                     </TableCell>
                     <TableCell>
@@ -149,7 +154,7 @@ export const DailyReservationsModal = ({
                     <TableCell>
                       <div className="flex items-center gap-1">
                         <MapPin className="h-4 w-4 text-muted-foreground" />
-                        <span>{reservation.room_types?.name || 'Standard'}</span>
+                        <span>{reservation.room_type?.name || 'Standard'}</span>
                       </div>
                     </TableCell>
                     <TableCell>

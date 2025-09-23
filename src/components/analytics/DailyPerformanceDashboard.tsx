@@ -20,6 +20,7 @@ import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import { useState } from "react";
 import { useDailyPerformance } from "@/hooks/use-daily-performance";
 import { useDailyBookingsCreated } from "@/hooks/use-daily-bookings-created";
+import { useDailyReservations } from "@/hooks/use-daily-reservations";
 import { DailyReservationsModal } from "./DailyReservationsModal";
 
 interface DailyPerformanceDashboardProps {
@@ -34,8 +35,8 @@ export const DailyPerformanceDashboard = ({ dateRange, selectedHotel }: DailyPer
   // Get today's performance metrics with real-time data
   const { data: todayMetrics, isLoading } = useDailyPerformance(selectedHotel, new Date());
   
-  // Get performance data for selected date when modal is opened
-  const { data: selectedDateMetrics } = useDailyPerformance(
+  // Get reservations for selected date when modal is opened
+  const { data: selectedDateReservations } = useDailyReservations(
     selectedHotel, 
     selectedDate || new Date()
   );
@@ -238,6 +239,15 @@ export const DailyPerformanceDashboard = ({ dateRange, selectedHotel }: DailyPer
             <CardTitle className="flex items-center gap-2">
               <Clock className="h-5 w-5" />
               Today's Reservations
+              <button 
+                onClick={() => {
+                  setSelectedDate(new Date(2025, 8, 25)); // Sept 25, 2025
+                  setShowModal(true);
+                }}
+                className="ml-auto text-xs bg-primary text-primary-foreground px-2 py-1 rounded hover:bg-primary/80"
+              >
+                Test Sept 25
+              </button>
             </CardTitle>
             <Badge variant="secondary">
               {todayMetrics?.totalReservations || 0} reservations
@@ -319,7 +329,9 @@ export const DailyPerformanceDashboard = ({ dateRange, selectedHotel }: DailyPer
             setSelectedDate(null);
           }}
           date={selectedDate}
-          reservations={selectedDateMetrics?.reservations || []}
+          reservations={selectedDateReservations?.reservations || []}
+          totalRevenue={selectedDateReservations?.totalRevenue || 0}
+          avgDailyRate={selectedDateReservations?.avgDailyRate || 0}
         />
       )}
     </div>

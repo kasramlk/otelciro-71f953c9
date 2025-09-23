@@ -41,18 +41,9 @@ export const useDailyPerformance = (hotelId: string, date: Date = new Date()) =>
         };
       }
 
-      const dayStart = format(startOfDay(date), 'yyyy-MM-dd');
-      const dayEnd = format(endOfDay(date), 'yyyy-MM-dd');
+      const dayStart = format(date, 'yyyy-MM-dd');
 
-      console.log('Daily Performance Query Details:', {
-        selectedDate: format(date, 'yyyy-MM-dd'),
-        dayStart,
-        dayEnd,
-        hotelId
-      });
-
-      // Fetch today's reservations with guest and room type details
-      // Fixed query: get reservations that are active on the selected date
+      // Fetch reservations that are active on the selected date
       const { data: reservations, error } = await supabase
         .from('reservations')
         .select(`
@@ -73,22 +64,9 @@ export const useDailyPerformance = (hotelId: string, date: Date = new Date()) =>
           )
         `)
         .eq('hotel_id', hotelId)
-        .lte('check_in', dayStart)  // Check-in is on or before the selected date
-        .gt('check_out', dayStart)   // Check-out is after the selected date
+        .lte('check_in', dayStart)
+        .gt('check_out', dayStart)
         .in('status', ['Booked', 'Confirmed', 'Checked In', 'Checked Out']);
-
-      console.log('Daily Performance DEBUG:', {
-        date: dayStart,
-        hotelId,
-        query: `check_in <= ${dayStart} AND check_out > ${dayStart}`,
-        totalReservationsFound: reservations?.length || 0,
-        reservationCodes: reservations?.map(r => ({ code: r.code, status: r.status, checkIn: r.check_in, checkOut: r.check_out })) || [],
-        statusBreakdown: reservations?.reduce((acc, res) => {
-          acc[res.status] = (acc[res.status] || 0) + 1;
-          return acc;
-        }, {} as Record<string, number>),
-        error: error?.message
-      });
 
       // Get total rooms for occupancy calculation
       const { data: rooms } = await supabase
