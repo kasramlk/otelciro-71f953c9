@@ -1,8 +1,10 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/use-auth";
 import { useProductionData } from "@/hooks/use-production-data";
+import { useDailyReservations } from "@/hooks/use-daily-reservations";
+import { DailyReservationsModal } from "@/components/analytics/DailyReservationsModal";
 import { checkSocialMediaAccess, features } from "@/lib/config";
 import { 
   Hotel, 
@@ -33,6 +35,10 @@ const Dashboard = () => {
   const userRole = user?.user_metadata?.role || 'hotel_manager';
   const canAccessSocialMedia = checkSocialMediaAccess(userRole);
   
+  // Daily reservations modal state
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [showReservationsModal, setShowReservationsModal] = useState(false);
+  
   const { 
     hotels, 
     reservations, 
@@ -41,6 +47,17 @@ const Dashboard = () => {
     loading: dataLoading,
     refreshData 
   } = useProductionData();
+
+  // Get first hotel ID for daily reservations (fallback if no hotel context)
+  const selectedHotelId = hotels?.[0]?.id || '';
+  
+  // Daily reservations data - only fetch when modal is open and date is selected
+  const { 
+    data: dailyReservationsData, 
+    isLoading: reservationsLoading 
+  } = useDailyReservations(selectedHotelId, selectedDate || new Date(), {
+    enabled: !!selectedDate && !!selectedHotelId && showReservationsModal
+  });
 
   // Mock data for charts
   const occupancyData = [
@@ -315,6 +332,25 @@ const Dashboard = () => {
         />
       </div>
 
+      {/* Test Button for Daily Reservations - Sept 25 */}
+      <Card className="card-modern bg-gradient-to-r from-blue-500 to-purple-600 text-white">
+        <CardContent className="p-6 text-center">
+          <h3 className="text-lg font-semibold mb-2">🔧 Debug Test</h3>
+          <p className="text-sm opacity-90 mb-4">Test the Sept 25 reservations modal (should show 3 reservations)</p>
+          <Button 
+            onClick={() => {
+              console.log('🔘 BIG TEST BUTTON CLICKED for Sept 25');
+              console.log('Selected Hotel ID:', selectedHotelId);
+              setSelectedDate(new Date(2025, 8, 25)); // Sept 25, 2025
+              setShowReservationsModal(true);
+            }}
+            className="bg-white text-blue-600 px-6 py-3 rounded-lg font-medium hover:bg-gray-100 transition-colors"
+          >
+            🎯 TEST SEPT 25 RESERVATIONS
+          </Button>
+        </CardContent>
+      </Card>
+
       {/* Today's Stats */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatCard
@@ -440,6 +476,21 @@ const Dashboard = () => {
           </div>
         </CardContent>
       </Card>
+
+      {/* Daily Reservations Modal */}
+      {selectedDate && (
+        <DailyReservationsModal
+          isOpen={showReservationsModal}
+          onClose={() => {
+            setShowReservationsModal(false);
+            setSelectedDate(null);
+          }}
+          date={selectedDate}
+          reservations={dailyReservationsData?.reservations || []}
+          totalRevenue={dailyReservationsData?.totalRevenue}
+          avgDailyRate={dailyReservationsData?.avgDailyRate}
+        />
+      )}
     </div>
   );
 };
