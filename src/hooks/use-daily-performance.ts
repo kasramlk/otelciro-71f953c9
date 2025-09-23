@@ -62,7 +62,7 @@ export const useDailyPerformance = (hotelId: string, date: Date = new Date()) =>
         `)
         .eq('hotel_id', hotelId)
         .or(`check_in.eq.${dayStart},and(check_in.lte.${dayStart},check_out.gt.${dayStart})`)
-        .in('status', ['Confirmed', 'Checked In', 'Checked Out']);
+        .in('status', ['Booked', 'Confirmed', 'Checked In', 'Checked Out']);
 
       // Get total rooms for occupancy calculation
       const { data: rooms } = await supabase
