@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Calendar, TrendingUp, TrendingDown, Users, Building, DollarSign, Clock, Bell, Settings, Zap } from 'lucide-react';
+import { Calendar, TrendingUp, TrendingDown, Users, Building, DollarSign, Clock, Bell, Settings, Zap, CalendarPlus } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -16,6 +16,7 @@ import { useHotel, useProductionData } from '@/hooks/use-production-data';
 import { useOccupancyData } from '@/hooks/use-occupancy-data';
 import { useRealtimeSubscriptions } from '@/hooks/use-real-time-subscriptions';
 import { useHotelContext } from '@/hooks/use-hotel-context';
+import { useDailyBookingsCreated } from '@/hooks/use-daily-bookings-created';
 
 export const HMSDashboard = () => {
   const { selectedMonth, setSelectedMonth, applyAISuggestion } = useHMSStore();
@@ -43,6 +44,9 @@ export const HMSDashboard = () => {
   
   // Set up real-time subscriptions
   useRealtimeSubscriptions(selectedHotelId || '');
+
+  // Get daily bookings data
+  const dailyBookings = useDailyBookingsCreated(selectedHotelId || '');
 
   // Real occupancy data is now fetched from useOccupancyData hook
 
@@ -280,7 +284,7 @@ export const HMSDashboard = () => {
       </div>
 
       {/* Additional Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
@@ -289,6 +293,26 @@ export const HMSDashboard = () => {
                 <p className="text-xl font-bold">€{kpis.totalRevenue.toLocaleString()}</p>
               </div>
               <TrendIcon trend={kpis.trends.revenue} />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground">24h New Bookings</p>
+                <p className="text-xl font-bold">{dailyBookings.total}</p>
+                <div className="flex items-center mt-1">
+                  <span className="text-xs text-muted-foreground">
+                    {dailyBookings.direct} direct, {dailyBookings.channels} channels
+                  </span>
+                  {dailyBookings.trend !== 0 && (
+                    <TrendingUp className={`h-3 w-3 ml-2 ${dailyBookings.trend > 0 ? 'text-green-500' : 'text-red-500'}`} />
+                  )}
+                </div>
+              </div>
+              <CalendarPlus className="h-6 w-6 text-green-500" />
             </div>
           </CardContent>
         </Card>

@@ -11,12 +11,14 @@ import {
   DollarSign, 
   Percent, 
   Building2,
-  Clock
+  Clock,
+  CalendarPlus
 } from "lucide-react";
 import { DateRange } from "react-day-picker";
 import { format, startOfDay } from "date-fns";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from "recharts";
 import { useDailyPerformance } from "@/hooks/use-daily-performance";
+import { useDailyBookingsCreated } from "@/hooks/use-daily-bookings-created";
 
 interface DailyPerformanceDashboardProps {
   dateRange?: DateRange;
@@ -26,6 +28,7 @@ interface DailyPerformanceDashboardProps {
 export const DailyPerformanceDashboard = ({ dateRange, selectedHotel }: DailyPerformanceDashboardProps) => {
   // Get today's performance metrics with real-time data
   const { data: todayMetrics, isLoading } = useDailyPerformance(selectedHotel, new Date());
+  const dailyBookings = useDailyBookingsCreated(selectedHotel);
 
   // Performance trend data
   const { data: trendData } = useQuery({
@@ -56,12 +59,21 @@ export const DailyPerformanceDashboard = ({ dateRange, selectedHotel }: DailyPer
       color: "primary"
     },
     {
+      title: "24h New Bookings",
+      value: dailyBookings.total,
+      icon: CalendarPlus,
+      change: `${dailyBookings.trend > 0 ? '+' : ''}${dailyBookings.trend}%`,
+      changeType: dailyBookings.trend > 0 ? "positive" as const : dailyBookings.trend < 0 ? "negative" as const : "neutral" as const,
+      color: "secondary",
+      subtitle: `${dailyBookings.direct} direct, ${dailyBookings.channels} channels`
+    },
+    {
       title: "Today's Revenue",
       value: `$${todayMetrics?.totalRevenue?.toLocaleString() || 0}`,
       icon: DollarSign,
       change: (todayMetrics?.totalRevenue || 0) > 0 ? "+8.2%" : "0%",
       changeType: (todayMetrics?.totalRevenue || 0) > 0 ? "positive" as const : "neutral" as const,
-      color: "secondary"
+      color: "accent"
     },
     {
       title: "Average Daily Rate",
@@ -69,14 +81,6 @@ export const DailyPerformanceDashboard = ({ dateRange, selectedHotel }: DailyPer
       icon: TrendingUp,
       change: (todayMetrics?.avgDailyRate || 0) > 0 ? "+5.1%" : "0%",
       changeType: (todayMetrics?.avgDailyRate || 0) > 0 ? "positive" as const : "neutral" as const,
-      color: "accent"
-    },
-    {
-      title: "Occupancy Rate",
-      value: `${todayMetrics?.occupancyRate?.toFixed(1) || 0}%`,
-      icon: Percent,
-      change: (todayMetrics?.occupancyRate || 0) > 0 ? "+3.2%" : "0%",
-      changeType: (todayMetrics?.occupancyRate || 0) > 0 ? "positive" as const : "neutral" as const,
       color: "neutral"
     }
   ];
@@ -94,20 +98,23 @@ export const DailyPerformanceDashboard = ({ dateRange, selectedHotel }: DailyPer
           >
             <Card className="card-modern card-hover">
               <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div className="space-y-2">
-                    <p className="text-sm font-medium text-muted-foreground">{kpi.title}</p>
-                    <p className="text-2xl font-bold text-foreground">{kpi.value}</p>
-                    <div className="flex items-center gap-1">
-                      <Badge 
-                        variant={kpi.changeType === 'positive' ? 'default' : 'destructive'}
-                        className="text-xs"
-                      >
-                        {kpi.change}
-                      </Badge>
-                      <span className="text-xs text-muted-foreground">vs yesterday</span>
-                    </div>
-                  </div>
+                 <div className="flex items-center justify-between">
+                   <div className="space-y-2">
+                     <p className="text-sm font-medium text-muted-foreground">{kpi.title}</p>
+                     <p className="text-2xl font-bold text-foreground">{kpi.value}</p>
+                     {kpi.subtitle && (
+                       <p className="text-xs text-muted-foreground">{kpi.subtitle}</p>
+                     )}
+                     <div className="flex items-center gap-1">
+                       <Badge 
+                         variant={kpi.changeType === 'positive' ? 'default' : kpi.changeType === 'negative' ? 'destructive' : 'secondary'}
+                         className="text-xs"
+                       >
+                         {kpi.change}
+                       </Badge>
+                       <span className="text-xs text-muted-foreground">vs yesterday</span>
+                     </div>
+                   </div>
                   <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
                     kpi.color === 'primary' ? 'bg-gradient-primary' :
                     kpi.color === 'secondary' ? 'bg-gradient-secondary' :
