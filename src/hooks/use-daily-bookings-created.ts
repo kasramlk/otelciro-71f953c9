@@ -29,7 +29,7 @@ export const useDailyBookingsCreated = (hotelId: string) => {
       // Get reservations created in last 24 hours
       const { data: currentReservations, error: currentError } = await supabase
         .from('reservations')
-        .select('source')
+        .select('id, source')
         .eq('hotel_id', hotelId)
         .gte('created_at', last24h.toISOString())
         .lte('created_at', now.toISOString());
@@ -53,16 +53,31 @@ export const useDailyBookingsCreated = (hotelId: string) => {
       let direct = 0;
       let channels = 0;
 
-      currentReservations?.forEach(reservation => {
+      console.log('DEBUG: Processing reservations:', currentReservations?.length || 0);
+      
+      currentReservations?.forEach((reservation, index) => {
+        const originalSource = reservation.source;
         const source = reservation.source || 'Direct';
+        
+        console.log(`DEBUG: Reservation ${index + 1}:`, {
+          originalSource,
+          processedSource: source,
+          id: reservation.id
+        });
+        
         sourceCounts[source] = (sourceCounts[source] || 0) + 1;
 
-        if (source === 'Direct' || source === 'Walk-in' || !source) {
+        // Fix the logic: remove the !source check since source is never falsy here
+        if (source === 'Direct' || source === 'Walk-in') {
           direct++;
+          console.log(`DEBUG: Counted as direct. Direct total: ${direct}`);
         } else {
           channels++;
+          console.log(`DEBUG: Counted as channel. Channels total: ${channels}`);
         }
       });
+
+      console.log('DEBUG: Final counts:', { total: currentReservations?.length || 0, direct, channels, sourceCounts });
 
       // Convert to breakdown array
       Object.entries(sourceCounts).forEach(([source, count]) => {
