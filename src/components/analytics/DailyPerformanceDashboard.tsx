@@ -33,6 +33,13 @@ export const DailyPerformanceDashboard = ({ dateRange, selectedHotel }: DailyPer
   
   // Get today's performance metrics with real-time data
   const { data: todayMetrics, isLoading } = useDailyPerformance(selectedHotel, new Date());
+  
+  // Get performance data for selected date when modal is opened
+  const { data: selectedDateMetrics } = useDailyPerformance(
+    selectedHotel, 
+    selectedDate || new Date()
+  );
+  
   const dailyBookings = useDailyBookingsCreated(selectedHotel);
 
   // Performance trend data
@@ -307,9 +314,12 @@ export const DailyPerformanceDashboard = ({ dateRange, selectedHotel }: DailyPer
       {selectedDate && (
         <DailyReservationsModal
           isOpen={showModal}
-          onClose={() => setShowModal(false)}
+          onClose={() => {
+            setShowModal(false);
+            setSelectedDate(null);
+          }}
           date={selectedDate}
-          reservations={todayMetrics?.reservations || []}
+          reservations={selectedDateMetrics?.reservations || []}
         />
       )}
     </div>
